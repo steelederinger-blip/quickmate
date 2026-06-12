@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js';
+import { Chess, validateFen } from 'chess.js';
 import { puzzles } from '../src/puzzles.js';
 
 const expectedCounts = new Map([
@@ -59,6 +59,82 @@ function getThemeList(puzzle) {
   }
 
   return [];
+}
+
+function oppositeColor(color) {
+  return color === 'w' ? 'b' : 'w';
+}
+
+function colorName(color) {
+  return color === 'w' ? 'white' : 'black';
+}
+
+function getKingSquare(game, color) {
+  for (const row of game.board()) {
+    for (const piece of row) {
+      if (piece?.type === 'k' && piece.color === color) {
+        return piece.square;
+      }
+    }
+  }
+
+  return null;
+}
+
+function warnDevFailProduction(puzzle, message) {
+  if ((puzzle.contentStatus || 'unspecified') === 'dev') {
+    warn(`${puzzle.id} ${message}`);
+    return;
+  }
+
+  fail(`${puzzle.id} ${message}`);
+}
+
+function validateStartingPosition(puzzle, game) {
+  const expectedTurn = puzzle.sideToMove === 'white' ? 'w' : 'b';
+  const whiteKingSquare = getKingSquare(game, 'w');
+  const blackKingSquare = getKingSquare(game, 'b');
+
+  if (!['white', 'black'].includes(puzzle.sideToMove)) {
+    fail(`${puzzle.id} sideToMove must be "white" or "black"`);
+  }
+
+  if (game.turn() !== expectedTurn) {
+    fail(`${puzzle.id} sideToMove does not match FEN`);
+  }
+
+  if (!whiteKingSquare || !blackKingSquare) {
+    fail(`${puzzle.id} has an illegal king situation`);
+  }
+
+  const whiteInCheck = game.isAttacked(whiteKingSquare, 'b');
+  const blackInCheck = game.isAttacked(blackKingSquare, 'w');
+
+  if (whiteInCheck && blackInCheck) {
+    fail(`${puzzle.id} has both kings in check`);
+  }
+
+  const opponentColor = oppositeColor(game.turn());
+  const opponentKingSquare = opponentColor === 'w' ? whiteKingSquare : blackKingSquare;
+
+  if (game.isAttacked(opponentKingSquare, game.turn())) {
+    fail(`${puzzle.id} has an illegal position: ${colorName(opponentColor)} king appears capturable`);
+  }
+
+  if (game.isCheckmate()) {
+    fail(`${puzzle.id} starting position is already checkmate`);
+  }
+
+  if (puzzle.mateIn > 1) {
+    const immediateMates = game.moves().filter((move) => move.includes('#'));
+
+    if (immediateMates.length > 0) {
+      warnDevFailProduction(
+        puzzle,
+        `is marked mate-in-${puzzle.mateIn} but has immediate mate(s): ${immediateMates.join(', ')}`,
+      );
+    }
+  }
 }
 
 for (const puzzle of puzzles) {
@@ -129,26 +205,31 @@ for (const puzzle of puzzles) {
     fail(`${puzzle.id} solution length does not match mateIn ${puzzle.mateIn}`);
   }
 
+  const fenValidation = validateFen(puzzle.fen);
+
+  if (!fenValidation.ok) {
+    fail(`${puzzle.id} has invalid FEN: ${fenValidation.error}`);
+  }
+
   const game = new Chess(puzzle.fen);
-  const expectedTurn = puzzle.sideToMove === 'white' ? 'w' : 'b';
 
-  if (game.turn() !== expectedTurn) {
-    fail(`${puzzle.id} sideToMove does not match FEN`);
-  }
-
-  if (contentStatus === 'candidate' && puzzle.mateIn > 1) {
-    const immediateMates = game.moves().filter((move) => move.includes('#'));
-
-    if (immediateMates.length > 0) {
-      fail(`${puzzle.id} is marked mate-in-${puzzle.mateIn} but has immediate mate(s): ${immediateMates.join(', ')}`);
-    }
-  }
+  validateStartingPosition(puzzle, game);
 
   for (const san of puzzle.solution) {
-    const move = game.move(san);
+    let move = null;
+
+    try {
+      move = game.move(san);
+    } catch (error) {
+      fail(`${puzzle.id} solution move "${san}" is not legal from ${game.fen()}: ${error.message}`);
+    }
 
     if (!move) {
-      fail(`${puzzle.id} has invalid SAN move ${san}`);
+      fail(`${puzzle.id} solution move "${san}" is not legal from ${game.fen()}`);
+    }
+
+    if (move.san !== san) {
+      fail(`${puzzle.id} solution move "${san}" should be written as "${move.san}"`);
     }
   }
 

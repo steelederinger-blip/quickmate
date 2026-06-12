@@ -100,12 +100,36 @@ function puzzleFitsMode(puzzle, targetMode) {
   return !Array.isArray(puzzle.modeFit) || puzzle.modeFit.includes(targetMode);
 }
 
+function isProductionTrackPuzzle(puzzle) {
+  return puzzle.contentStatus === 'candidate' || puzzle.contentStatus === 'approved';
+}
+
+function getPuzzleIndexesForMode(targetMode, { productionTrackOnly = false, devOnly = false } = {}) {
+  return puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => puzzleFitsMode(puzzle, targetMode))
+    .filter(({ puzzle }) => {
+      if (productionTrackOnly) {
+        return isProductionTrackPuzzle(puzzle);
+      }
+
+      if (devOnly) {
+        return puzzle.contentStatus === 'dev';
+      }
+
+      return puzzle.contentStatus !== 'rejected';
+    })
+    .map(({ index }) => index);
+}
+
 function getDailyPuzzleIndex(dateKey = getTodayKey()) {
   const hash = [...dateKey].reduce((total, char) => total + char.charCodeAt(0), 0);
-  const dailyIndexes = puzzles
+  const productionDailyIndexes = puzzles
     .map((puzzle, index) => ({ puzzle, index }))
-    .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'daily'))
+    .filter(({ puzzle }) => isProductionTrackPuzzle(puzzle) && puzzle.contentStatus !== 'rejected')
     .map(({ index }) => index);
+  const devDailyIndexes = getPuzzleIndexesForMode('daily', { devOnly: true });
+  const dailyIndexes = productionDailyIndexes.length > 0 ? productionDailyIndexes : devDailyIndexes;
 
   return dailyIndexes[hash % dailyIndexes.length] ?? hash % puzzles.length;
 }
@@ -114,47 +138,27 @@ function shuffle(values) {
   return [...values].sort(() => Math.random() - 0.5);
 }
 
-function isCandidatePuzzle(puzzle) {
-  return puzzle.contentStatus === 'candidate';
-}
-
 function getRushEligiblePuzzleIndexes(solvedCount) {
+  const rushIndexes = getPuzzleIndexesForMode('rush', { productionTrackOnly: true });
+  let tierIndexes = [];
+
   if (solvedCount <= 2) {
-    return puzzles
-      .map((puzzle, index) => ({ puzzle, index }))
-      .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 1 && puzzle.mateIn <= 2)
-      .map(({ index }) => index);
+    tierIndexes = rushIndexes.filter((index) => puzzles[index].mateIn >= 1 && puzzles[index].mateIn <= 2);
+  } else if (solvedCount <= 6) {
+    tierIndexes = rushIndexes.filter((index) => puzzles[index].mateIn >= 2 && puzzles[index].mateIn <= 3);
+  } else if (solvedCount <= 11) {
+    tierIndexes = rushIndexes.filter((index) => puzzles[index].mateIn >= 3 && puzzles[index].mateIn <= 4);
+  } else {
+    tierIndexes = rushIndexes.filter((index) => puzzles[index].mateIn >= 4);
   }
 
-  if (solvedCount <= 6) {
-    return puzzles
-      .map((puzzle, index) => ({ puzzle, index }))
-      .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 2 && puzzle.mateIn <= 3)
-      .map(({ index }) => index);
-  }
-
-  if (solvedCount <= 11) {
-    return puzzles
-      .map((puzzle, index) => ({ puzzle, index }))
-      .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 3 && puzzle.mateIn <= 4)
-      .map(({ index }) => index);
-  }
-
-  return puzzles
-    .map((puzzle, index) => ({ puzzle, index }))
-    .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 4)
-    .map(({ index }) => index);
+  return tierIndexes.length > 0 ? tierIndexes : rushIndexes;
 }
 
 function buildRushQueue(solvedCount, usedPuzzleIds = []) {
   const eligibleIndexes = getRushEligiblePuzzleIndexes(solvedCount);
   const unusedIndexes = eligibleIndexes.filter((index) => !usedPuzzleIds.includes(puzzles[index].id));
-  const unusedCandidateIndexes = unusedIndexes.filter((index) => isCandidatePuzzle(puzzles[index]));
-  const queueSource = unusedCandidateIndexes.length > 0
-    ? unusedCandidateIndexes
-    : unusedIndexes.length > 0
-      ? unusedIndexes
-      : eligibleIndexes;
+  const queueSource = unusedIndexes.length > 0 ? unusedIndexes : eligibleIndexes;
 
   return shuffle(queueSource);
 }
@@ -349,6 +353,9 @@ function formatContentStatus(status) {
   }[status] || 'Unspecified Puzzles';
 }
 
+const productionRushPuzzleCount = getPuzzleIndexesForMode('rush', { productionTrackOnly: true }).length;
+const hasProductionRushPuzzles = productionRushPuzzleCount > 0;
+
 export default function App() {
   const todayKey = getTodayKey();
   const dailyPuzzleIndex = getDailyPuzzleIndex(todayKey);
@@ -481,6 +488,11 @@ export default function App() {
 
   function startRush() {
     const queue = buildRushQueue(0, []);
+
+    if (queue.length === 0) {
+      setFeedback('No production-track Rush puzzles are available.');
+      return;
+    }
 
     setRushQueue(queue);
     setRushQueueCursor(0);
@@ -961,7 +973,7 @@ export default function App() {
               <Zap size={30} />
               <span>
                 <strong>Rush Mode</strong>
-                <small>3 minutes | candidate puzzles first | best rank {bestRushRank}</small>
+                <small>3 minutes | production-track puzzles only | best rank {bestRushRank}</small>
               </span>
               <Play size={24} />
             </button>
@@ -1041,8 +1053,8 @@ export default function App() {
               <span>Total solved</span>
             </div>
             <div>
-              <strong>{puzzles.filter(isCandidatePuzzle).length}</strong>
-              <span>Rush candidates</span>
+              <strong>{productionRushPuzzleCount}</strong>
+              <span>Rush pool</span>
             </div>
           </div>
 
@@ -1072,6 +1084,7 @@ export default function App() {
                 <li>Rush punishes wrong legal moves immediately.</li>
                 <li>Faster clean solves score higher.</li>
                 <li>Rush Mode is timed.</li>
+                <li>Rush uses candidate or approved puzzles only.</li>
                 <li>Rush perfect solves build combo multipliers.</li>
                 <li>Rush wrong moves and skips reset combo.</li>
                 <li>Rush fast and perfect solves can add time.</li>
@@ -1103,14 +1116,17 @@ export default function App() {
 
           <div className="rush-rules">
             <div><strong>3:00</strong><span>Timed run</span></div>
-            <div><strong>Mate</strong><span>Solve as many puzzles as possible</span></div>
+            <div><strong>Pool</strong><span>Candidate and approved puzzles only</span></div>
             <div><strong>Combo</strong><span>Perfect solves build multipliers</span></div>
             <div><strong>Breaks</strong><span>Wrong legal moves and skips reset combo</span></div>
             <div><strong>Time</strong><span>Fast and perfect solves can add seconds</span></div>
           </div>
+          {!hasProductionRushPuzzles && (
+            <p className="empty-log">No production-track Rush puzzles are available.</p>
+          )}
 
           <div className="actions">
-            <button type="button" className="primary-action" onClick={startRush}>
+            <button type="button" className="primary-action" onClick={startRush} disabled={!hasProductionRushPuzzles}>
               <Zap size={18} />
               Start Rush
             </button>

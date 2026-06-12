@@ -14,6 +14,14 @@ Do not promote candidates by count alone. The final approved pack should balance
 
 The current v2 trial batch contains 10 Rush-friendly candidates: 5 mate-in-1 and 5 mate-in-2 puzzles. It is a playability test before sourcing the full 50-candidate set.
 
+## Runtime Selection Rules
+
+- Rush Mode uses only `candidate` and `approved` puzzles.
+- Rush Mode excludes `dev` and `rejected` puzzles.
+- If Rush exhausts the current candidate/approved pool during a run, it repeats candidate/approved puzzles instead of falling back to dev content.
+- Daily prefers `candidate` and `approved` puzzles, then falls back to dev content only if no production-track puzzle exists.
+- Ladder can show dev puzzles separately for development testing.
+
 ## Required Metadata
 
 Every production-track puzzle must include:
