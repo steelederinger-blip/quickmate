@@ -12,7 +12,14 @@ Pack v2 should start with 50 candidate puzzles:
 
 Do not promote candidates by count alone. The final approved pack should balance tactical themes, difficulty, and mode fit.
 
-The current v2.1 trial batch contains 30 Rush-friendly candidates: 13 mate-in-1, 15 mate-in-2, and 2 mate-in-3 puzzles. It is a playability test before sourcing the full 50-candidate set.
+The current v2.2 trial batch contains 75 Rush-friendly candidates:
+
+- 25 mate-in-1 puzzles
+- 30 mate-in-2 puzzles
+- 15 mate-in-3 puzzles
+- 5 mate-in-4 puzzles
+
+It is a playability test for Blitz, Classic, and Survival before promoting any content to `approved`. Mate-in-4 candidates should be treated as Classic/Survival/Ladder content unless they are later reviewed as suitable for Blitz.
 
 ## Runtime Selection Rules
 
@@ -20,6 +27,9 @@ The current v2.1 trial batch contains 30 Rush-friendly candidates: 13 mate-in-1,
 - Rush Mode excludes `dev` and `rejected` puzzles.
 - If Rush exhausts the current candidate/approved pool during a run, it repeats candidate/approved puzzles instead of falling back to dev content.
 - Rush should scale from quick mates to deeper forced-mate sequences as the player advances.
+- Blitz should emphasize fast mate-in-1 to mate-in-3 patterns.
+- Classic can include mate-in-4 content once the candidate is reviewed for time-pressure fit.
+- Survival should progressively allow deeper mate-in values as solved count increases and the content pool grows.
 - Daily prefers `candidate` and `approved` puzzles, then falls back to dev content only if no production-track puzzle exists.
 - Ladder can show dev puzzles separately for development testing.
 

@@ -226,7 +226,11 @@ function getRushMateInLimit(solvedCount, rushModeKey) {
 }
 
 function getRushEligiblePuzzleIndexes(solvedCount, rushModeKey = RUSH_MODE_KEYS.classic) {
-  const rushIndexes = getPuzzleIndexesForMode('rush', { productionTrackOnly: true });
+  const rushIndexes = puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => isProductionTrackPuzzle(puzzle))
+    .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') || puzzleFitsMode(puzzle, rushModeKey))
+    .map(({ index }) => index);
   const mateInLimit = getRushMateInLimit(solvedCount, rushModeKey);
   const eligibleIndexes = rushIndexes.filter((index) => puzzles[index].mateIn <= mateInLimit);
 

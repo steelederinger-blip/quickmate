@@ -44,16 +44,16 @@ This validates the puzzle pack and creates a fresh production build in `dist`.
 ## Puzzle Pack
 
 - Puzzle Pack v1 dev set plus v2 trial candidates
-- 55 local mate puzzles
+- 100 local mate puzzles
 - 25 development/test puzzles
-- 30 v2 candidate puzzles
+- 75 v2 candidate puzzles
 - Data source: `src/puzzles.js`
 - Current content statuses: `dev`, `candidate`
 - Current content purpose: development and test coverage for app behavior
 
-The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates include the v2.1 Rush candidate pack for testing better Blitz, Classic, and Survival content, but they are not approved production content.
+The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates include the v2.2 Rush candidate pack: 25 mate-in-1, 30 mate-in-2, 15 mate-in-3, and 5 mate-in-4 candidates for testing better Blitz, Classic, and Survival content. They are not approved production content.
 
-Rush Mode only selects production-track puzzles: `candidate` or `approved`. It excludes `dev` and `rejected` puzzles, and repeats production-track puzzles during long runs instead of falling back to dev content. Rush content should scale from quick mates to deeper forced-mate sequences as the player advances. Daily prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
+Rush Mode only selects production-track puzzles: `candidate` or `approved`. It excludes `dev` and `rejected` puzzles, and repeats production-track puzzles during long runs instead of falling back to dev content. Rush content should scale from quick mates to deeper forced-mate sequences as the player advances. Blitz focuses on mate-in-1 to mate-in-3 candidates; Classic and Survival can include mate-in-4 candidates as the production-track pool expands. Daily prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
 
 ## Production Puzzle Quality Gate
 
