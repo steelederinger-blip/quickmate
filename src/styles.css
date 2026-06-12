@@ -292,6 +292,45 @@ h2 {
   align-self: center;
 }
 
+.rush-mode-list {
+  display: grid;
+  gap: 10px;
+}
+
+.rush-mode-card {
+  display: grid;
+  gap: 10px;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--surface);
+  text-align: left;
+  box-shadow: var(--shadow);
+}
+
+.rush-mode-card.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.rush-mode-card strong,
+.rush-mode-card small {
+  display: block;
+}
+
+.rush-mode-card small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 780;
+}
+
+.rush-mode-meta {
+  display: grid;
+  gap: 2px;
+}
+
 .rush-rules {
   display: grid;
   gap: 10px;
@@ -342,6 +381,7 @@ h2 {
 }
 
 .mode-card,
+.rush-mode-card,
 .puzzle-item,
 .icon-button,
 .primary-action,
@@ -394,6 +434,7 @@ h2 {
 }
 
 .mode-card:hover,
+.rush-mode-card:hover,
 .icon-button:hover,
 .primary-action:hover,
 .secondary-action:hover,
@@ -619,13 +660,13 @@ h2 {
   background: var(--surface-soft);
 }
 
-.low-time .rush-grid .stat:first-child {
+.low-time .rush-grid .rush-time-stat {
   color: #fff;
   background: #9b2f21;
 }
 
-.low-time .rush-grid .stat:first-child svg,
-.low-time .rush-grid .stat:first-child small {
+.low-time .rush-grid .rush-time-stat svg,
+.low-time .rush-grid .rush-time-stat small {
   color: #ffe7df;
 }
 
@@ -1067,6 +1108,10 @@ h2 {
   .about-panel {
     grid-template-columns: auto 1fr;
     align-items: center;
+  }
+
+  .rush-mode-list {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .rush-rules {
