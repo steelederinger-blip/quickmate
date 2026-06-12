@@ -53,6 +53,8 @@ The pack is generated from a small set of synthetic queen, rook, and knight patt
 
 ## Production Puzzle Quality Gate
 
+See `docs/puzzle-quality.md` for the Puzzle Pack v2 target, metadata requirements, content statuses, and validation warning policy.
+
 Before a puzzle can move out of `contentStatus: "dev"`, verify:
 
 - no faster mate than claimed

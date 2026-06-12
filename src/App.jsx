@@ -266,8 +266,12 @@ function getPuzzleStatus(completion) {
   return completion.perfect ? 'perfect' : 'solved';
 }
 
-function formatTheme(theme) {
-  return Array.isArray(theme) ? theme.join(', ') : theme;
+function getPuzzleThemes(item) {
+  return item.themes || item.theme || [];
+}
+
+function formatTheme(themes) {
+  return Array.isArray(themes) ? themes.join(', ') : themes;
 }
 
 export default function App() {
@@ -830,7 +834,7 @@ export default function App() {
       >
         <span>
           <strong>{item.title}</strong>
-          <small>{formatTheme(item.theme)}</small>
+          <small>{formatTheme(getPuzzleThemes(item))}</small>
           <small className="completion-line">
             {status}
             {completion?.bestScore ? ` | best ${completion.bestScore}` : ''}
@@ -1094,7 +1098,7 @@ export default function App() {
         <aside className="info-panel" aria-label="Puzzle status">
           <div className="panel-title">
             <div>
-              <p className="eyebrow">{formatTheme(puzzle.theme)} | Mate in {mateIn}</p>
+              <p className="eyebrow">{formatTheme(getPuzzleThemes(puzzle))} | Mate in {mateIn}</p>
               <h2>{puzzle.title}</h2>
             </div>
             <span className="badge">{puzzle.rating}</span>
