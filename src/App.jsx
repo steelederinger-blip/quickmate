@@ -88,6 +88,10 @@ function shuffle(values) {
   return [...values].sort(() => Math.random() - 0.5);
 }
 
+function isCandidatePuzzle(puzzle) {
+  return puzzle.contentStatus === 'candidate';
+}
+
 function getRushEligiblePuzzleIndexes(solvedCount) {
   if (solvedCount <= 2) {
     return puzzles
@@ -119,7 +123,12 @@ function getRushEligiblePuzzleIndexes(solvedCount) {
 function buildRushQueue(solvedCount, usedPuzzleIds = []) {
   const eligibleIndexes = getRushEligiblePuzzleIndexes(solvedCount);
   const unusedIndexes = eligibleIndexes.filter((index) => !usedPuzzleIds.includes(puzzles[index].id));
-  const queueSource = unusedIndexes.length > 0 ? unusedIndexes : eligibleIndexes;
+  const unusedCandidateIndexes = unusedIndexes.filter((index) => isCandidatePuzzle(puzzles[index]));
+  const queueSource = unusedCandidateIndexes.length > 0
+    ? unusedCandidateIndexes
+    : unusedIndexes.length > 0
+      ? unusedIndexes
+      : eligibleIndexes;
 
   return shuffle(queueSource);
 }
@@ -274,6 +283,15 @@ function formatTheme(themes) {
   return Array.isArray(themes) ? themes.join(', ') : themes;
 }
 
+function formatContentStatus(status) {
+  return {
+    candidate: 'Candidate Puzzles',
+    dev: 'Development Puzzles',
+    approved: 'Approved Puzzles',
+    rejected: 'Rejected Puzzles',
+  }[status] || 'Unspecified Puzzles';
+}
+
 export default function App() {
   const todayKey = getTodayKey();
   const dailyPuzzleIndex = getDailyPuzzleIndex(todayKey);
@@ -322,13 +340,18 @@ export default function App() {
     : {};
   const groupedPuzzles = useMemo(() => {
     return puzzles.reduce((groups, item, index) => {
-      const key = item.mateIn;
+      const statusKey = item.contentStatus || 'unspecified';
+      const mateInKey = item.mateIn;
 
-      if (!groups[key]) {
-        groups[key] = [];
+      if (!groups[statusKey]) {
+        groups[statusKey] = {};
       }
 
-      groups[key].push({ item, index });
+      if (!groups[statusKey][mateInKey]) {
+        groups[statusKey][mateInKey] = [];
+      }
+
+      groups[statusKey][mateInKey].push({ item, index });
       return groups;
     }, {});
   }, []);
@@ -916,7 +939,7 @@ export default function App() {
             </button>
             <div>
               <strong>QuickMate MVP</strong>
-              <span>Puzzle Pack v1 | 25 puzzles</span>
+              <span>Puzzle Pack | {puzzles.length} puzzles</span>
             </div>
           </section>
 
@@ -1056,15 +1079,25 @@ export default function App() {
             ) : mode === 'daily' ? (
               renderPuzzleItem(puzzles[dailyPuzzleIndex], dailyPuzzleIndex)
             ) : (
-              Object.entries(groupedPuzzles).map(([groupMateIn, groupItems]) => (
-                <section className="puzzle-group" key={groupMateIn}>
-                  <div className="group-title">
-                    <span>Mate in {groupMateIn}</span>
-                    <strong>{groupItems.length}</strong>
+              Object.entries(groupedPuzzles).map(([contentStatus, mateInGroups]) => (
+                <section className="content-group" key={contentStatus}>
+                  <div className="content-title">
+                    <span>{formatContentStatus(contentStatus)}</span>
+                    <strong>
+                      {Object.values(mateInGroups).reduce((total, groupItems) => total + groupItems.length, 0)}
+                    </strong>
                   </div>
-                  <div className="group-items">
-                    {groupItems.map(({ item, index }) => renderPuzzleItem(item, index))}
-                  </div>
+                  {Object.entries(mateInGroups).map(([groupMateIn, groupItems]) => (
+                    <section className="puzzle-group" key={`${contentStatus}-${groupMateIn}`}>
+                      <div className="group-title">
+                        <span>Mate in {groupMateIn}</span>
+                        <strong>{groupItems.length}</strong>
+                      </div>
+                      <div className="group-items">
+                        {groupItems.map(({ item, index }) => renderPuzzleItem(item, index))}
+                      </div>
+                    </section>
+                  ))}
                 </section>
               ))
             )}

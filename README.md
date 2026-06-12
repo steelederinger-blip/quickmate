@@ -2,7 +2,7 @@
 
 QuickMate is a mobile-first React/Vite chess puzzle trainer focused on fast mate-solving. It includes Daily QuickMate, a grouped Puzzle Ladder, and a timed Rush Mode using a local Puzzle Pack v1.
 
-The current 25-puzzle pack is development/test content. It exists to exercise the app flow, scoring, validation, and mode behavior, but it is not production-quality puzzle content.
+The original 25-puzzle pack is development/test content. It exists to exercise the app flow, scoring, validation, and mode behavior, but it is not production-quality puzzle content.
 
 Current version: **QuickMate MVP v0.1**
 
@@ -43,13 +43,15 @@ This validates the puzzle pack and creates a fresh production build in `dist`.
 
 ## Puzzle Pack
 
-- Puzzle Pack v1
-- 25 local mate puzzles
+- Puzzle Pack v1 dev set plus v2 trial candidates
+- 35 local mate puzzles
+- 25 development/test puzzles
+- 10 v2 candidate puzzles
 - Data source: `src/puzzles.js`
-- Current content status: `dev`
+- Current content statuses: `dev`, `candidate`
 - Current content purpose: development and test coverage for app behavior
 
-The pack is generated from a small set of synthetic queen, rook, and knight patterns. It should not be treated as a curated production puzzle set.
+The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates are a trial batch for testing better Rush content, not approved production content.
 
 ## Production Puzzle Quality Gate
 

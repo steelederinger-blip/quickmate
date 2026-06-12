@@ -2,16 +2,25 @@ import { Chess } from 'chess.js';
 import { puzzles } from '../src/puzzles.js';
 
 const expectedCounts = new Map([
-  [1, 5],
-  [2, 5],
+  [1, 10],
+  [2, 10],
   [3, 5],
   [4, 5],
   [5, 3],
   [6, 1],
   [7, 1],
 ]);
+const expectedContentStatusCounts = new Map([
+  ['dev', 25],
+  ['candidate', 10],
+]);
+const expectedCandidateCounts = new Map([
+  [1, 5],
+  [2, 5],
+]);
 
 const counts = new Map();
+const candidateCounts = new Map();
 const contentStatusCounts = new Map();
 const themeCounts = new Map();
 const mateInThemePatternCounts = new Map();
@@ -86,6 +95,24 @@ for (const puzzle of puzzles) {
   const contentStatus = puzzle.contentStatus || 'unspecified';
   const themes = getThemeList(puzzle);
 
+  if (contentStatus === 'candidate') {
+    if (!isNonEmptyString(puzzle.source)) {
+      fail(`${puzzle.id} candidate puzzle is missing source`);
+    }
+
+    if (!isNonEmptyStringArray(puzzle.modeFit)) {
+      fail(`${puzzle.id} candidate puzzle is missing modeFit`);
+    }
+
+    if (!isNonEmptyStringArray(puzzle.qualityNotes)) {
+      fail(`${puzzle.id} candidate puzzle is missing qualityNotes`);
+    }
+
+    if (!isNonEmptyStringArray(puzzle.themes)) {
+      fail(`${puzzle.id} candidate puzzle is missing themes`);
+    }
+  }
+
   if (contentStatus !== 'dev' && !isNonEmptyString(puzzle.source)) {
     warn(`${puzzle.id} is ${contentStatus} but is missing source`);
   }
@@ -109,6 +136,14 @@ for (const puzzle of puzzles) {
     fail(`${puzzle.id} sideToMove does not match FEN`);
   }
 
+  if (contentStatus === 'candidate' && puzzle.mateIn > 1) {
+    const immediateMates = game.moves().filter((move) => move.includes('#'));
+
+    if (immediateMates.length > 0) {
+      fail(`${puzzle.id} is marked mate-in-${puzzle.mateIn} but has immediate mate(s): ${immediateMates.join(', ')}`);
+    }
+  }
+
   for (const san of puzzle.solution) {
     const move = game.move(san);
 
@@ -123,6 +158,10 @@ for (const puzzle of puzzles) {
 
   counts.set(puzzle.mateIn, (counts.get(puzzle.mateIn) || 0) + 1);
   contentStatusCounts.set(contentStatus, (contentStatusCounts.get(contentStatus) || 0) + 1);
+
+  if (contentStatus === 'candidate') {
+    candidateCounts.set(puzzle.mateIn, (candidateCounts.get(puzzle.mateIn) || 0) + 1);
+  }
 
   for (const theme of themes) {
     themeCounts.set(theme, (themeCounts.get(theme) || 0) + 1);
@@ -153,8 +192,24 @@ for (const [mateIn, expectedCount] of expectedCounts) {
   }
 }
 
-if (puzzles.length !== 25) {
-  fail(`Expected 25 puzzles, found ${puzzles.length}`);
+for (const [status, expectedCount] of expectedContentStatusCounts) {
+  const actualCount = contentStatusCounts.get(status) || 0;
+
+  if (actualCount !== expectedCount) {
+    fail(`Expected ${expectedCount} ${status} puzzles, found ${actualCount}`);
+  }
+}
+
+for (const [mateIn, expectedCount] of expectedCandidateCounts) {
+  const actualCount = candidateCounts.get(mateIn) || 0;
+
+  if (actualCount !== expectedCount) {
+    fail(`Expected ${expectedCount} candidate mate-in-${mateIn} puzzles, found ${actualCount}`);
+  }
+}
+
+if (puzzles.length !== 35) {
+  fail(`Expected 35 puzzles, found ${puzzles.length}`);
 }
 
 const contentStatusSummary = [...contentStatusCounts.entries()]

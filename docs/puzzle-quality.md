@@ -12,6 +12,8 @@ Pack v2 should start with 50 candidate puzzles:
 
 Do not promote candidates by count alone. The final approved pack should balance tactical themes, difficulty, and mode fit.
 
+The current v2 trial batch contains 10 Rush-friendly candidates: 5 mate-in-1 and 5 mate-in-2 puzzles. It is a playability test before sourcing the full 50-candidate set.
+
 ## Required Metadata
 
 Every production-track puzzle must include:
