@@ -19,6 +19,7 @@ The current v2 trial batch contains 10 Rush-friendly candidates: 5 mate-in-1 and
 - Rush Mode uses only `candidate` and `approved` puzzles.
 - Rush Mode excludes `dev` and `rejected` puzzles.
 - If Rush exhausts the current candidate/approved pool during a run, it repeats candidate/approved puzzles instead of falling back to dev content.
+- Rush should scale from quick mates to deeper forced-mate sequences as the player advances.
 - Daily prefers `candidate` and `approved` puzzles, then falls back to dev content only if no production-track puzzle exists.
 - Ladder can show dev puzzles separately for development testing.
 
@@ -37,6 +38,8 @@ Every production-track puzzle must include:
 - `modeFit`: suitable modes, such as `rush`, `daily`, `ladder`, or `challenge`
 - `source`: provenance for non-dev content
 - `qualityNotes`: review notes, caveats, or verification evidence
+
+For `rush` mode fit, `mateIn`, `difficulty`, and `rating` should support progression from quick mates early in a run toward deeper forced-mate sequences later in a run.
 
 The app still supports the legacy `theme` field during migration. New production-track content should use `themes`; compatibility aliases can remain until the app fully migrates.
 

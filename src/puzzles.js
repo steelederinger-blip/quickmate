@@ -40,7 +40,9 @@ const DEV_QUALITY_NOTES = [
 // Production puzzle imports must be quality-gated before contentStatus changes
 // from "dev": verify no faster mate than claimed, a realistic forcing line,
 // varied themes, no repetitive queen/rook-only pattern, and suitable mode fit
-// for rush, daily, ladder, or challenge.
+// for rush, daily, ladder, or challenge. Rush-fit content should use mateIn,
+// difficulty, and rating metadata to scale from quick mates to deeper forced
+// mate sequences as the player advances.
 function puzzle({
   id,
   title,

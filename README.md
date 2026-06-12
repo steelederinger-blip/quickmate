@@ -53,7 +53,7 @@ This validates the puzzle pack and creates a fresh production build in `dist`.
 
 The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates are a trial batch for testing better Rush content, not approved production content.
 
-Rush Mode only selects production-track puzzles: `candidate` or `approved`. It excludes `dev` and `rejected` puzzles, and repeats production-track puzzles during long runs instead of falling back to dev content. Daily prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
+Rush Mode only selects production-track puzzles: `candidate` or `approved`. It excludes `dev` and `rejected` puzzles, and repeats production-track puzzles during long runs instead of falling back to dev content. Rush content should scale from quick mates to deeper forced-mate sequences as the player advances. Daily prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
 
 ## Production Puzzle Quality Gate
 
