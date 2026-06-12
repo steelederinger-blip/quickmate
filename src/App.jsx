@@ -1115,22 +1115,56 @@ export default function App() {
             <div className="result-panel help-panel">
               <HelpCircle size={42} />
               <p className="eyebrow">How to Play</p>
-              <h2>Find the mate</h2>
-              <ul className="help-list">
-                <li>User plays the mating side.</li>
-                <li>Opponent responses are automatic.</li>
-                <li>Illegal moves are rejected.</li>
-                <li>Legal moves that do not force mate count as mistakes.</li>
-                <li>Daily and Ladder let you retry wrong legal moves.</li>
-                <li>Rush punishes wrong legal moves immediately.</li>
-                <li>Rush gives one more try before a puzzle is missed.</li>
-                <li>Faster clean solves score higher.</li>
-                <li>Rush Mode is timed.</li>
-                <li>Rush uses candidate or approved puzzles only.</li>
-                <li>Rush perfect solves build combo multipliers.</li>
-                <li>Rush wrong moves and skips reset combo.</li>
-                <li>Rush fast and perfect solves can add time.</li>
-              </ul>
+              <h2>Find the forced mate</h2>
+              <div className="help-sections">
+                <section className="help-section">
+                  <h3>Goal</h3>
+                  <ul className="help-list">
+                    <li>You play the attacking side.</li>
+                    <li>Find the forced checkmate.</li>
+                    <li>QuickMate auto-plays opponent replies when you are on the correct line.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Moves</h3>
+                  <ul className="help-list">
+                    <li>Illegal moves are rejected and do not count as mistakes.</li>
+                    <li>Legal moves that do not force mate count as mistakes.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Rush Mode</h3>
+                  <ul className="help-list">
+                    <li>Rush is a 3-minute sprint using production-track puzzles only.</li>
+                    <li>First wrong legal move breaks combo, costs 3 seconds, and gives one more try.</li>
+                    <li>Second wrong legal move marks the puzzle missed, reveals the correct line, and waits for Next Puzzle.</li>
+                    <li>Skip breaks combo, applies the skip penalty, reveals the correct line, and waits for Next Puzzle.</li>
+                    <li>Perfect solves have no wrong moves and build combo multipliers.</li>
+                    <li>Fast or perfect solves can add time.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Daily and Ladder</h3>
+                  <ul className="help-list">
+                    <li>Daily and Ladder are training modes.</li>
+                    <li>Wrong legal moves count as mistakes, but you can keep trying.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Scoring</h3>
+                  <ul className="help-list">
+                    <li>Score more for fast solves, perfect solves, harder puzzles, and Rush multipliers.</li>
+                    <li>Wrong legal moves and Rush skips apply penalties.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Review Missed</h3>
+                  <ul className="help-list">
+                    <li>Missed and skipped Rush puzzles show the correct line.</li>
+                    <li>Review Missed helps you learn after the run.</li>
+                  </ul>
+                </section>
+              </div>
               <button type="button" className="primary-action" onClick={() => setShowHelp(false)}>
                 Got it
               </button>

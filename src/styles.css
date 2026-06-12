@@ -998,13 +998,35 @@ h2 {
   text-align: center;
 }
 
-.help-list {
+.help-sections {
   display: grid;
   gap: 10px;
   width: 100%;
   margin: 16px 0;
+}
+
+.help-section {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.help-section h3 {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.help-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
   padding-left: 20px;
   color: var(--text);
+  font-size: 0.92rem;
   font-weight: 750;
 }
 
