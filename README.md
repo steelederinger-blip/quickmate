@@ -44,14 +44,14 @@ This validates the puzzle pack and creates a fresh production build in `dist`.
 ## Puzzle Pack
 
 - Puzzle Pack v1 dev set plus v2 trial candidates
-- 35 local mate puzzles
+- 55 local mate puzzles
 - 25 development/test puzzles
-- 10 v2 candidate puzzles
+- 30 v2 candidate puzzles
 - Data source: `src/puzzles.js`
 - Current content statuses: `dev`, `candidate`
 - Current content purpose: development and test coverage for app behavior
 
-The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates are a trial batch for testing better Rush content, not approved production content.
+The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates include the v2.1 Rush candidate pack for testing better Blitz, Classic, and Survival content, but they are not approved production content.
 
 Rush Mode only selects production-track puzzles: `candidate` or `approved`. It excludes `dev` and `rejected` puzzles, and repeats production-track puzzles during long runs instead of falling back to dev content. Rush content should scale from quick mates to deeper forced-mate sequences as the player advances. Daily prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
 

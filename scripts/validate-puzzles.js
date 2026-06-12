@@ -2,9 +2,9 @@ import { Chess, validateFen } from 'chess.js';
 import { puzzles } from '../src/puzzles.js';
 
 const expectedCounts = new Map([
-  [1, 10],
-  [2, 10],
-  [3, 5],
+  [1, 18],
+  [2, 20],
+  [3, 7],
   [4, 5],
   [5, 3],
   [6, 1],
@@ -12,11 +12,12 @@ const expectedCounts = new Map([
 ]);
 const expectedContentStatusCounts = new Map([
   ['dev', 25],
-  ['candidate', 10],
+  ['candidate', 30],
 ]);
 const expectedCandidateCounts = new Map([
-  [1, 5],
-  [2, 5],
+  [1, 13],
+  [2, 15],
+  [3, 2],
 ]);
 
 const counts = new Map();
@@ -289,8 +290,8 @@ for (const [mateIn, expectedCount] of expectedCandidateCounts) {
   }
 }
 
-if (puzzles.length !== 35) {
-  fail(`Expected 35 puzzles, found ${puzzles.length}`);
+if (puzzles.length !== 55) {
+  fail(`Expected 55 puzzles, found ${puzzles.length}`);
 }
 
 const contentStatusSummary = [...contentStatusCounts.entries()]
