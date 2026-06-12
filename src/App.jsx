@@ -28,8 +28,10 @@ const STORAGE_KEY = 'quickmate.stats.v1';
 const RUSH_SECONDS = 180;
 const SKIP_PENALTY = 100;
 const RUSH_WRONG_MOVE_TIME_PENALTY = 3;
+const RUSH_MAX_PUZZLE_ATTEMPTS = 2;
 const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
+const RUSH_FIRST_MISS_FEEDBACK = 'Not forcing. One more try.';
 const PUZZLE_BEHAVIOR = {
   trainingMode: 'trainingMode',
   strictMode: 'strictMode',
@@ -247,14 +249,16 @@ function getRushBadges(result) {
   ].filter(Boolean);
 }
 
-function getRushReviewItem(item, reason) {
+function getRushReviewItem(item, reason, details = {}) {
   return {
     id: item.id,
     title: item.title,
     mateIn: item.mateIn,
     themes: getPuzzleThemes(item),
     firstMove: item.solution[0],
+    solution: item.solution,
     reason,
+    wrongMoveCount: details.wrongMoveCount ?? 0,
   };
 }
 
@@ -379,6 +383,8 @@ export default function App() {
   const [rushStats, setRushStats] = useState(DEFAULT_RUSH_STATS);
   const [rushUsedPuzzleIds, setRushUsedPuzzleIds] = useState([]);
   const [rushMissedPuzzles, setRushMissedPuzzles] = useState([]);
+  const [rushPuzzleMistakes, setRushPuzzleMistakes] = useState(0);
+  const [rushReveal, setRushReveal] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
 
@@ -391,7 +397,10 @@ export default function App() {
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isRush = mode === 'rush';
   const puzzleBehavior = getPuzzleBehavior(mode);
-  const boardIsInteractive = screen === 'game' && !isComplete && Boolean(expectedMove) && (!isRush || rushTimeLeft > 0);
+  const boardIsInteractive = screen === 'game'
+    && !isComplete
+    && Boolean(expectedMove)
+    && (!isRush || (rushTimeLeft > 0 && !rushReveal));
   const rushElapsed = RUSH_SECONDS - rushTimeLeft;
   const rushMultiplier = getRushMultiplier(rushStats.currentCombo);
   const nextRushMultiplier = getNextRushMultiplierInfo(rushStats.currentCombo);
@@ -470,6 +479,8 @@ export default function App() {
     setCopyStatus('Copy Result');
     setFeedback(nextFeedback);
     setSelectedSquare(null);
+    setRushPuzzleMistakes(0);
+    setRushReveal(null);
   }
 
   function startPuzzle(index, nextMode = 'ladder') {
@@ -500,6 +511,8 @@ export default function App() {
     setRushStats(DEFAULT_RUSH_STATS);
     setRushUsedPuzzleIds([]);
     setRushMissedPuzzles([]);
+    setRushPuzzleMistakes(0);
+    setRushReveal(null);
     resetPuzzle(queue[0], 'rush');
     setScreen('game');
   }
@@ -530,6 +543,11 @@ export default function App() {
   ) {
     const nextQueue = buildRushQueue(nextSolvedCount, nextUsedPuzzleIds);
     const nextCursor = 0;
+
+    if (nextQueue.length === 0) {
+      endRush();
+      return;
+    }
 
     setRushQueue(nextQueue);
     setRushQueueCursor(nextCursor);
@@ -588,14 +606,25 @@ export default function App() {
     });
   }
 
-  function skipRushPuzzle() {
+  function continueRushAfterReveal() {
     if (!isRush || isComplete || rushTimeLeft <= 0) {
+      return;
+    }
+
+    advanceRushPuzzle(rushStats.solved, rushUsedPuzzleIds);
+  }
+
+  function skipRushPuzzle() {
+    if (!isRush || isComplete || rushTimeLeft <= 0 || rushReveal) {
       return;
     }
 
     const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
 
-    setRushMissedPuzzles((items) => [...items, getRushReviewItem(puzzle, 'Skipped')]);
+    setRushMissedPuzzles((items) => [
+      ...items,
+      getRushReviewItem(puzzle, 'Skipped', { wrongMoveCount: rushPuzzleMistakes }),
+    ]);
     setRushStats((currentStats) => ({
       ...currentStats,
       skips: currentStats.skips + 1,
@@ -604,7 +633,9 @@ export default function App() {
     }));
     setRushUsedPuzzleIds(nextUsedPuzzleIds);
     setRushTimeLeft((value) => Math.max(0, value - 5));
-    advanceRushPuzzle(rushStats.solved, nextUsedPuzzleIds, 'Skipped. Combo broken. -100 score, -5 seconds.');
+    setSelectedSquare(null);
+    setRushReveal({ reason: 'Skipped', wrongMoveCount: rushPuzzleMistakes });
+    setFeedback('Skipped. Correct line shown. -100 score, -5 seconds.');
   }
 
   function updateStatsForSolve(nextResult) {
@@ -794,24 +825,34 @@ export default function App() {
   }
 
   function handleWrongLegalMove() {
-    setMistakes((value) => value + 1);
-
     if (puzzleBehavior === PUZZLE_BEHAVIOR.strictMode && isRush) {
-      const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
+      const nextPuzzleMistakes = rushPuzzleMistakes + 1;
+      const isMissed = nextPuzzleMistakes >= RUSH_MAX_PUZZLE_ATTEMPTS;
 
-      setRushMissedPuzzles((items) => [...items, getRushReviewItem(puzzle, 'Missed')]);
+      setMistakes((value) => value + 1);
+      setRushPuzzleMistakes(nextPuzzleMistakes);
       setRushStats((currentStats) => ({
         ...currentStats,
         mistakes: currentStats.mistakes + 1,
         currentCombo: 0,
       }));
-      setRushUsedPuzzleIds(nextUsedPuzzleIds);
       setRushTimeLeft((value) => Math.max(0, value - RUSH_WRONG_MOVE_TIME_PENALTY));
-      advanceRushPuzzle(
-        rushStats.solved,
-        nextUsedPuzzleIds,
-        `${WRONG_LEGAL_MOVE_FEEDBACK} Combo broken. -${RUSH_WRONG_MOVE_TIME_PENALTY} seconds.`,
-      );
+
+      if (!isMissed) {
+        setFeedback(RUSH_FIRST_MISS_FEEDBACK);
+        return;
+      }
+
+      const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
+
+      setRushMissedPuzzles((items) => [
+        ...items,
+        getRushReviewItem(puzzle, 'Missed', { wrongMoveCount: nextPuzzleMistakes }),
+      ]);
+      setRushUsedPuzzleIds(nextUsedPuzzleIds);
+      setSelectedSquare(null);
+      setRushReveal({ reason: 'Missed', wrongMoveCount: nextPuzzleMistakes });
+      setFeedback(`Missed. Correct line shown. -${RUSH_WRONG_MOVE_TIME_PENALTY} seconds.`);
       return;
     }
 
@@ -1082,6 +1123,7 @@ export default function App() {
                 <li>Legal moves that do not force mate count as mistakes.</li>
                 <li>Daily and Ladder let you retry wrong legal moves.</li>
                 <li>Rush punishes wrong legal moves immediately.</li>
+                <li>Rush gives one more try before a puzzle is missed.</li>
                 <li>Faster clean solves score higher.</li>
                 <li>Rush Mode is timed.</li>
                 <li>Rush uses candidate or approved puzzles only.</li>
@@ -1276,6 +1318,11 @@ export default function App() {
                   <small>Mistakes</small>
                 </div>
                 <div className="stat">
+                  <Target size={18} />
+                  <span>{rushPuzzleMistakes}/{RUSH_MAX_PUZZLE_ATTEMPTS}</span>
+                  <small>Attempts</small>
+                </div>
+                <div className="stat">
                   <SkipForward size={18} />
                   <span>{rushStats.skips}</span>
                   <small>Skips</small>
@@ -1314,21 +1361,47 @@ export default function App() {
 
           <p className={`feedback ${isComplete ? 'success' : ''}`}>{feedback}</p>
 
+          {isRush && rushReveal && (
+            <div className="correct-line-panel" aria-label="Correct line">
+              <div className="panel-header">
+                <h3>Correct line</h3>
+                <span>{rushReveal.reason}</span>
+              </div>
+              <ol className="solution-line">
+                {puzzle.solution.map((move, index) => (
+                  <li className={index === 0 ? 'first-move' : ''} key={`${move}-${index}`}>
+                    <span>{index === 0 ? 'First move' : `Move ${index + 1}`}</span>
+                    <strong>{move}</strong>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           <div className="actions">
-            <button type="button" className="primary-action" onClick={showHint} disabled={isComplete || isRush}>
-              <Lightbulb size={18} />
-              Hint
-            </button>
-            {isRush ? (
-              <button type="button" className="secondary-action" onClick={skipRushPuzzle}>
-                <SkipForward size={18} />
-                Skip
+            {isRush && rushReveal ? (
+              <button type="button" className="primary-action" onClick={continueRushAfterReveal}>
+                <ChevronRight size={18} />
+                Next Puzzle
               </button>
             ) : (
-              <button type="button" className="secondary-action" onClick={() => resetPuzzle()}>
-                <RotateCcw size={18} />
-                Retry
-              </button>
+              <>
+                <button type="button" className="primary-action" onClick={showHint} disabled={isComplete || isRush}>
+                  <Lightbulb size={18} />
+                  Hint
+                </button>
+                {isRush ? (
+                  <button type="button" className="secondary-action" onClick={skipRushPuzzle}>
+                    <SkipForward size={18} />
+                    Skip
+                  </button>
+                ) : (
+                  <button type="button" className="secondary-action" onClick={() => resetPuzzle()}>
+                    <RotateCcw size={18} />
+                    Retry
+                  </button>
+                )}
+              </>
             )}
           </div>
 
@@ -1438,14 +1511,19 @@ export default function App() {
                   <p className="empty-log">No missed or skipped puzzles.</p>
                 ) : (
                   <div className="missed-list">
-                    {(result.missedPuzzles || []).map((item, index) => (
-                      <div className="missed-item" key={`${item.id}-${item.reason}-${index}`}>
-                        <span className="missed-reason">{item.reason}</span>
-                        <strong>{item.title}</strong>
-                        <small>Mate in {item.mateIn} | {formatTheme(item.themes)}</small>
-                        <small>First move: {item.firstMove}</small>
-                      </div>
-                    ))}
+                    {(result.missedPuzzles || []).map((item, index) => {
+                      const solutionLine = item.solution || [item.firstMove].filter(Boolean);
+
+                      return (
+                        <div className="missed-item" key={`${item.id}-${item.reason}-${index}`}>
+                          <span className="missed-reason">{item.reason}</span>
+                          <strong>{item.title}</strong>
+                          <small>Mate in {item.mateIn} | {formatTheme(item.themes)}</small>
+                          <small>Wrong moves: {item.wrongMoveCount ?? 0}/{RUSH_MAX_PUZZLE_ATTEMPTS}</small>
+                          <small>Correct line: {solutionLine.join(' ')}</small>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

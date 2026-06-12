@@ -716,11 +716,28 @@ h2 {
   border-top: 1px solid var(--line);
 }
 
+.correct-line-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.correct-line-panel .panel-header span {
+  color: var(--warn-text);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .empty-log {
   margin: 14px 0 0;
 }
 
-.move-log ol {
+.move-log ol,
+.solution-line {
   display: grid;
   gap: 8px;
   margin: 14px 0 0;
@@ -728,7 +745,8 @@ h2 {
   list-style: none;
 }
 
-.move-log li {
+.move-log li,
+.solution-line li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -738,10 +756,24 @@ h2 {
   background: var(--surface-soft);
 }
 
-.move-log li span {
+.solution-line li {
+  background: var(--surface-strong);
+}
+
+.solution-line li.first-move {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.move-log li span,
+.solution-line li span {
   color: var(--muted);
   font-size: 0.85rem;
   font-weight: 800;
+}
+
+.solution-line li.first-move span {
+  color: currentColor;
 }
 
 .saved-stats {
