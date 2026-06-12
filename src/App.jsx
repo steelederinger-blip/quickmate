@@ -280,6 +280,7 @@ export default function App() {
   const [rushStats, setRushStats] = useState(DEFAULT_RUSH_STATS);
   const [rushUsedPuzzleIds, setRushUsedPuzzleIds] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
+  const [selectedSquare, setSelectedSquare] = useState(null);
 
   const puzzle = puzzles[puzzleIndex];
   const game = useMemo(() => new Chess(fen), [fen]);
@@ -289,9 +290,18 @@ export default function App() {
   const mateIn = getMateIn(puzzle);
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isRush = mode === 'rush';
+  const boardIsInteractive = screen === 'game' && !isComplete && Boolean(expectedMove) && (!isRush || rushTimeLeft > 0);
   const rushElapsed = RUSH_SECONDS - rushTimeLeft;
   const rushMultiplier = getRushMultiplier(rushStats.currentCombo);
   const ladderSolvedCount = Object.values(stats.puzzleCompletions).filter((completion) => completion?.solved).length;
+  const selectedSquareStyles = selectedSquare
+    ? {
+        [selectedSquare]: {
+          boxShadow: 'inset 0 0 0 4px rgba(255, 226, 95, 0.95)',
+          background: 'linear-gradient(135deg, rgba(255, 226, 95, 0.42), rgba(255, 255, 255, 0.08))',
+        },
+      }
+    : {};
   const groupedPuzzles = useMemo(() => {
     return puzzles.reduce((groups, item, index) => {
       const key = item.mateIn;
@@ -349,6 +359,7 @@ export default function App() {
     setResult(null);
     setCopyStatus('Copy Result');
     setFeedback(nextFeedback);
+    setSelectedSquare(null);
   }
 
   function startPuzzle(index, nextMode = 'ladder') {
@@ -658,8 +669,10 @@ export default function App() {
     setMoveLog(nextLog);
   }
 
-  function onPieceDrop(sourceSquare, targetSquare) {
-    if (isComplete || !expectedMove) {
+  function attemptMove(sourceSquare, targetSquare) {
+    setSelectedSquare(null);
+
+    if (!boardIsInteractive || !sourceSquare || !targetSquare) {
       return false;
     }
 
@@ -721,6 +734,44 @@ export default function App() {
     setSolutionIndex(nextIndex);
     finishIfSolved(nextGame, nextIndex, nextLog);
     return true;
+  }
+
+  function onPieceDrop({ sourceSquare, targetSquare }) {
+    return attemptMove(sourceSquare, targetSquare);
+  }
+
+  function onSquareClick({ piece, square }) {
+    if (!boardIsInteractive) {
+      setSelectedSquare(null);
+      return;
+    }
+
+    if (!selectedSquare) {
+      if (piece?.pieceType?.startsWith(game.turn())) {
+        setSelectedSquare(square);
+        setFeedback(`Selected ${square}. Choose a target square.`);
+      }
+      return;
+    }
+
+    if (selectedSquare === square) {
+      setSelectedSquare(null);
+      setFeedback('Selection cleared.');
+      return;
+    }
+
+    if (attemptMove(selectedSquare, square)) {
+      return;
+    }
+
+    if (piece?.pieceType?.startsWith(game.turn())) {
+      setSelectedSquare(square);
+      setFeedback(`Selected ${square}. Choose a target square.`);
+    }
+  }
+
+  function canDragPiece({ piece }) {
+    return boardIsInteractive && piece?.pieceType?.startsWith(game.turn());
   }
 
   function showHint() {
@@ -989,16 +1040,23 @@ export default function App() {
         <section className="board-zone" aria-label="Chess board">
           <div className="board-frame">
             <Chessboard
-              id="quickmate-board"
-              position={fen}
-              onPieceDrop={onPieceDrop}
-              boardOrientation={boardOrientation}
-              customBoardStyle={{
-                borderRadius: '8px',
-                boxShadow: '0 20px 44px rgba(11, 18, 32, 0.2)',
+              options={{
+                id: 'quickmate-board',
+                position: fen,
+                boardOrientation,
+                allowDragging: boardIsInteractive,
+                allowDragOffBoard: false,
+                canDragPiece,
+                onPieceDrop,
+                onSquareClick,
+                boardStyle: {
+                  borderRadius: '8px',
+                  boxShadow: '0 20px 44px rgba(11, 18, 32, 0.2)',
+                },
+                squareStyles: selectedSquareStyles,
+                darkSquareStyle: { backgroundColor: '#58745f' },
+                lightSquareStyle: { backgroundColor: '#e7d8bd' },
               }}
-              customDarkSquareStyle={{ backgroundColor: '#58745f' }}
-              customLightSquareStyle={{ backgroundColor: '#e7d8bd' }}
             />
           </div>
         </section>
