@@ -32,7 +32,28 @@ function line(pattern, mateIn) {
   return [...pattern.waits.slice(0, (mateIn - 1) * 2), pattern.finalMove];
 }
 
-function puzzle({ id, title, pattern, mateIn, difficulty, rating, theme }) {
+const DEV_QUALITY_NOTES = [
+  'Synthetic development/test puzzle generated from a small repeated pattern set.',
+  'Not production-quality puzzle content.',
+];
+
+// Production puzzle imports must be quality-gated before contentStatus changes
+// from "dev": verify no faster mate than claimed, a realistic forcing line,
+// varied themes, no repetitive queen/rook-only pattern, and suitable mode fit
+// for rush, daily, ladder, or challenge.
+function puzzle({
+  id,
+  title,
+  pattern,
+  mateIn,
+  difficulty,
+  rating,
+  theme,
+  contentStatus = 'dev',
+  modeFit = ['rush', 'daily', 'ladder'],
+  qualityNotes = DEV_QUALITY_NOTES,
+  source = 'synthetic-dev-pack-v1',
+}) {
   return {
     id,
     title,
@@ -43,6 +64,10 @@ function puzzle({ id, title, pattern, mateIn, difficulty, rating, theme }) {
     difficulty,
     rating,
     theme,
+    contentStatus,
+    modeFit,
+    qualityNotes,
+    source,
   };
 }
 

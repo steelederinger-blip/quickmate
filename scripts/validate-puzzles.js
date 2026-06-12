@@ -12,8 +12,11 @@ const expectedCounts = new Map([
 ]);
 
 const counts = new Map();
+const contentStatusCounts = new Map();
 const ids = new Set();
 const requiredFields = ['id', 'title', 'fen', 'sideToMove', 'mateIn', 'solution', 'difficulty', 'rating', 'theme'];
+const optionalStringFields = ['contentStatus', 'source'];
+const optionalStringArrayFields = ['modeFit', 'qualityNotes'];
 
 function fail(message) {
   throw new Error(message);
@@ -34,6 +37,20 @@ for (const puzzle of puzzles) {
 
   if (!Array.isArray(puzzle.theme) || puzzle.theme.length === 0) {
     fail(`${puzzle.id} theme must be a non-empty array`);
+  }
+
+  for (const field of optionalStringFields) {
+    if (puzzle[field] !== undefined && (typeof puzzle[field] !== 'string' || puzzle[field].trim() === '')) {
+      fail(`${puzzle.id} optional field ${field} must be a non-empty string when provided`);
+    }
+  }
+
+  for (const field of optionalStringArrayFields) {
+    if (puzzle[field] !== undefined) {
+      if (!Array.isArray(puzzle[field]) || puzzle[field].some((value) => typeof value !== 'string' || value.trim() === '')) {
+        fail(`${puzzle.id} optional field ${field} must be an array of non-empty strings when provided`);
+      }
+    }
   }
 
   if (!Array.isArray(puzzle.solution) || puzzle.solution.length !== puzzle.mateIn * 2 - 1) {
@@ -60,6 +77,7 @@ for (const puzzle of puzzles) {
   }
 
   counts.set(puzzle.mateIn, (counts.get(puzzle.mateIn) || 0) + 1);
+  contentStatusCounts.set(puzzle.contentStatus || 'unspecified', (contentStatusCounts.get(puzzle.contentStatus || 'unspecified') || 0) + 1);
 }
 
 for (const [mateIn, expectedCount] of expectedCounts) {
@@ -74,4 +92,9 @@ if (puzzles.length !== 25) {
   fail(`Expected 25 puzzles, found ${puzzles.length}`);
 }
 
+const contentStatusSummary = [...contentStatusCounts.entries()]
+  .map(([status, count]) => `${status}: ${count}`)
+  .join(', ');
+
 console.log(`Validated ${puzzles.length} puzzles. Every solution ends in checkmate.`);
+console.log(`Content status counts: ${contentStatusSummary}.`);

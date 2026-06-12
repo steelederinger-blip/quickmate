@@ -27,6 +27,13 @@ import { puzzles } from './puzzles.js';
 const STORAGE_KEY = 'quickmate.stats.v1';
 const RUSH_SECONDS = 180;
 const SKIP_PENALTY = 100;
+const RUSH_WRONG_MOVE_TIME_PENALTY = 3;
+const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
+const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
+const PUZZLE_BEHAVIOR = {
+  trainingMode: 'trainingMode',
+  strictMode: 'strictMode',
+};
 
 const DEFAULT_STATS = {
   puzzlesSolved: 0,
@@ -232,6 +239,12 @@ function saveStats(stats) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
 }
 
+function getPuzzleBehavior(currentMode) {
+  return currentMode === 'rush'
+    ? PUZZLE_BEHAVIOR.strictMode
+    : PUZZLE_BEHAVIOR.trainingMode;
+}
+
 function moveMatches(move, expectedSan) {
   return move.san === expectedSan;
 }
@@ -290,6 +303,7 @@ export default function App() {
   const mateIn = getMateIn(puzzle);
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isRush = mode === 'rush';
+  const puzzleBehavior = getPuzzleBehavior(mode);
   const boardIsInteractive = screen === 'game' && !isComplete && Boolean(expectedMove) && (!isRush || rushTimeLeft > 0);
   const rushElapsed = RUSH_SECONDS - rushTimeLeft;
   const rushMultiplier = getRushMultiplier(rushStats.currentCombo);
@@ -669,6 +683,30 @@ export default function App() {
     setMoveLog(nextLog);
   }
 
+  function handleWrongLegalMove() {
+    setMistakes((value) => value + 1);
+
+    if (puzzleBehavior === PUZZLE_BEHAVIOR.strictMode && isRush) {
+      const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
+
+      setRushStats((currentStats) => ({
+        ...currentStats,
+        mistakes: currentStats.mistakes + 1,
+        currentCombo: 0,
+      }));
+      setRushUsedPuzzleIds(nextUsedPuzzleIds);
+      setRushTimeLeft((value) => Math.max(0, value - RUSH_WRONG_MOVE_TIME_PENALTY));
+      advanceRushPuzzle(
+        rushStats.solved,
+        nextUsedPuzzleIds,
+        `${WRONG_LEGAL_MOVE_FEEDBACK} Combo broken. -${RUSH_WRONG_MOVE_TIME_PENALTY} seconds.`,
+      );
+      return;
+    }
+
+    setFeedback(WRONG_LEGAL_MOVE_FEEDBACK);
+  }
+
   function attemptMove(sourceSquare, targetSquare) {
     setSelectedSquare(null);
 
@@ -690,23 +728,12 @@ export default function App() {
     }
 
     if (!attemptedMove) {
-      setFeedback('Illegal move.');
+      setFeedback(ILLEGAL_MOVE_FEEDBACK);
       return false;
     }
 
     if (!moveMatches(attemptedMove, expectedMove)) {
-      setMistakes((value) => value + 1);
-      if (isRush) {
-        setRushStats((currentStats) => ({
-          ...currentStats,
-          mistakes: currentStats.mistakes + 1,
-          currentCombo: 0,
-        }));
-        setRushTimeLeft((value) => Math.max(0, value - 3));
-        setFeedback('Combo broken. -3 seconds.');
-        return false;
-      }
-      setFeedback('Not the solution. Try the forcing move.');
+      handleWrongLegalMove();
       return false;
     }
 
@@ -925,7 +952,10 @@ export default function App() {
               <ul className="help-list">
                 <li>User plays the mating side.</li>
                 <li>Opponent responses are automatic.</li>
-                <li>Wrong moves count as mistakes.</li>
+                <li>Illegal moves are rejected.</li>
+                <li>Legal moves that do not force mate count as mistakes.</li>
+                <li>Daily and Ladder let you retry wrong legal moves.</li>
+                <li>Rush punishes wrong legal moves immediately.</li>
                 <li>Faster clean solves score higher.</li>
                 <li>Rush Mode is timed.</li>
                 <li>Rush perfect solves build combo multipliers.</li>
@@ -961,7 +991,7 @@ export default function App() {
             <div><strong>3:00</strong><span>Timed run</span></div>
             <div><strong>Mate</strong><span>Solve as many puzzles as possible</span></div>
             <div><strong>Combo</strong><span>Perfect solves build multipliers</span></div>
-            <div><strong>Breaks</strong><span>Wrong moves and skips reset combo</span></div>
+            <div><strong>Breaks</strong><span>Wrong legal moves and skips reset combo</span></div>
             <div><strong>Time</strong><span>Fast and perfect solves can add seconds</span></div>
           </div>
 
