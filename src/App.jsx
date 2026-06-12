@@ -40,6 +40,7 @@ const DEFAULT_STATS = {
   perfectSolves: 0,
   bestScore: 0,
   bestRushScore: 0,
+  bestRushCombo: 0,
   rushGamesPlayed: 0,
   rushHistory: [],
   bestTimeByPuzzleId: {},
@@ -58,6 +59,22 @@ const DEFAULT_RUSH_STATS = {
   bestCombo: 0,
   totalSolveSeconds: 0,
 };
+
+const RUSH_RANKS = [
+  { rank: 'Warmup', minScore: 0 },
+  { rank: 'Tactician', minScore: 1000 },
+  { rank: 'Attacker', minScore: 2500 },
+  { rank: 'Closer', minScore: 5000 },
+  { rank: 'Checkmate Machine', minScore: 7500 },
+  { rank: 'QuickMate Master', minScore: 10000 },
+];
+
+const RUSH_MULTIPLIER_THRESHOLDS = [
+  { combo: 2, multiplier: 1.25 },
+  { combo: 3, multiplier: 1.5 },
+  { combo: 5, multiplier: 2 },
+  { combo: 8, multiplier: 2.5 },
+];
 
 function formatTime(seconds) {
   const mins = Math.floor(seconds / 60);
@@ -79,9 +96,18 @@ function getYesterdayKey(todayKey) {
   return getTodayKey(date);
 }
 
+function puzzleFitsMode(puzzle, targetMode) {
+  return !Array.isArray(puzzle.modeFit) || puzzle.modeFit.includes(targetMode);
+}
+
 function getDailyPuzzleIndex(dateKey = getTodayKey()) {
   const hash = [...dateKey].reduce((total, char) => total + char.charCodeAt(0), 0);
-  return hash % puzzles.length;
+  const dailyIndexes = puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'daily'))
+    .map(({ index }) => index);
+
+  return dailyIndexes[hash % dailyIndexes.length] ?? hash % puzzles.length;
 }
 
 function shuffle(values) {
@@ -96,27 +122,27 @@ function getRushEligiblePuzzleIndexes(solvedCount) {
   if (solvedCount <= 2) {
     return puzzles
       .map((puzzle, index) => ({ puzzle, index }))
-      .filter(({ puzzle }) => puzzle.mateIn >= 1 && puzzle.mateIn <= 2)
+      .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 1 && puzzle.mateIn <= 2)
       .map(({ index }) => index);
   }
 
   if (solvedCount <= 6) {
     return puzzles
       .map((puzzle, index) => ({ puzzle, index }))
-      .filter(({ puzzle }) => puzzle.mateIn >= 2 && puzzle.mateIn <= 3)
+      .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 2 && puzzle.mateIn <= 3)
       .map(({ index }) => index);
   }
 
   if (solvedCount <= 11) {
     return puzzles
       .map((puzzle, index) => ({ puzzle, index }))
-      .filter(({ puzzle }) => puzzle.mateIn >= 3 && puzzle.mateIn <= 4)
+      .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 3 && puzzle.mateIn <= 4)
       .map(({ index }) => index);
   }
 
   return puzzles
     .map((puzzle, index) => ({ puzzle, index }))
-    .filter(({ puzzle }) => puzzle.mateIn >= 4)
+    .filter(({ puzzle }) => puzzleFitsMode(puzzle, 'rush') && puzzle.mateIn >= 4)
     .map(({ index }) => index);
 }
 
@@ -153,6 +179,24 @@ function getRushMultiplier(combo) {
   return 1;
 }
 
+function getNextRushMultiplierInfo(combo) {
+  const nextThreshold = RUSH_MULTIPLIER_THRESHOLDS.find((threshold) => combo < threshold.combo);
+
+  if (!nextThreshold) {
+    return {
+      label: 'Max multiplier',
+      detail: `${getRushMultiplier(combo).toFixed(2)}x active`,
+      comboNeeded: 0,
+    };
+  }
+
+  return {
+    label: `Combo ${nextThreshold.combo}`,
+    detail: `${Math.max(0, nextThreshold.combo - combo)} more for ${nextThreshold.multiplier.toFixed(2)}x`,
+    comboNeeded: nextThreshold.combo - combo,
+  };
+}
+
 function getFastSolveTarget(mateIn) {
   return {
     1: 10,
@@ -166,37 +210,48 @@ function getFastSolveTarget(mateIn) {
 }
 
 function getRushRank(score) {
-  if (score >= 10000) {
-    return 'QuickMate Master';
-  }
+  return getRushRankProgress(score).current.rank;
+}
 
-  if (score >= 7500) {
-    return 'Checkmate Machine';
-  }
+function getRushRankProgress(score) {
+  const currentIndex = RUSH_RANKS.reduce((bestIndex, rank, index) => {
+    return score >= rank.minScore ? index : bestIndex;
+  }, 0);
+  const current = RUSH_RANKS[currentIndex];
+  const next = RUSH_RANKS[currentIndex + 1] || null;
+  const pointsNeeded = next ? Math.max(0, next.minScore - score) : 0;
+  const progressPercent = next
+    ? Math.round(((score - current.minScore) / (next.minScore - current.minScore)) * 100)
+    : 100;
 
-  if (score >= 5000) {
-    return 'Closer';
-  }
-
-  if (score >= 2500) {
-    return 'Attacker';
-  }
-
-  if (score >= 1000) {
-    return 'Tactician';
-  }
-
-  return 'Warmup';
+  return {
+    current,
+    next,
+    pointsNeeded,
+    progressPercent: Math.max(0, Math.min(100, progressPercent)),
+  };
 }
 
 function getRushBadges(result) {
   return [
     result.isNewBest ? 'New Best' : '',
+    result.isNewBestCombo ? 'Best Combo' : '',
     result.mistakes === 0 && result.skips === 0 ? 'Perfect Run' : '',
     result.skips === 0 ? 'No Skip' : '',
     result.bestCombo >= 5 ? 'Combo 5' : '',
     result.averageSolveTime < 20 && result.solved >= 3 ? 'Fast Hands' : '',
   ].filter(Boolean);
+}
+
+function getRushReviewItem(item, reason) {
+  return {
+    id: item.id,
+    title: item.title,
+    mateIn: item.mateIn,
+    themes: getPuzzleThemes(item),
+    firstMove: item.solution[0],
+    reason,
+  };
 }
 
 function getMateIn(puzzle) {
@@ -234,6 +289,8 @@ function loadStats() {
       ...DEFAULT_STATS,
       ...parsed,
       bestRushScore: parsed.bestRushScore || 0,
+      bestRushCombo: parsed.bestRushCombo
+        || Math.max(0, ...(parsed.rushHistory || []).map((run) => run.bestCombo || 0)),
       rushGamesPlayed: parsed.rushGamesPlayed || 0,
       rushHistory: parsed.rushHistory || [],
       bestTimeByPuzzleId: parsed.bestTimeByPuzzleId || {},
@@ -314,6 +371,7 @@ export default function App() {
   const [rushTimeLeft, setRushTimeLeft] = useState(RUSH_SECONDS);
   const [rushStats, setRushStats] = useState(DEFAULT_RUSH_STATS);
   const [rushUsedPuzzleIds, setRushUsedPuzzleIds] = useState([]);
+  const [rushMissedPuzzles, setRushMissedPuzzles] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
 
@@ -329,6 +387,10 @@ export default function App() {
   const boardIsInteractive = screen === 'game' && !isComplete && Boolean(expectedMove) && (!isRush || rushTimeLeft > 0);
   const rushElapsed = RUSH_SECONDS - rushTimeLeft;
   const rushMultiplier = getRushMultiplier(rushStats.currentCombo);
+  const nextRushMultiplier = getNextRushMultiplierInfo(rushStats.currentCombo);
+  const bestRushCombo = stats.bestRushCombo || 0;
+  const bestRushRank = getRushRank(stats.bestRushScore || 0);
+  const recentRushRuns = (stats.rushHistory || []).slice(0, 3);
   const ladderSolvedCount = Object.values(stats.puzzleCompletions).filter((completion) => completion?.solved).length;
   const selectedSquareStyles = selectedSquare
     ? {
@@ -425,6 +487,7 @@ export default function App() {
     setRushTimeLeft(RUSH_SECONDS);
     setRushStats(DEFAULT_RUSH_STATS);
     setRushUsedPuzzleIds([]);
+    setRushMissedPuzzles([]);
     resetPuzzle(queue[0], 'rush');
     setScreen('game');
   }
@@ -466,7 +529,9 @@ export default function App() {
       ? Math.round(rushStats.totalSolveSeconds / rushStats.solved)
       : 0;
     const previousBestRushScore = stats.bestRushScore || 0;
+    const previousBestRushCombo = stats.bestRushCombo || 0;
     const rank = getRushRank(rushStats.totalScore);
+    const rankProgress = getRushRankProgress(rushStats.totalScore);
     const nextResult = {
       mode: 'rush',
       solved: rushStats.solved,
@@ -477,8 +542,12 @@ export default function App() {
       averageSolveTime,
       bestCombo: rushStats.bestCombo,
       rank,
+      rankProgress,
       isNewBest: rushStats.totalScore > previousBestRushScore,
+      isNewBestCombo: rushStats.bestCombo > previousBestRushCombo,
       bestRushScore: Math.max(stats.bestRushScore, rushStats.totalScore),
+      bestRushCombo: Math.max(previousBestRushCombo, rushStats.bestCombo),
+      missedPuzzles: rushMissedPuzzles,
     };
     const historyEntry = {
       date: new Date().toISOString(),
@@ -497,6 +566,7 @@ export default function App() {
       const nextStats = {
         ...currentStats,
         bestRushScore: Math.max(currentStats.bestRushScore || 0, rushStats.totalScore),
+        bestRushCombo: Math.max(currentStats.bestRushCombo || 0, rushStats.bestCombo),
         rushGamesPlayed: (currentStats.rushGamesPlayed || 0) + 1,
         rushHistory: [historyEntry, ...(currentStats.rushHistory || [])].slice(0, 5),
       };
@@ -513,6 +583,7 @@ export default function App() {
 
     const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
 
+    setRushMissedPuzzles((items) => [...items, getRushReviewItem(puzzle, 'Skipped')]);
     setRushStats((currentStats) => ({
       ...currentStats,
       skips: currentStats.skips + 1,
@@ -716,6 +787,7 @@ export default function App() {
     if (puzzleBehavior === PUZZLE_BEHAVIOR.strictMode && isRush) {
       const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
 
+      setRushMissedPuzzles((items) => [...items, getRushReviewItem(puzzle, 'Missed')]);
       setRushStats((currentStats) => ({
         ...currentStats,
         mistakes: currentStats.mistakes + 1,
@@ -884,27 +956,59 @@ export default function App() {
             </div>
           </div>
 
-          <div className="home-stats" aria-label="Saved stats">
-            <div>
-              <strong>{stats.currentDailyStreak}</strong>
-              <span>Daily streak</span>
-            </div>
-            <div>
-              <strong>{ladderSolvedCount}/{puzzles.length}</strong>
-              <span>Ladder progress</span>
-            </div>
-            <div>
-              <strong>{stats.bestRushScore || 0}</strong>
-              <span>Best Rush</span>
-            </div>
-            <div>
-              <strong>{stats.puzzlesSolved}</strong>
-              <span>Total solved</span>
-            </div>
-          </div>
+          <section className="rush-home" aria-label="Rush Mode">
+            <button type="button" className="mode-card rush-hero-card featured" onClick={openRushIntro}>
+              <Zap size={30} />
+              <span>
+                <strong>Rush Mode</strong>
+                <small>3 minutes | candidate puzzles first | best rank {bestRushRank}</small>
+              </span>
+              <Play size={24} />
+            </button>
 
-          <div className="mode-grid">
-            <button type="button" className="mode-card featured" onClick={startDaily}>
+            <div className="rush-home-metrics" aria-label="Rush performance">
+              <div>
+                <strong>{stats.bestRushScore || 0}</strong>
+                <span>Best Rush Score</span>
+              </div>
+              <div>
+                <strong>{bestRushCombo}</strong>
+                <span>Best Combo</span>
+              </div>
+            </div>
+
+            <section className="rush-home-history" aria-label="Recent Rush runs">
+              <div className="panel-header">
+                <h2>Recent Rush Runs</h2>
+                <span>{recentRushRuns.length}</span>
+              </div>
+              {recentRushRuns.length === 0 ? (
+                <p className="empty-log">No Rush runs yet.</p>
+              ) : (
+                <div className="history-list">
+                  {recentRushRuns.map((run) => (
+                    <div className="history-item" key={`${run.date}-${run.score}`}>
+                      <span>
+                        <strong>{run.score}</strong>
+                        <small>{run.rank}</small>
+                      </span>
+                      <span>
+                        <strong>{run.solved}</strong>
+                        <small>solved</small>
+                      </span>
+                      <span>
+                        <strong>{run.bestCombo}</strong>
+                        <small>combo</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </section>
+
+          <div className="mode-grid secondary-mode-grid">
+            <button type="button" className="mode-card" onClick={startDaily}>
               <CalendarDays size={24} />
               <span>
                 <strong>Daily QuickMate</strong>
@@ -921,15 +1025,25 @@ export default function App() {
               </span>
               <Play size={20} />
             </button>
+          </div>
 
-            <button type="button" className="mode-card" onClick={openRushIntro}>
-              <Zap size={24} />
-              <span>
-                <strong>Rush Mode</strong>
-                <small>3 minutes | best {stats.bestRushScore || 0}</small>
-              </span>
-              <Play size={20} />
-            </button>
+          <div className="home-stats" aria-label="Saved stats">
+            <div>
+              <strong>{stats.currentDailyStreak}</strong>
+              <span>Daily streak</span>
+            </div>
+            <div>
+              <strong>{ladderSolvedCount}/{puzzles.length}</strong>
+              <span>Ladder progress</span>
+            </div>
+            <div>
+              <strong>{stats.puzzlesSolved}</strong>
+              <span>Total solved</span>
+            </div>
+            <div>
+              <strong>{puzzles.filter(isCandidatePuzzle).length}</strong>
+              <span>Rush candidates</span>
+            </div>
           </div>
 
           <section className="about-panel" aria-label="About QuickMate">
@@ -942,33 +1056,6 @@ export default function App() {
               <span>Puzzle Pack | {puzzles.length} puzzles</span>
             </div>
           </section>
-
-          {stats.rushHistory.length > 0 && (
-            <section className="history-panel" aria-label="Recent Rush runs">
-              <div className="panel-header">
-                <h2>Recent Rush</h2>
-                <span>{stats.rushHistory.length}</span>
-              </div>
-              <div className="history-list">
-                {stats.rushHistory.map((run) => (
-                  <div className="history-item" key={`${run.date}-${run.score}`}>
-                    <span>
-                      <strong>{run.score}</strong>
-                      <small>{run.rank}</small>
-                    </span>
-                    <span>
-                      <strong>{run.solved}</strong>
-                      <small>solved</small>
-                    </span>
-                    <span>
-                      <strong>{run.bestCombo}</strong>
-                      <small>combo</small>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
         </section>
         {showHelp && (
           <section className="result-screen" role="dialog" aria-modal="true" aria-label="How to Play">
@@ -1138,38 +1225,47 @@ export default function App() {
           </div>
 
           {isRush ? (
-            <div className="stats-grid rush-grid">
-              <div className="stat">
-                <Clock3 size={18} />
-                <span>{formatTime(rushTimeLeft)}</span>
-                <small>Remaining</small>
+            <>
+              <div className="rush-combo-panel" aria-label="Rush combo and multiplier">
+                <div>
+                  <p className="eyebrow">Combo</p>
+                  <strong>{rushStats.currentCombo}</strong>
+                  <span>{rushMultiplier.toFixed(2)}x multiplier</span>
+                </div>
+                <div>
+                  <p className="eyebrow">Next Boost</p>
+                  <strong>{nextRushMultiplier.label}</strong>
+                  <span>{nextRushMultiplier.detail}</span>
+                </div>
               </div>
-              <div className="stat">
-                <BadgeCheck size={18} />
-                <span>{rushStats.solved}</span>
-                <small>Solved</small>
+              <div className="stats-grid rush-grid">
+                <div className="stat">
+                  <Clock3 size={18} />
+                  <span>{formatTime(rushTimeLeft)}</span>
+                  <small>Remaining</small>
+                </div>
+                <div className="stat">
+                  <Sparkles size={18} />
+                  <span>{rushStats.totalScore}</span>
+                  <small>Score</small>
+                </div>
+                <div className="stat">
+                  <BadgeCheck size={18} />
+                  <span>{rushStats.solved}</span>
+                  <small>Solved</small>
+                </div>
+                <div className="stat">
+                  <XCircle size={18} />
+                  <span>{rushStats.mistakes}</span>
+                  <small>Mistakes</small>
+                </div>
+                <div className="stat">
+                  <SkipForward size={18} />
+                  <span>{rushStats.skips}</span>
+                  <small>Skips</small>
+                </div>
               </div>
-              <div className="stat">
-                <Sparkles size={18} />
-                <span>{rushStats.totalScore}</span>
-                <small>Score</small>
-              </div>
-              <div className="stat">
-                <XCircle size={18} />
-                <span>{rushStats.mistakes}</span>
-                <small>Mistakes</small>
-              </div>
-              <div className="stat">
-                <SkipForward size={18} />
-                <span>{rushStats.skips}</span>
-                <small>Skips</small>
-              </div>
-              <div className="stat">
-                <Zap size={18} />
-                <span>{rushStats.currentCombo}</span>
-                <small>{rushMultiplier.toFixed(2)}x combo</small>
-              </div>
-            </div>
+            </>
           ) : (
             <div className="stats-grid">
               <div className="stat">
@@ -1258,8 +1354,50 @@ export default function App() {
                 <strong>{result.totalScore}</strong>
                 <span>score</span>
               </div>
+              <div className="rush-result-highlights" aria-label="Rush highlights">
+                <div className="highlight-card rank">
+                  <span>Rank</span>
+                  <strong>{result.rank}</strong>
+                </div>
+                <div className={`highlight-card ${result.isNewBest ? 'new-best' : ''}`}>
+                  <span>{result.isNewBest ? 'New Best' : 'Best Rush'}</span>
+                  <strong>{result.bestRushScore}</strong>
+                </div>
+                <div className={`highlight-card ${result.isNewBestCombo ? 'new-best' : ''}`}>
+                  <span>{result.isNewBestCombo ? 'New Best Combo' : 'Best Combo'}</span>
+                  <strong>{result.bestCombo}</strong>
+                </div>
+              </div>
+              <div className="rank-progress-card" aria-label="Rush rank progress">
+                <div className="progress-copy">
+                  <span>Current rank</span>
+                  <strong>{result.rankProgress.current.rank}</strong>
+                </div>
+                <div className="progress-track">
+                  <span style={{ width: `${result.rankProgress.progressPercent}%` }} />
+                </div>
+                {result.rankProgress.next ? (
+                  <>
+                    <div className="rank-next-row">
+                      <span>Next rank</span>
+                      <strong>{result.rankProgress.next.rank}</strong>
+                    </div>
+                    <div className="rank-next-row">
+                      <span>Points needed</span>
+                      <strong>{result.rankProgress.pointsNeeded}</strong>
+                    </div>
+                    <p className="rank-chase">
+                      You were {result.rankProgress.pointsNeeded} points from {result.rankProgress.next.rank}.
+                    </p>
+                  </>
+                ) : (
+                  <p className="rank-chase">Top Rush rank reached.</p>
+                )}
+              </div>
               <div className="score-breakdown" aria-label="Rush result">
                 <div><span>Rush rank</span><strong>{result.rank}</strong></div>
+                <div><span>Next rank</span><strong>{result.rankProgress.next?.rank || 'Max rank'}</strong></div>
+                <div><span>Needed for next</span><strong>{result.rankProgress.next ? result.rankProgress.pointsNeeded : 0}</strong></div>
                 <div><span>Puzzles solved</span><strong>{result.solved}</strong></div>
                 <div><span>Perfect solves</span><strong>{result.perfectSolves}</strong></div>
                 <div><span>Mistakes</span><strong>{result.mistakes}</strong></div>
@@ -1275,6 +1413,26 @@ export default function App() {
                   ))}
                 </div>
               )}
+              <div className="review-missed" aria-label="Review missed Rush puzzles">
+                <div className="panel-header">
+                  <h3>Review Missed</h3>
+                  <span>{(result.missedPuzzles || []).length}</span>
+                </div>
+                {(result.missedPuzzles || []).length === 0 ? (
+                  <p className="empty-log">No missed or skipped puzzles.</p>
+                ) : (
+                  <div className="missed-list">
+                    {(result.missedPuzzles || []).map((item, index) => (
+                      <div className="missed-item" key={`${item.id}-${item.reason}-${index}`}>
+                        <span className="missed-reason">{item.reason}</span>
+                        <strong>{item.title}</strong>
+                        <small>Mate in {item.mateIn} | {formatTheme(item.themes)}</small>
+                        <small>First move: {item.firstMove}</small>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {stats.rushHistory.length > 0 && (
                 <div className="result-history" aria-label="Recent Rush runs">
                   <h3>Recent runs</h3>
@@ -1288,13 +1446,13 @@ export default function App() {
                 </div>
               )}
               <div className="actions">
-                <button type="button" className="secondary-action" onClick={copyResult}>
-                  <Copy size={18} />
-                  {copyStatus}
-                </button>
                 <button type="button" className="primary-action" onClick={startRush}>
                   <Zap size={18} />
                   Play Rush Again
+                </button>
+                <button type="button" className="secondary-action" onClick={copyResult}>
+                  <Copy size={18} />
+                  {copyStatus}
                 </button>
                 <button type="button" className="secondary-action" onClick={goHome}>
                   <Home size={18} />
