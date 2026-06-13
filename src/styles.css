@@ -552,6 +552,33 @@ h2 {
   line-height: 1.45;
 }
 
+.collection-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.collection-stats div {
+  display: grid;
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.collection-stats strong {
+  color: var(--text);
+  font-size: 1.35rem;
+}
+
+.collection-stats span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .collection-grid {
   display: grid;
   gap: 12px;
@@ -1353,6 +1380,49 @@ h2 {
   background: var(--accent-soft);
   font-size: 0.78rem;
   font-weight: 850;
+}
+
+.earned-chest-card,
+.chest-open-result {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 35%);
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+  text-align: left;
+}
+
+.earned-chest-card h3,
+.chest-open-result h3 {
+  font-size: 1.12rem;
+}
+
+.earned-chest-card > span {
+  width: fit-content;
+  min-height: 28px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--surface-strong);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.earned-chest-card small {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.chest-open-result .actions {
+  width: 100%;
+}
+
+.score-breakdown.compact {
+  margin-bottom: 0;
 }
 
 .result-history {
