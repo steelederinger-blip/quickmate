@@ -66,3 +66,7 @@ Before a puzzle can move out of `contentStatus: "dev"`, verify:
 - varied themes across the pack
 - no repetitive queen/rook-only pattern
 - suitable mode fit: rush, daily, ladder, or challenge
+
+## Collection System
+
+See `docs/collection-system-plan.md` for the planned cosmetic collection system, including piece sets, board themes, badges, Rush chests, localStorage-only implementation phases, and no-pay-to-win guardrails. The current scaffold lives in `src/collections.js` and is not wired into gameplay yet.
