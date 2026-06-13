@@ -170,6 +170,19 @@ const LADDER_WORLD_ZONES = [
   },
 ];
 
+const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
+const LADDER_MATE_GROUPS = [
+  { key: '1', label: 'Mate in 1' },
+  { key: '2', label: 'Mate in 2' },
+  { key: '3', label: 'Mate in 3' },
+  { key: '4', label: 'Mate in 4' },
+  { key: '5-plus', label: 'Mate in 5+' },
+];
+
+function getLadderMateGroupKey(mateIn) {
+  return mateIn >= 5 ? '5-plus' : String(mateIn);
+}
+
 const DEFAULT_STATS = {
   puzzlesSolved: 0,
   perfectSolves: 0,
@@ -604,6 +617,8 @@ export default function App() {
   const [rushReveal, setRushReveal] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
+  const [openLadderSections, setOpenLadderSections] = useState({ candidate: true, dev: false });
+  const [openLadderMateGroups, setOpenLadderMateGroups] = useState({ 'candidate:1': true });
 
   const puzzle = puzzles[puzzleIndex];
   const game = useMemo(() => new Chess(fen), [fen]);
@@ -638,22 +653,47 @@ export default function App() {
         },
       }
     : {};
-  const groupedPuzzles = useMemo(() => {
-    return puzzles.reduce((groups, item, index) => {
+  const ladderPuzzleSections = useMemo(() => {
+    const sectionMap = puzzles.reduce((groups, item, index) => {
       const statusKey = item.contentStatus || 'unspecified';
-      const mateInKey = item.mateIn;
+      const mateGroupKey = getLadderMateGroupKey(item.mateIn);
 
       if (!groups[statusKey]) {
         groups[statusKey] = {};
       }
 
-      if (!groups[statusKey][mateInKey]) {
-        groups[statusKey][mateInKey] = [];
+      if (!groups[statusKey][mateGroupKey]) {
+        groups[statusKey][mateGroupKey] = [];
       }
 
-      groups[statusKey][mateInKey].push({ item, index });
+      groups[statusKey][mateGroupKey].push({ item, index });
       return groups;
     }, {});
+
+    return Object.entries(sectionMap)
+      .sort(([firstStatus], [secondStatus]) => {
+        const firstIndex = LADDER_CONTENT_SECTION_ORDER.indexOf(firstStatus);
+        const secondIndex = LADDER_CONTENT_SECTION_ORDER.indexOf(secondStatus);
+        const normalizedFirstIndex = firstIndex === -1 ? LADDER_CONTENT_SECTION_ORDER.length : firstIndex;
+        const normalizedSecondIndex = secondIndex === -1 ? LADDER_CONTENT_SECTION_ORDER.length : secondIndex;
+
+        return normalizedFirstIndex - normalizedSecondIndex || firstStatus.localeCompare(secondStatus);
+      })
+      .map(([contentStatus, mateGroups]) => {
+        const groups = LADDER_MATE_GROUPS
+          .map((mateGroup) => ({
+            ...mateGroup,
+            items: mateGroups[mateGroup.key] || [],
+          }))
+          .filter((mateGroup) => mateGroup.items.length > 0);
+
+        return {
+          contentStatus,
+          label: formatContentStatus(contentStatus),
+          count: groups.reduce((total, mateGroup) => total + mateGroup.items.length, 0),
+          groups,
+        };
+      });
   }, []);
 
   useEffect(() => {
@@ -1287,6 +1327,75 @@ export default function App() {
     );
   }
 
+  function toggleLadderSection(contentStatus) {
+    setOpenLadderSections((currentSections) => ({
+      ...currentSections,
+      [contentStatus]: !currentSections[contentStatus],
+    }));
+  }
+
+  function toggleLadderMateGroup(contentStatus, mateGroupKey) {
+    const accordionKey = `${contentStatus}:${mateGroupKey}`;
+
+    setOpenLadderMateGroups((currentGroups) => ({
+      ...currentGroups,
+      [accordionKey]: !currentGroups[accordionKey],
+    }));
+  }
+
+  function renderLadderPuzzleList() {
+    return ladderPuzzleSections.map((section) => {
+      const sectionOpen = Boolean(openLadderSections[section.contentStatus]);
+
+      return (
+        <section className={`content-group ${sectionOpen ? 'open' : 'collapsed'}`} key={section.contentStatus}>
+          <button
+            type="button"
+            className="content-title accordion-trigger"
+            onClick={() => toggleLadderSection(section.contentStatus)}
+            aria-expanded={sectionOpen}
+          >
+            <span>{section.label}</span>
+            <span className="accordion-meta">
+              <strong>{section.count}</strong>
+              <ChevronRight className="accordion-icon" size={16} />
+            </span>
+          </button>
+          {sectionOpen && (
+            <div className="mate-group-list">
+              {section.groups.map((mateGroup) => {
+                const groupKey = `${section.contentStatus}:${mateGroup.key}`;
+                const groupOpen = Boolean(openLadderMateGroups[groupKey]);
+
+                return (
+                  <section className={`puzzle-group ${groupOpen ? 'open' : 'collapsed'}`} key={groupKey}>
+                    <button
+                      type="button"
+                      className="group-title accordion-trigger mate-trigger"
+                      onClick={() => toggleLadderMateGroup(section.contentStatus, mateGroup.key)}
+                      aria-expanded={groupOpen}
+                    >
+                      <span>{mateGroup.label}</span>
+                      <span className="accordion-meta">
+                        <strong>{mateGroup.items.length}</strong>
+                        <ChevronRight className="accordion-icon" size={15} />
+                      </span>
+                    </button>
+                    {groupOpen && (
+                      <div className="group-items">
+                        {mateGroup.items.map(({ item, index }) => renderPuzzleItem(item, index))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      );
+    });
+  }
+
   if (screen === 'home') {
     return (
       <main className="app-shell home-shell">
@@ -1754,27 +1863,7 @@ export default function App() {
             ) : mode === 'daily' ? (
               renderPuzzleItem(puzzles[dailyPuzzleIndex], dailyPuzzleIndex)
             ) : (
-              Object.entries(groupedPuzzles).map(([contentStatus, mateInGroups]) => (
-                <section className="content-group" key={contentStatus}>
-                  <div className="content-title">
-                    <span>{formatContentStatus(contentStatus)}</span>
-                    <strong>
-                      {Object.values(mateInGroups).reduce((total, groupItems) => total + groupItems.length, 0)}
-                    </strong>
-                  </div>
-                  {Object.entries(mateInGroups).map(([groupMateIn, groupItems]) => (
-                    <section className="puzzle-group" key={`${contentStatus}-${groupMateIn}`}>
-                      <div className="group-title">
-                        <span>Mate in {groupMateIn}</span>
-                        <strong>{groupItems.length}</strong>
-                      </div>
-                      <div className="group-items">
-                        {groupItems.map(({ item, index }) => renderPuzzleItem(item, index))}
-                      </div>
-                    </section>
-                  ))}
-                </section>
-              ))
+              renderLadderPuzzleList()
             )}
           </div>
         </aside>

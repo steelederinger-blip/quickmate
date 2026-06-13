@@ -688,6 +688,7 @@ h2 {
 .mode-card,
 .rush-mode-card,
 .puzzle-item,
+.accordion-trigger,
 .icon-button,
 .primary-action,
 .secondary-action {
@@ -743,7 +744,8 @@ h2 {
 .icon-button:hover,
 .primary-action:hover,
 .secondary-action:hover,
-.puzzle-item:hover {
+.puzzle-item:hover,
+.accordion-trigger:hover {
   transform: translateY(-1px);
 }
 
@@ -803,7 +805,7 @@ h2 {
 
 .content-group {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .content-title {
@@ -811,6 +813,8 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  width: 100%;
+  min-height: 42px;
   padding: 9px 10px;
   border-radius: 8px;
   color: var(--accent-strong);
@@ -818,6 +822,43 @@ h2 {
   font-size: 0.84rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.accordion-trigger {
+  text-align: left;
+}
+
+.accordion-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.accordion-meta strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--surface-strong);
+  font-size: 0.78rem;
+}
+
+.accordion-icon {
+  flex: 0 0 auto;
+  transition: transform 160ms ease;
+}
+
+.accordion-trigger[aria-expanded="true"] .accordion-icon {
+  transform: rotate(90deg);
+}
+
+.mate-group-list {
+  display: grid;
+  gap: 8px;
 }
 
 .puzzle-group {
@@ -830,14 +871,29 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px;
+  border-radius: 8px;
   color: var(--muted);
+  background: var(--surface-soft);
   font-size: 0.82rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
-.group-title strong {
+.group-title .accordion-meta strong {
   color: var(--accent);
+  background: var(--surface-strong);
+}
+
+.content-group.collapsed .content-title {
+  color: var(--muted);
+  background: var(--surface-soft);
+}
+
+.content-group.collapsed .content-title .accordion-meta strong {
+  color: var(--muted);
 }
 
 .group-items {
