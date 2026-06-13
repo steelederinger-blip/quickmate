@@ -82,6 +82,93 @@ const RUSH_MODE_OPTIONS = [
   RUSH_MODES[RUSH_MODE_KEYS.survival],
 ];
 
+const LADDER_WORLD_ZONES = [
+  {
+    id: 'pawn-village',
+    name: 'Pawn Village',
+    focus: 'First tactics, direct mates, and simple forcing moves.',
+    mateInRange: 'Mate in 1',
+    difficultyRange: 'Starter to Easy',
+    motifs: ['back-rank basics', 'protected mates', 'promotion finish'],
+    bossName: 'The Pawn Captain',
+    rewardPreview: 'Classic Pawn, Bronze Pawn, starter coins',
+    unlocked: true,
+    color: '#3f7a4f',
+  },
+  {
+    id: 'knight-woods',
+    name: 'Knight Woods',
+    focus: 'Knight patterns, forks, smothered shapes, and unusual geometry.',
+    mateInRange: 'Mate in 1-2',
+    difficultyRange: 'Easy to Medium',
+    motifs: ['knight-mate', 'smothered-mate', 'corner nets'],
+    bossName: 'The Forest Knight',
+    rewardPreview: 'Shadow Knight fragment, Knight Woods badge',
+    unlocked: false,
+    color: '#4c6f9f',
+  },
+  {
+    id: 'bishop-tower',
+    name: 'Bishop Tower',
+    focus: 'Diagonal control, long-range coverage, and bishop mating nets.',
+    mateInRange: 'Mate in 1-2',
+    difficultyRange: 'Easy to Medium',
+    motifs: ['bishop-diagonal', 'discovered-check', 'pinned defender'],
+    bossName: 'The Tower Bishop',
+    rewardPreview: 'Royal Bishop fragment, tower badge',
+    unlocked: false,
+    color: '#7a5c9f',
+  },
+  {
+    id: 'rook-fortress',
+    name: 'Rook Fortress',
+    focus: 'Files, ranks, back-rank pressure, clearance, and rook lifts.',
+    mateInRange: 'Mate in 2-3',
+    difficultyRange: 'Medium to Advanced',
+    motifs: ['rook-file', 'deflection', 'overloaded defender'],
+    bossName: 'The Fortress Warden',
+    rewardPreview: 'Bronze Rook, fortress frame, coin chest',
+    unlocked: false,
+    color: '#8a6a2f',
+  },
+  {
+    id: 'queens-court',
+    name: "Queen's Court",
+    focus: 'Queen coordination, sacrifices, forcing checks, and attack conversion.',
+    mateInRange: 'Mate in 2-3',
+    difficultyRange: 'Medium to Advanced',
+    motifs: ['queen-sacrifice', 'decoy', 'king-hunt'],
+    bossName: 'The Court Queen',
+    rewardPreview: 'Royal Queen fragment, court banner',
+    unlocked: false,
+    color: '#9a4f72',
+  },
+  {
+    id: 'kings-gate',
+    name: "King's Gate",
+    focus: 'Defensive resources, exact forcing lines, and boss-gate pressure.',
+    mateInRange: 'Mate in 2-4',
+    difficultyRange: 'Advanced to Expert',
+    motifs: ['double-check', 'quiet move', 'no-escape nets'],
+    bossName: 'The Gatekeeper King',
+    rewardPreview: 'Shadow King, gate key cosmetic',
+    unlocked: false,
+    color: '#7b4a32',
+  },
+  {
+    id: 'grandmaster-keep',
+    name: 'Grandmaster Keep',
+    focus: 'Deep calculation, mixed motifs, and long-term mastery.',
+    mateInRange: 'Mate in 3-4, later 5+',
+    difficultyRange: 'Expert to Master',
+    motifs: ['multi-theme lines', 'sacrifice', 'promotion'],
+    bossName: 'The Grandmaster',
+    rewardPreview: 'Grandmaster Set pieces, title, animated frame',
+    unlocked: false,
+    color: '#2e4968',
+  },
+];
+
 const DEFAULT_STATS = {
   puzzlesSolved: 0,
   perfectSolves: 0,
@@ -630,6 +717,11 @@ export default function App() {
   function openRushIntro() {
     setMode('rush');
     setScreen('rushIntro');
+  }
+
+  function openLadderWorld() {
+    setMode('ladder');
+    setScreen('ladderWorld');
   }
 
   function startRush() {
@@ -1274,11 +1366,11 @@ export default function App() {
               <Play size={20} />
             </button>
 
-            <button type="button" className="mode-card" onClick={() => startPuzzle(0, 'ladder')}>
+            <button type="button" className="mode-card" onClick={openLadderWorld}>
               <ListChecks size={24} />
               <span>
-                <strong>Puzzle Ladder</strong>
-                <small>{ladderSolvedCount}/{puzzles.length} solved</small>
+                <strong>Ladder World</strong>
+                <small>Pawn Village unlocked | {ladderSolvedCount}/{puzzles.length} solved</small>
               </span>
               <Play size={20} />
             </button>
@@ -1379,6 +1471,99 @@ export default function App() {
             </div>
           </section>
         )}
+      </main>
+    );
+  }
+
+  if (screen === 'ladderWorld') {
+    return (
+      <main className="app-shell home-shell">
+        <section className="home-hero ladder-world" aria-label="Ladder World map preview">
+          <div className="brand-row">
+            <div>
+              <p className="eyebrow">Ladder World</p>
+              <h1>Clear the chess road.</h1>
+            </div>
+            <div className="streak-pill">
+              <ListChecks size={17} />
+              <span>{ladderSolvedCount}/{puzzles.length} solved</span>
+            </div>
+          </div>
+
+          <section className="world-summary" aria-label="Ladder World summary">
+            <div>
+              <strong>Pawn Village</strong>
+              <span>Unlocked starting zone</span>
+            </div>
+            <div>
+              <strong>{LADDER_WORLD_ZONES.length - 1}</strong>
+              <span>Coming soon zones</span>
+            </div>
+            <div>
+              <strong>Cosmetic</strong>
+              <span>Rewards planned only</span>
+            </div>
+          </section>
+
+          <section className="world-map" aria-label="Ladder World zones">
+            {LADDER_WORLD_ZONES.map((zone, index) => (
+              <article
+                className={`zone-node ${zone.unlocked ? 'unlocked' : 'locked'}`}
+                key={zone.id}
+                style={{ '--zone-color': zone.color }}
+              >
+                <div className="zone-marker" aria-hidden="true">
+                  <span>{index + 1}</span>
+                </div>
+                <div className="zone-card">
+                  <div className="zone-card-header">
+                    <div>
+                      <p className="eyebrow">{zone.mateInRange}</p>
+                      <h2>{zone.name}</h2>
+                    </div>
+                    <span className="zone-status">{zone.unlocked ? 'Unlocked' : 'Locked'}</span>
+                  </div>
+                  <p>{zone.focus}</p>
+                  <div className="zone-details">
+                    <div>
+                      <span>Difficulty</span>
+                      <strong>{zone.difficultyRange}</strong>
+                    </div>
+                    <div>
+                      <span>Boss</span>
+                      <strong>{zone.bossName}</strong>
+                    </div>
+                    <div>
+                      <span>Rewards</span>
+                      <strong>{zone.rewardPreview}</strong>
+                    </div>
+                  </div>
+                  <div className="zone-motifs" aria-label={`${zone.name} puzzle motifs`}>
+                    {zone.motifs.map((motif) => (
+                      <span key={motif}>{motif}</span>
+                    ))}
+                  </div>
+                  {!zone.unlocked && <small className="zone-lock-copy">Coming soon</small>}
+                </div>
+              </article>
+            ))}
+          </section>
+
+          <div className="actions world-actions">
+            <button type="button" className="primary-action" onClick={() => startPuzzle(0, 'ladder')}>
+              <Play size={18} />
+              Start Pawn Village
+            </button>
+            <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
+              <ListChecks size={18} />
+              Open Classic Ladder List
+            </button>
+            <button type="button" className="secondary-action" onClick={() => setScreen('home')}>
+              <Home size={18} />
+              Back Home
+            </button>
+          </div>
+        </section>
       </main>
     );
   }
