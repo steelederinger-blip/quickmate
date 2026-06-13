@@ -22,6 +22,7 @@ import {
   Zap,
   XCircle,
 } from 'lucide-react';
+import { PIECE_SETS } from './collections.js';
 import { puzzles } from './puzzles.js';
 
 const STORAGE_KEY = 'quickmate.stats.v1';
@@ -724,6 +725,10 @@ export default function App() {
     setScreen('ladderWorld');
   }
 
+  function openCollection() {
+    setScreen('collection');
+  }
+
   function startRush() {
     const rushModeKey = selectedRushMode;
     const rushMode = getRushModeConfig(rushModeKey);
@@ -1374,6 +1379,15 @@ export default function App() {
               </span>
               <Play size={20} />
             </button>
+
+            <button type="button" className="mode-card" onClick={openCollection}>
+              <Trophy size={24} />
+              <span>
+                <strong>Collection</strong>
+                <small>Piece sets, cosmetics, and status rewards</small>
+              </span>
+              <Play size={20} />
+            </button>
           </div>
 
           <div className="home-stats" aria-label="Saved stats">
@@ -1471,6 +1485,74 @@ export default function App() {
             </div>
           </section>
         )}
+      </main>
+    );
+  }
+
+  if (screen === 'collection') {
+    return (
+      <main className="app-shell home-shell">
+        <section className="home-hero collection-screen" aria-label="Collection">
+          <div className="brand-row">
+            <div>
+              <p className="eyebrow">Collection</p>
+              <h1>Build your chess sets.</h1>
+            </div>
+            <div className="streak-pill">
+              <Trophy size={17} />
+              <span>{PIECE_SETS.length} sets</span>
+            </div>
+          </div>
+
+          <section className="collection-intro" aria-label="Collection overview">
+            <p>
+              Collect pieces by playing Rush, clearing Ladder nodes, and defeating bosses.
+              Collection rewards are cosmetic/status-based only.
+            </p>
+          </section>
+
+          <section className="collection-grid" aria-label="Collectible piece sets">
+            {PIECE_SETS.map((pieceSet) => {
+              const ownedCount = pieceSet.pieces.filter((piece) => piece.owned).length;
+              const isComplete = ownedCount === pieceSet.pieces.length;
+
+              return (
+                <article
+                  className={`collection-set-card ${isComplete ? 'unlocked' : 'locked'}`}
+                  key={pieceSet.setId}
+                >
+                  <div className="collection-set-header">
+                    <div>
+                      <p className="eyebrow">{pieceSet.rarity}</p>
+                      <h2>{pieceSet.setName}</h2>
+                    </div>
+                    <span className="collection-progress">{ownedCount}/{pieceSet.pieces.length}</span>
+                  </div>
+                  <div className="collection-reward">
+                    <span>Reward preview</span>
+                    <strong>{pieceSet.cosmeticReward}</strong>
+                  </div>
+                  <div className="piece-slots" aria-label={`${pieceSet.setName} pieces`}>
+                    {pieceSet.pieces.map((piece) => (
+                      <div className={`piece-slot ${piece.owned ? 'owned' : 'locked'}`} key={piece.collectionItemId}>
+                        <span>{piece.pieceType.charAt(0)}</span>
+                        <strong>{piece.pieceType}</strong>
+                        <small>{piece.owned ? 'Unlocked' : 'Locked'}</small>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+
+          <div className="actions">
+            <button type="button" className="secondary-action" onClick={() => setScreen('home')}>
+              <Home size={18} />
+              Back Home
+            </button>
+          </div>
+        </section>
       </main>
     );
   }
