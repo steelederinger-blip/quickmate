@@ -105,8 +105,8 @@ const LADDER_WORLD_ZONES = [
     mateInRange: 'Mate in 1',
     difficultyRange: 'Starter to Easy',
     motifs: ['back-rank basics', 'protected mates', 'promotion finish'],
-    bossName: 'The Pawn Captain',
-    rewardPreview: 'Classic Pawn, Bronze Pawn, starter coins',
+    bossName: 'Back Rank Guard',
+    rewardPreview: 'Back Rank Guard Badge, Ladder XP',
     unlocked: true,
     color: '#3f7a4f',
   },
@@ -184,6 +184,69 @@ const LADDER_WORLD_ZONES = [
   },
 ];
 
+const PAWN_VILLAGE_ZONE_ID = 'pawn-village';
+const PAWN_VILLAGE_BOSS_BADGE = 'Back Rank Guard Badge';
+const PAWN_VILLAGE_NODES = [
+  {
+    id: 'pawn-welcome-mate',
+    zoneId: PAWN_VILLAGE_ZONE_ID,
+    type: 'normal',
+    title: 'Welcome Mate',
+    description: 'Start with direct mates and protected finishing moves.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 25,
+    motifs: ['back-rank', 'corner-mate', 'rook-file'],
+  },
+  {
+    id: 'pawn-back-rank-basics',
+    zoneId: PAWN_VILLAGE_ZONE_ID,
+    type: 'normal',
+    title: 'Back Rank Basics',
+    description: 'Spot simple back-rank nets before defenders escape.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 25,
+    motifs: ['back-rank', 'rook-file', 'pinned-defender'],
+  },
+  {
+    id: 'pawn-queen-rook-finish',
+    zoneId: PAWN_VILLAGE_ZONE_ID,
+    type: 'normal',
+    title: 'Queen and Rook Finish',
+    description: 'Convert clean queen and rook pressure into mate.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 25,
+    motifs: ['rook-file', 'queen-sacrifice', 'deflection'],
+  },
+  {
+    id: 'pawn-no-hint-challenge',
+    zoneId: PAWN_VILLAGE_ZONE_ID,
+    type: 'normal',
+    title: 'No-Hint Challenge',
+    description: 'Clear two of three without using hints.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 25,
+    noHints: true,
+    motifs: ['back-rank', 'bishop-diagonal', 'knight-mate'],
+  },
+  {
+    id: 'pawn-back-rank-guard',
+    zoneId: PAWN_VILLAGE_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: Back Rank Guard',
+    description: 'Defeat the guard by solving three of five before your lives run out.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 100,
+    rewardBadge: PAWN_VILLAGE_BOSS_BADGE,
+    motifs: ['back-rank', 'rook-file', 'deflection', 'pinned-defender'],
+  },
+];
+
 const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
 const LADDER_MATE_GROUPS = [
   { key: '1', label: 'Mate in 1' },
@@ -224,6 +287,10 @@ const DEFAULT_STATS = {
   dailyRushDate: '',
   dailyRushOfficialResult: null,
   dailyRushStreak: 0,
+  completedLadderNodes: [],
+  currentZone: PAWN_VILLAGE_ZONE_ID,
+  ladderXp: 0,
+  ladderBadges: [],
   ownedCollectionItems: [],
   unopenedChests: [],
   collectionStats: DEFAULT_COLLECTION_STATS,
@@ -239,6 +306,12 @@ const DEFAULT_RUSH_STATS = {
   currentCombo: 0,
   bestCombo: 0,
   totalSolveSeconds: 0,
+};
+
+const DEFAULT_LADDER_NODE_STATS = {
+  solved: 0,
+  misses: 0,
+  mistakes: 0,
 };
 
 const RUSH_CHEST_SCORE_THRESHOLDS = {
@@ -424,6 +497,77 @@ function buildDailyRushSequence(dateKey = getTodayKey()) {
   }
 
   return selectedIndexes;
+}
+
+function getPawnVillageNodeById(nodeId) {
+  return PAWN_VILLAGE_NODES.find((node) => node.id === nodeId) || PAWN_VILLAGE_NODES[0];
+}
+
+function getProductionTrackLadderPuzzleIndexes() {
+  return puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => isProductionTrackPuzzle(puzzle))
+    .filter(({ puzzle }) => puzzleFitsAnyMode(puzzle, ['ladder', 'rush', 'blitz', 'classic', 'survival']))
+    .map(({ index }) => index);
+}
+
+function puzzleMatchesNodeMotif(puzzle, node) {
+  const puzzleThemes = getPuzzleThemes(puzzle);
+
+  if (!Array.isArray(node.motifs) || node.motifs.length === 0 || puzzleThemes.length === 0) {
+    return false;
+  }
+
+  return node.motifs.some((motif) => puzzleThemes.includes(motif));
+}
+
+function buildPawnVillageNodeQueue(nodeId) {
+  const node = getPawnVillageNodeById(nodeId);
+  const productionIndexes = getProductionTrackLadderPuzzleIndexes();
+  const mateInPreferredIndexes = productionIndexes.filter((index) => puzzles[index].mateIn <= 2);
+  const motifPreferredIndexes = mateInPreferredIndexes.filter((index) => puzzleMatchesNodeMotif(puzzles[index], node));
+  const sourceIndexes = motifPreferredIndexes.length >= node.puzzleCount
+    ? motifPreferredIndexes
+    : mateInPreferredIndexes.length > 0
+      ? mateInPreferredIndexes
+      : productionIndexes;
+  const shuffledIndexes = shuffleSeeded(sourceIndexes, `pawn-village:${node.id}`);
+  const selectedIndexes = [];
+
+  for (let index = 0; index < node.puzzleCount; index += 1) {
+    const unusedIndexes = shuffledIndexes.filter((puzzleIndex) => !selectedIndexes.includes(puzzleIndex));
+    const finalPool = unusedIndexes.length > 0 ? unusedIndexes : shuffledIndexes;
+
+    if (finalPool.length === 0) {
+      return selectedIndexes;
+    }
+
+    selectedIndexes.push(finalPool[index % finalPool.length]);
+  }
+
+  return selectedIndexes;
+}
+
+function getPawnVillageProgress(completedNodeIds = []) {
+  const completedSet = new Set(completedNodeIds);
+  const completedCount = PAWN_VILLAGE_NODES.filter((node) => completedSet.has(node.id)).length;
+
+  return {
+    completedCount,
+    totalCount: PAWN_VILLAGE_NODES.length,
+    isComplete: completedCount >= PAWN_VILLAGE_NODES.length,
+  };
+}
+
+function pawnVillageNodeIsUnlocked(nodeId, completedNodeIds = []) {
+  const nodeIndex = PAWN_VILLAGE_NODES.findIndex((node) => node.id === nodeId);
+  const completedSet = new Set(completedNodeIds);
+
+  if (nodeIndex <= 0) {
+    return true;
+  }
+
+  return completedSet.has(PAWN_VILLAGE_NODES[nodeIndex - 1].id);
 }
 
 function getRushModeConfig(rushModeKey) {
@@ -704,6 +848,12 @@ function normalizeUnopenedChests(value) {
     : [];
 }
 
+function normalizeStringArray(value) {
+  return Array.isArray(value)
+    ? [...new Set(value.filter((item) => typeof item === 'string' && item.trim() !== ''))]
+    : [];
+}
+
 function getCollectionStatsSummary(ownedCollectionItems, unopenedChests, previousStats = {}) {
   const ownedIds = new Set(ownedCollectionItems);
   const setsCompleted = PIECE_SETS.filter((pieceSet) => {
@@ -848,6 +998,8 @@ function loadStats() {
     const bestDailyRushScore = parsed.bestDailyRushScore || parsed.dailyRushOfficialResult?.score || 0;
     const ownedCollectionItems = normalizeOwnedCollectionItems(parsed.ownedCollectionItems);
     const unopenedChests = normalizeUnopenedChests(parsed.unopenedChests);
+    const completedLadderNodes = normalizeStringArray(parsed.completedLadderNodes);
+    const ladderBadges = normalizeStringArray(parsed.ladderBadges);
     return {
       ...DEFAULT_STATS,
       ...parsed,
@@ -870,6 +1022,10 @@ function loadStats() {
       dailyRushDate: parsed.dailyRushDate || '',
       dailyRushOfficialResult: parsed.dailyRushOfficialResult || null,
       dailyRushStreak: parsed.dailyRushStreak || 0,
+      completedLadderNodes,
+      currentZone: parsed.currentZone || PAWN_VILLAGE_ZONE_ID,
+      ladderXp: parsed.ladderXp || 0,
+      ladderBadges,
       ownedCollectionItems,
       unopenedChests,
       collectionStats: getCollectionStatsSummary(ownedCollectionItems, unopenedChests, parsed.collectionStats),
@@ -884,7 +1040,7 @@ function saveStats(stats) {
 }
 
 function getPuzzleBehavior(currentMode) {
-  return currentMode === 'rush' || currentMode === 'dailyRush'
+  return currentMode === 'rush' || currentMode === 'dailyRush' || currentMode === 'ladderNode'
     ? PUZZLE_BEHAVIOR.strictMode
     : PUZZLE_BEHAVIOR.trainingMode;
 }
@@ -962,6 +1118,13 @@ export default function App() {
   const [rushPuzzleOutcomes, setRushPuzzleOutcomes] = useState([]);
   const [rushPuzzleMistakes, setRushPuzzleMistakes] = useState(0);
   const [rushReveal, setRushReveal] = useState(null);
+  const [activeLadderNodeId, setActiveLadderNodeId] = useState('');
+  const [ladderNodeQueue, setLadderNodeQueue] = useState([]);
+  const [ladderNodeCursor, setLadderNodeCursor] = useState(0);
+  const [ladderNodeStats, setLadderNodeStats] = useState(DEFAULT_LADDER_NODE_STATS);
+  const [ladderNodeLives, setLadderNodeLives] = useState(0);
+  const [ladderNodePuzzleMistakes, setLadderNodePuzzleMistakes] = useState(0);
+  const [ladderNodeReveal, setLadderNodeReveal] = useState(null);
   const [dailyRushRunDate, setDailyRushRunDate] = useState(todayKey);
   const [dailyRushPracticeRun, setDailyRushPracticeRun] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -979,7 +1142,16 @@ export default function App() {
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isDailyRush = mode === 'dailyRush';
   const isRush = mode === 'rush' || isDailyRush;
+  const isLadderNode = mode === 'ladderNode';
+  const isChallengeRun = isRush || isLadderNode;
   const puzzleBehavior = getPuzzleBehavior(mode);
+  const activeLadderNode = activeLadderNodeId ? getPawnVillageNodeById(activeLadderNodeId) : null;
+  const activeLadderNodeTotal = activeLadderNode?.puzzleCount || ladderNodeQueue.length || 0;
+  const completedLadderNodeIds = useMemo(() => {
+    return new Set(stats.completedLadderNodes || []);
+  }, [stats.completedLadderNodes]);
+  const pawnVillageProgress = getPawnVillageProgress(stats.completedLadderNodes || []);
+  const hasBackRankGuardBadge = (stats.ladderBadges || []).includes(PAWN_VILLAGE_BOSS_BADGE);
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -995,7 +1167,8 @@ export default function App() {
   const boardIsInteractive = screen === 'game'
     && !isComplete
     && Boolean(expectedMove)
-    && (!isRush || ((!rushIsTimed || rushTimeLeft > 0) && rushLives > 0 && !rushReveal));
+    && (!isRush || ((!rushIsTimed || rushTimeLeft > 0) && rushLives > 0 && !rushReveal))
+    && (!isLadderNode || (!ladderNodeReveal && (!activeLadderNode?.lives || ladderNodeLives > 0)));
   const rushMultiplier = getRushMultiplier(rushStats.currentCombo);
   const nextRushMultiplier = getNextRushMultiplierInfo(rushStats.currentCombo);
   const bestRushCombo = stats.bestRushCombo || 0;
@@ -1111,9 +1284,15 @@ export default function App() {
     setSelectedSquare(null);
     setRushPuzzleMistakes(0);
     setRushReveal(null);
+    setLadderNodePuzzleMistakes(0);
+    setLadderNodeReveal(null);
   }
 
   function startPuzzle(index, nextMode = 'ladder') {
+    if (nextMode !== 'ladderNode') {
+      setActiveLadderNodeId('');
+    }
+
     resetPuzzle(index, nextMode);
     setScreen('game');
   }
@@ -1163,6 +1342,31 @@ export default function App() {
     setScreen('ladderWorld');
   }
 
+  function openPawnVillage() {
+    setMode('ladder');
+    setScreen('pawnVillage');
+  }
+
+  function startPawnVillageNode(nodeId) {
+    const node = getPawnVillageNodeById(nodeId);
+    const queue = buildPawnVillageNodeQueue(node.id);
+
+    if (queue.length === 0) {
+      setFeedback('No production-track Pawn Village puzzles are available.');
+      return;
+    }
+
+    setActiveLadderNodeId(node.id);
+    setLadderNodeQueue(queue);
+    setLadderNodeCursor(0);
+    setLadderNodeStats(DEFAULT_LADDER_NODE_STATS);
+    setLadderNodeLives(node.lives || 0);
+    setLadderNodePuzzleMistakes(0);
+    setLadderNodeReveal(null);
+    resetPuzzle(queue[0], 'ladderNode', `${node.title}: solve ${node.clearRequirement} of ${node.puzzleCount}.`);
+    setScreen('game');
+  }
+
   function openCollection() {
     setScreen('collection');
   }
@@ -1210,6 +1414,7 @@ export default function App() {
     setRushPuzzleMistakes(0);
     setRushReveal(null);
     setDailyRushPracticeRun(false);
+    setActiveLadderNodeId('');
     resetPuzzle(queue[0], 'rush');
     setScreen('game');
   }
@@ -1471,6 +1676,151 @@ export default function App() {
       : `Skipped. Correct line shown. -100 score${rushIsTimed ? `, -${RUSH_SKIP_TIME_PENALTY} seconds` : ''}.`);
   }
 
+  function ladderNodeRunShouldEnd(
+    nextStats = ladderNodeStats,
+    nextLives = ladderNodeLives,
+    nextCursor = ladderNodeCursor + 1,
+  ) {
+    if (!activeLadderNode) {
+      return true;
+    }
+
+    if (activeLadderNode.type === 'boss' && nextStats.solved >= activeLadderNode.clearRequirement) {
+      return true;
+    }
+
+    if (activeLadderNode.lives && nextLives <= 0) {
+      return true;
+    }
+
+    if (nextCursor >= ladderNodeQueue.length) {
+      return true;
+    }
+
+    const remainingPuzzles = ladderNodeQueue.length - nextCursor;
+    return nextStats.solved + remainingPuzzles < activeLadderNode.clearRequirement;
+  }
+
+  function finishLadderNodeRun({
+    nextStats = ladderNodeStats,
+    nextLives = ladderNodeLives,
+  } = {}) {
+    if (!activeLadderNode) {
+      return;
+    }
+
+    const cleared = nextStats.solved >= activeLadderNode.clearRequirement;
+    const completedNodeIds = stats.completedLadderNodes || [];
+    const alreadyCompleted = completedNodeIds.includes(activeLadderNode.id);
+    const nextCompletedNodeIds = cleared && !alreadyCompleted
+      ? [...completedNodeIds, activeLadderNode.id]
+      : completedNodeIds;
+    const nextProgress = getPawnVillageProgress(nextCompletedNodeIds);
+    const nodeIndex = PAWN_VILLAGE_NODES.findIndex((node) => node.id === activeLadderNode.id);
+    const nextNode = cleared ? PAWN_VILLAGE_NODES[nodeIndex + 1] || null : null;
+    const rewardXp = cleared && !alreadyCompleted ? activeLadderNode.rewardXp : 0;
+    const earnedBadge = cleared && activeLadderNode.rewardBadge && !alreadyCompleted
+      ? activeLadderNode.rewardBadge
+      : '';
+
+    setIsComplete(true);
+    setResult({
+      mode: 'ladderNode',
+      nodeId: activeLadderNode.id,
+      nodeTitle: activeLadderNode.title,
+      nodeType: activeLadderNode.type,
+      cleared,
+      alreadyCompleted,
+      solved: nextStats.solved,
+      misses: nextStats.misses,
+      mistakes: nextStats.mistakes,
+      totalPuzzles: activeLadderNode.puzzleCount,
+      livesRemaining: activeLadderNode.lives ? nextLives : null,
+      rewardXp,
+      earnedBadge,
+      progressCompleted: nextProgress.completedCount,
+      progressTotal: nextProgress.totalCount,
+      nextNodeId: nextNode?.id || '',
+      nextNodeTitle: nextNode?.title || '',
+      comingSoon: cleared && activeLadderNode.type === 'boss' ? 'Knight Woods' : '',
+    });
+    setFeedback(cleared
+      ? (activeLadderNode.type === 'boss' ? 'Boss defeated.' : 'Node clear.')
+      : 'Node failed. Try again.');
+
+    if (!cleared) {
+      return;
+    }
+
+    setStats((currentStats) => {
+      const currentCompletedNodeIds = normalizeStringArray(currentStats.completedLadderNodes);
+      const nodeAlreadyCompleted = currentCompletedNodeIds.includes(activeLadderNode.id);
+      const currentLadderBadges = normalizeStringArray(currentStats.ladderBadges);
+      const nextLadderBadges = activeLadderNode.rewardBadge
+        && !currentLadderBadges.includes(activeLadderNode.rewardBadge)
+        && !nodeAlreadyCompleted
+        ? [...currentLadderBadges, activeLadderNode.rewardBadge]
+        : currentLadderBadges;
+      const nextStatsValue = {
+        ...currentStats,
+        completedLadderNodes: nodeAlreadyCompleted
+          ? currentCompletedNodeIds
+          : [...currentCompletedNodeIds, activeLadderNode.id],
+        currentZone: PAWN_VILLAGE_ZONE_ID,
+        ladderXp: (currentStats.ladderXp || 0) + (nodeAlreadyCompleted ? 0 : activeLadderNode.rewardXp),
+        ladderBadges: nextLadderBadges,
+      };
+
+      saveStats(nextStatsValue);
+      return nextStatsValue;
+    });
+  }
+
+  function advanceLadderNodePuzzle(nextFeedback = 'Find the forcing move.') {
+    const nextCursor = ladderNodeCursor + 1;
+
+    if (nextCursor >= ladderNodeQueue.length) {
+      finishLadderNodeRun();
+      return;
+    }
+
+    setLadderNodeCursor(nextCursor);
+    resetPuzzle(ladderNodeQueue[nextCursor], 'ladderNode', nextFeedback);
+  }
+
+  function continueLadderNodeAfterReveal() {
+    if (!isLadderNode || isComplete) {
+      return;
+    }
+
+    if (ladderNodeRunShouldEnd(ladderNodeStats, ladderNodeLives, ladderNodeCursor + 1)) {
+      finishLadderNodeRun();
+      return;
+    }
+
+    advanceLadderNodePuzzle();
+  }
+
+  function skipLadderNodePuzzle() {
+    if (!isLadderNode || isComplete || ladderNodeReveal) {
+      return;
+    }
+
+    const nextLives = activeLadderNode?.lives ? Math.max(0, ladderNodeLives - 1) : ladderNodeLives;
+    const nextStats = {
+      ...ladderNodeStats,
+      misses: ladderNodeStats.misses + 1,
+    };
+
+    setLadderNodeStats(nextStats);
+    setLadderNodeLives(nextLives);
+    setSelectedSquare(null);
+    setLadderNodeReveal({ reason: 'Skipped', wrongMoveCount: ladderNodePuzzleMistakes });
+    setFeedback(activeLadderNode?.lives && nextLives === 0
+      ? 'Skipped. No lives left. Correct line shown.'
+      : 'Skipped. Correct line shown.');
+  }
+
   function updateStatsForSolve(nextResult) {
     setStats((currentStats) => {
       const bestTime = currentStats.bestTimeByPuzzleId[puzzle.id];
@@ -1613,6 +1963,75 @@ export default function App() {
     advanceRushPuzzle(rushStats.solved + 1, nextUsedPuzzleIds, feedbackParts.join(' | '));
   }
 
+  function completeLadderNodePuzzle() {
+    if (!activeLadderNode) {
+      return;
+    }
+
+    const scoreBreakdown = calculateScore({
+      mateIn,
+      mistakes,
+      hints,
+      seconds,
+    });
+    const nextResult = {
+      ...scoreBreakdown,
+      puzzleId: puzzle.id,
+      puzzleTitle: puzzle.title,
+      mateIn,
+      mistakes,
+      hints,
+      seconds,
+      mode: 'ladderNode',
+    };
+    const nextStats = {
+      ...ladderNodeStats,
+      solved: ladderNodeStats.solved + 1,
+    };
+
+    updateStatsForSolve(nextResult);
+    setLadderNodeStats(nextStats);
+
+    if (ladderNodeRunShouldEnd(nextStats, ladderNodeLives, ladderNodeCursor + 1)) {
+      finishLadderNodeRun({ nextStats });
+      return;
+    }
+
+    advanceLadderNodePuzzle(`Solved. ${nextStats.solved}/${activeLadderNode.clearRequirement} needed.`);
+  }
+
+  function handleLadderNodeWrongLegalMove() {
+    if (!activeLadderNode) {
+      setFeedback(WRONG_LEGAL_MOVE_FEEDBACK);
+      return;
+    }
+
+    const nextPuzzleMistakes = ladderNodePuzzleMistakes + 1;
+    const isMissed = nextPuzzleMistakes >= RUSH_MAX_PUZZLE_ATTEMPTS;
+    const nextLives = isMissed && activeLadderNode.lives ? Math.max(0, ladderNodeLives - 1) : ladderNodeLives;
+    const nextStats = {
+      ...ladderNodeStats,
+      mistakes: ladderNodeStats.mistakes + 1,
+      misses: ladderNodeStats.misses + (isMissed ? 1 : 0),
+    };
+
+    setMistakes((value) => value + 1);
+    setLadderNodePuzzleMistakes(nextPuzzleMistakes);
+    setLadderNodeStats(nextStats);
+
+    if (!isMissed) {
+      setFeedback(RUSH_FIRST_MISS_FEEDBACK);
+      return;
+    }
+
+    setLadderNodeLives(nextLives);
+    setSelectedSquare(null);
+    setLadderNodeReveal({ reason: 'Missed', wrongMoveCount: nextPuzzleMistakes });
+    setFeedback(activeLadderNode.lives && nextLives === 0
+      ? 'Missed. No lives left. Correct line shown.'
+      : 'Missed. Correct line shown.');
+  }
+
   function copyResult() {
     if (!result) {
       return;
@@ -1747,6 +2166,13 @@ export default function App() {
         return;
       }
 
+      if (isLadderNode) {
+        setMoveLog(nextLog);
+        setFeedback('Checkmate. Loading next puzzle.');
+        completeLadderNodePuzzle();
+        return;
+      }
+
       setIsComplete(true);
       setFeedback('Checkmate completed.');
       finalizeSolve();
@@ -1755,6 +2181,13 @@ export default function App() {
         setMoveLog(nextLog);
         setFeedback('Line complete. Loading next puzzle.');
         completeRushPuzzle();
+        return;
+      }
+
+      if (isLadderNode) {
+        setMoveLog(nextLog);
+        setFeedback('Line complete. Loading next puzzle.');
+        completeLadderNodePuzzle();
         return;
       }
 
@@ -1814,6 +2247,11 @@ export default function App() {
       setFeedback(nextLives === 0
         ? 'Missed. No lives left. Correct line shown.'
         : 'Missed. Correct line shown. -1 life.');
+      return;
+    }
+
+    if (puzzleBehavior === PUZZLE_BEHAVIOR.strictMode && isLadderNode) {
+      handleLadderNodeWrongLegalMove();
       return;
     }
 
@@ -1928,6 +2366,7 @@ export default function App() {
     setResult(null);
     setCopyStatus('Copy Result');
     setChestOpenResult(null);
+    setActiveLadderNodeId('');
     setScreen('home');
   }
 
@@ -1941,11 +2380,11 @@ export default function App() {
         key={item.id}
         className={`puzzle-item ${index === puzzleIndex ? 'active' : ''} ${status}`}
         onClick={() => {
-          if (!isRush) {
+          if (!isChallengeRun) {
             startPuzzle(index, mode === 'daily' ? 'daily' : 'ladder');
           }
         }}
-        disabled={isRush}
+        disabled={isChallengeRun}
       >
         <span>
           <strong>{item.title}</strong>
@@ -2367,6 +2806,107 @@ export default function App() {
     );
   }
 
+  if (screen === 'pawnVillage') {
+    return (
+      <main className="app-shell home-shell">
+        <section className="home-hero pawn-village-screen" aria-label="Pawn Village">
+          <div className="brand-row">
+            <div>
+              <p className="eyebrow">Ladder World</p>
+              <h1>Pawn Village</h1>
+            </div>
+            <div className="streak-pill">
+              <ListChecks size={17} />
+              <span>{pawnVillageProgress.completedCount}/{pawnVillageProgress.totalCount} nodes cleared</span>
+            </div>
+          </div>
+
+          <section className="world-summary" aria-label="Pawn Village summary">
+            <div>
+              <strong>{stats.ladderXp || 0}</strong>
+              <span>Ladder XP</span>
+            </div>
+            <div>
+              <strong>{hasBackRankGuardBadge ? 'Earned' : 'Locked'}</strong>
+              <span>{PAWN_VILLAGE_BOSS_BADGE}</span>
+            </div>
+            <div>
+              <strong>Next</strong>
+              <span>{pawnVillageProgress.isComplete ? 'Knight Woods coming soon' : 'Clear the road'}</span>
+            </div>
+          </section>
+
+          <section className="node-path" aria-label="Pawn Village nodes">
+            {PAWN_VILLAGE_NODES.map((node, index) => {
+              const cleared = completedLadderNodeIds.has(node.id);
+              const unlocked = pawnVillageNodeIsUnlocked(node.id, stats.completedLadderNodes || []);
+              const queue = buildPawnVillageNodeQueue(node.id);
+
+              return (
+                <article
+                  className={`node-card ${node.type === 'boss' ? 'boss' : ''} ${cleared ? 'cleared' : ''} ${unlocked ? 'unlocked' : 'locked'}`}
+                  key={node.id}
+                >
+                  <div className="node-index" aria-hidden="true">{index + 1}</div>
+                  <div className="node-content">
+                    <div className="node-header">
+                      <div>
+                        <p className="eyebrow">{node.type === 'boss' ? 'Boss Battle' : 'Puzzle Node'}</p>
+                        <h2>{node.title}</h2>
+                      </div>
+                      <span className="zone-status">{cleared ? 'Cleared' : unlocked ? 'Unlocked' : 'Locked'}</span>
+                    </div>
+                    <p>{node.description}</p>
+                    <div className="node-details">
+                      <div><span>Puzzles</span><strong>{node.puzzleCount}</strong></div>
+                      <div><span>Clear</span><strong>{node.clearRequirement}/{node.puzzleCount}</strong></div>
+                      <div><span>Reward</span><strong>{node.rewardXp} XP</strong></div>
+                      {node.lives && <div><span>Lives</span><strong>{node.lives}</strong></div>}
+                    </div>
+                    <div className="zone-motifs" aria-label={`${node.title} motifs`}>
+                      {node.motifs.map((motif) => (
+                        <span key={motif}>{motif}</span>
+                      ))}
+                    </div>
+                    {node.rewardBadge && (
+                      <small className="zone-badge-earned">
+                        {cleared ? `${node.rewardBadge} earned` : `Badge: ${node.rewardBadge}`}
+                      </small>
+                    )}
+                    <button
+                      type="button"
+                      className={cleared ? 'secondary-action' : 'primary-action'}
+                      onClick={() => startPawnVillageNode(node.id)}
+                      disabled={!unlocked || queue.length === 0}
+                    >
+                      <Play size={18} />
+                      {cleared ? 'Replay Node' : node.type === 'boss' ? 'Start Boss' : 'Start Node'}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+
+          <div className="actions world-actions">
+            <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
+              <ListChecks size={18} />
+              Open Classic Ladder List
+            </button>
+            <button type="button" className="secondary-action" onClick={() => setScreen('ladderWorld')}>
+              <ChevronLeft size={18} />
+              Back to World
+            </button>
+            <button type="button" className="secondary-action" onClick={() => setScreen('home')}>
+              <Home size={18} />
+              Back Home
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   if (screen === 'ladderWorld') {
     return (
       <main className="app-shell home-shell">
@@ -2384,16 +2924,16 @@ export default function App() {
 
           <section className="world-summary" aria-label="Ladder World summary">
             <div>
-              <strong>Pawn Village</strong>
-              <span>Unlocked starting zone</span>
+              <strong>{pawnVillageProgress.completedCount}/{pawnVillageProgress.totalCount}</strong>
+              <span>Pawn Village nodes cleared</span>
             </div>
             <div>
-              <strong>{LADDER_WORLD_ZONES.length - 1}</strong>
-              <span>Coming soon zones</span>
+              <strong>{stats.ladderXp || 0}</strong>
+              <span>Ladder XP</span>
             </div>
             <div>
-              <strong>Cosmetic</strong>
-              <span>Rewards planned only</span>
+              <strong>{hasBackRankGuardBadge ? 'Earned' : 'Locked'}</strong>
+              <span>{PAWN_VILLAGE_BOSS_BADGE}</span>
             </div>
           </section>
 
@@ -2435,6 +2975,18 @@ export default function App() {
                       <span key={motif}>{motif}</span>
                     ))}
                   </div>
+                  {zone.id === PAWN_VILLAGE_ZONE_ID && (
+                    <div className="zone-progress" aria-label="Pawn Village progress">
+                      <div className="progress-copy">
+                        <span>Progress</span>
+                        <strong>{pawnVillageProgress.completedCount}/{pawnVillageProgress.totalCount}</strong>
+                      </div>
+                      <div className="progress-track">
+                        <span style={{ width: `${(pawnVillageProgress.completedCount / pawnVillageProgress.totalCount) * 100}%` }} />
+                      </div>
+                      {hasBackRankGuardBadge && <small className="zone-badge-earned">{PAWN_VILLAGE_BOSS_BADGE} earned</small>}
+                    </div>
+                  )}
                   {!zone.unlocked && <small className="zone-lock-copy">Coming soon</small>}
                 </div>
               </article>
@@ -2442,9 +2994,9 @@ export default function App() {
           </section>
 
           <div className="actions world-actions">
-            <button type="button" className="primary-action" onClick={() => startPuzzle(0, 'ladder')}>
+            <button type="button" className="primary-action" onClick={openPawnVillage}>
               <Play size={18} />
-              Start Pawn Village
+              Open Pawn Village
             </button>
             <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
               <ListChecks size={18} />
@@ -2534,20 +3086,21 @@ export default function App() {
             {mode === 'ladder' ? 'Puzzle Ladder' : ''}
             {mode === 'rush' ? activeRushModeConfig.label : ''}
             {mode === 'dailyRush' ? 'Daily Rush' : ''}
+            {mode === 'ladderNode' ? 'Pawn Village' : ''}
           </h1>
         </div>
         <div className="topbar-actions">
-          {!isRush && (
+          {!isChallengeRun && (
             <button type="button" className="icon-button" onClick={() => goToOffset(-1)} aria-label="Previous puzzle">
               <ChevronLeft size={20} />
             </button>
           )}
-          {!isRush && (
+          {!isChallengeRun && (
             <button type="button" className="icon-button" onClick={() => resetPuzzle()} aria-label="Reset puzzle">
               <RotateCcw size={18} />
             </button>
           )}
-          {!isRush && (
+          {!isChallengeRun && (
             <button type="button" className="icon-button" onClick={() => goToOffset(1)} aria-label="Next puzzle">
               <ChevronRight size={20} />
             </button>
@@ -2558,16 +3111,23 @@ export default function App() {
       <section className="workspace">
         <aside className="sidebar" aria-label="Puzzle list">
           <div className="panel-header">
-            <h2>{mode === 'daily' ? 'Daily Warmup' : isDailyRush ? 'Daily Rush' : isRush ? 'Rush Queue' : 'Puzzles'}</h2>
+            <h2>
+              {mode === 'daily' ? 'Daily Warmup' : ''}
+              {isDailyRush ? 'Daily Rush' : ''}
+              {mode === 'rush' ? 'Rush Queue' : ''}
+              {isLadderNode ? activeLadderNode?.title || 'Pawn Village' : ''}
+              {!isChallengeRun && mode !== 'daily' ? 'Puzzles' : ''}
+            </h2>
             <span>
               {mode === 'daily' ? todayKey : ''}
               {isDailyRush ? `${Math.min(rushQueueCursor + 1, DAILY_RUSH_PUZZLE_COUNT)}/${DAILY_RUSH_PUZZLE_COUNT}` : ''}
               {mode === 'rush' ? `${rushQueueCursor + 1}/${rushQueue.length}` : ''}
-              {!isRush && mode !== 'daily' ? puzzles.length : ''}
+              {isLadderNode ? `${Math.min(ladderNodeCursor + 1, activeLadderNodeTotal)}/${activeLadderNodeTotal}` : ''}
+              {!isChallengeRun && mode !== 'daily' ? puzzles.length : ''}
             </span>
           </div>
           <div className="puzzle-list">
-            {isRush ? (
+            {isChallengeRun ? (
               renderPuzzleItem(puzzle, puzzleIndex)
             ) : mode === 'daily' ? (
               renderPuzzleItem(puzzles[dailyPuzzleIndex], dailyPuzzleIndex)
@@ -2680,6 +3240,41 @@ export default function App() {
                 </div>
               </div>
             </>
+          ) : isLadderNode ? (
+            <div className="stats-grid ladder-node-grid">
+              <div className="stat">
+                <ListChecks size={18} />
+                <span>{activeLadderNode?.type === 'boss' ? 'Boss' : 'Node'}</span>
+                <small>Pawn Village</small>
+              </div>
+              <div className="stat">
+                <BadgeCheck size={18} />
+                <span>{ladderNodeStats.solved}/{activeLadderNode?.clearRequirement || 0}</span>
+                <small>Needed</small>
+              </div>
+              {activeLadderNode?.lives && (
+                <div className="stat">
+                  <Trophy size={18} />
+                  <span>{ladderNodeLives}/{activeLadderNode.lives}</span>
+                  <small>Lives</small>
+                </div>
+              )}
+              <div className="stat">
+                <Target size={18} />
+                <span>{ladderNodePuzzleMistakes}/{RUSH_MAX_PUZZLE_ATTEMPTS}</span>
+                <small>Attempts</small>
+              </div>
+              <div className="stat">
+                <XCircle size={18} />
+                <span>{ladderNodeStats.misses}</span>
+                <small>Misses</small>
+              </div>
+              <div className="stat">
+                <Sparkles size={18} />
+                <span>{stats.ladderXp || 0}</span>
+                <small>Ladder XP</small>
+              </div>
+            </div>
           ) : (
             <div className="stats-grid">
               <div className="stat">
@@ -2729,20 +3324,54 @@ export default function App() {
             </div>
           )}
 
+          {isLadderNode && ladderNodeReveal && (
+            <div className="correct-line-panel" aria-label="Correct line">
+              <div className="panel-header">
+                <h3>Correct line</h3>
+                <span>{ladderNodeReveal.reason} | ID {puzzle.id}</span>
+              </div>
+              <ol className="solution-line">
+                {puzzle.solution.map((move, index) => (
+                  <li className={index === 0 ? 'first-move' : ''} key={`${move}-${index}`}>
+                    <span>{index === 0 ? 'First move' : `Move ${index + 1}`}</span>
+                    <strong>{move}</strong>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           <div className="actions">
             {isRush && rushReveal ? (
               <button type="button" className="primary-action" onClick={continueRushAfterReveal}>
                 <ChevronRight size={18} />
                 {rushLives <= 0 || rushRunShouldFinishAfterReveal ? 'Finish Run' : 'Next Puzzle'}
               </button>
+            ) : isLadderNode && ladderNodeReveal ? (
+              <button type="button" className="primary-action" onClick={continueLadderNodeAfterReveal}>
+                <ChevronRight size={18} />
+                {ladderNodeRunShouldEnd(ladderNodeStats, ladderNodeLives, ladderNodeCursor + 1)
+                  ? 'Finish Node'
+                  : 'Next Puzzle'}
+              </button>
             ) : (
               <>
-                <button type="button" className="primary-action" onClick={showHint} disabled={isComplete || isRush}>
+                <button
+                  type="button"
+                  className="primary-action"
+                  onClick={showHint}
+                  disabled={isComplete || isRush || (isLadderNode && activeLadderNode?.noHints)}
+                >
                   <Lightbulb size={18} />
-                  Hint
+                  {isLadderNode && activeLadderNode?.noHints ? 'No Hints' : 'Hint'}
                 </button>
                 {isRush ? (
                   <button type="button" className="secondary-action" onClick={skipRushPuzzle}>
+                    <SkipForward size={18} />
+                    Skip
+                  </button>
+                ) : isLadderNode ? (
+                  <button type="button" className="secondary-action" onClick={skipLadderNodePuzzle}>
                     <SkipForward size={18} />
                     Skip
                   </button>
@@ -2780,6 +3409,8 @@ export default function App() {
             <span>
               {isDailyRush
                 ? `${dailyRushPracticeRun ? 'Practice Replay' : 'Official attempt'} | ${dailyRushRunDate}`
+                : isLadderNode
+                  ? `Pawn Village ${pawnVillageProgress.completedCount}/${pawnVillageProgress.totalCount} | ${stats.ladderXp || 0} XP`
                 : isRush
                   ? `${activeRushModeConfig.label} best ${activeRushModeBestScore}`
                   : `Best score ${stats.bestScore}`}
@@ -2790,7 +3421,81 @@ export default function App() {
 
       {isComplete && result && (
         <section className="result-screen" role="dialog" aria-modal="true" aria-label="Puzzle result">
-          {result.mode === 'rush' || result.mode === 'dailyRush' ? (
+          {result.mode === 'ladderNode' ? (
+            <div className="result-panel">
+              <Trophy size={42} />
+              <p className="eyebrow">
+                {result.cleared
+                  ? result.nodeType === 'boss' ? 'Boss Defeated' : 'Node Clear'
+                  : 'Node Failed'}
+              </p>
+              <h2>{result.nodeTitle}</h2>
+              <div className="result-score">
+                <Sparkles size={20} />
+                <strong>{result.solved}/{result.totalPuzzles}</strong>
+                <span>solved</span>
+              </div>
+              <div className="rush-result-highlights" aria-label="Ladder node highlights">
+                <div className={`highlight-card ${result.cleared ? 'rank' : ''}`}>
+                  <span>Status</span>
+                  <strong>{result.cleared ? 'Cleared' : 'Retry'}</strong>
+                </div>
+                <div className="highlight-card">
+                  <span>Reward XP</span>
+                  <strong>+{result.rewardXp}</strong>
+                </div>
+                <div className="highlight-card">
+                  <span>Pawn Village</span>
+                  <strong>{result.progressCompleted}/{result.progressTotal}</strong>
+                </div>
+              </div>
+              <div className="score-breakdown" aria-label="Ladder node result">
+                <div><span>Puzzles solved</span><strong>{result.solved}/{result.totalPuzzles}</strong></div>
+                <div><span>Misses</span><strong>{result.misses}</strong></div>
+                <div><span>Mistakes</span><strong>{result.mistakes}</strong></div>
+                {result.livesRemaining !== null && (
+                  <div><span>Lives remaining</span><strong>{result.livesRemaining}</strong></div>
+                )}
+                <div><span>Reward XP</span><strong>+{result.rewardXp}</strong></div>
+                <div><span>Progress</span><strong>{result.progressCompleted}/{result.progressTotal} nodes</strong></div>
+              </div>
+              {result.earnedBadge && (
+                <section className="earned-chest-card" aria-label="Badge earned">
+                  <p className="eyebrow">Badge Earned</p>
+                  <h3>{result.earnedBadge}</h3>
+                  <small>Pawn Village progress complete.</small>
+                </section>
+              )}
+              {result.comingSoon && (
+                <p className="rank-chase">Coming soon: {result.comingSoon}</p>
+              )}
+              {result.alreadyCompleted && result.cleared && (
+                <p className="rank-chase">Rewards already claimed for this node.</p>
+              )}
+              <div className="actions">
+                {result.cleared && result.nextNodeId && (
+                  <button type="button" className="primary-action" onClick={() => startPawnVillageNode(result.nextNodeId)}>
+                    <ChevronRight size={18} />
+                    Next Node
+                  </button>
+                )}
+                {!result.cleared && (
+                  <button type="button" className="primary-action" onClick={() => startPawnVillageNode(result.nodeId)}>
+                    <RotateCcw size={18} />
+                    Retry Node
+                  </button>
+                )}
+                <button type="button" className={result.cleared && result.nextNodeId ? 'secondary-action' : 'primary-action'} onClick={openPawnVillage}>
+                  <ListChecks size={18} />
+                  Pawn Village
+                </button>
+                <button type="button" className="secondary-action" onClick={goHome}>
+                  <Home size={18} />
+                  Back Home
+                </button>
+              </div>
+            </div>
+          ) : result.mode === 'rush' || result.mode === 'dailyRush' ? (
             <div className="result-panel">
               <Zap size={42} />
               <p className="eyebrow">{result.mode === 'dailyRush' ? result.dailyRushLabel : 'Rush complete'}</p>

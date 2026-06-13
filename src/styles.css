@@ -564,8 +564,124 @@ h2 {
   justify-self: start;
 }
 
+.zone-progress {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.zone-badge-earned {
+  color: var(--accent-strong);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .world-actions {
   align-items: stretch;
+}
+
+.pawn-village-screen h1 {
+  max-width: 820px;
+}
+
+.node-path {
+  display: grid;
+  gap: 12px;
+}
+
+.node-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+
+.node-index {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 3px solid var(--surface-strong);
+  border-radius: 50%;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: var(--shadow);
+  font-weight: 950;
+}
+
+.node-card.locked {
+  opacity: 0.62;
+}
+
+.node-card.cleared .node-index {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.node-card.boss .node-index {
+  background: #7b4a32;
+}
+
+.node-content {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.node-card.boss .node-content {
+  border-left-color: #7b4a32;
+}
+
+.node-card.cleared .node-content {
+  border-color: color-mix(in srgb, var(--accent), transparent 40%);
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+}
+
+.node-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.node-content p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 780;
+}
+
+.node-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.node-details div {
+  display: grid;
+  gap: 3px;
+  min-height: 54px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.node-details span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.node-details strong {
+  color: var(--text);
 }
 
 .collection-screen h1 {
@@ -1102,6 +1218,10 @@ h2 {
 }
 
 .rush-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ladder-node-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -1835,6 +1955,18 @@ h2 {
 
   .zone-details {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .node-path {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .node-card.boss {
+    grid-column: 1 / -1;
+  }
+
+  .node-details {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .collection-stats {
