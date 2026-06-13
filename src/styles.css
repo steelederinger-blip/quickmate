@@ -773,6 +773,20 @@ h2 {
   text-transform: uppercase;
 }
 
+.puzzle-id {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 22px;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.74rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
 .empty-log {
   margin: 14px 0 0;
 }
@@ -1005,10 +1019,23 @@ h2 {
 
 .missed-item {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   padding: 10px;
   border-radius: 8px;
   background: var(--surface-soft);
+}
+
+.missed-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.missed-title-row .puzzle-id {
+  flex: 0 0 auto;
+  margin-top: 0;
+  background: var(--surface-strong);
 }
 
 .missed-reason {
@@ -1026,6 +1053,18 @@ h2 {
 .missed-item small {
   color: var(--muted);
   font-weight: 800;
+}
+
+.feedback-copy-button {
+  justify-self: start;
+  min-height: 34px;
+  margin-top: 4px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  font-size: 0.8rem;
+  font-weight: 850;
 }
 
 .help-panel {

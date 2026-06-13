@@ -342,6 +342,21 @@ function getRushReviewItem(item, reason, details = {}) {
   };
 }
 
+function formatPuzzleFeedbackText(item, rushModeLabel) {
+  const solutionLine = item.solution || [item.firstMove].filter(Boolean);
+
+  return [
+    `Puzzle ID: ${item.id}`,
+    `Title: ${item.title}`,
+    `Mate in: ${item.mateIn}`,
+    `Themes: ${formatTheme(item.themes)}`,
+    `Rush mode: ${rushModeLabel || 'Rush Mode'}`,
+    `Result reason: ${String(item.reason || '').toLowerCase()}`,
+    `Correct solution line: ${solutionLine.join(' ')}`,
+    'Issue:',
+  ].join('\n');
+}
+
 function getMateIn(puzzle) {
   return puzzle.mateIn;
 }
@@ -487,6 +502,7 @@ export default function App() {
   const [stats, setStats] = useState(loadStats);
   const [result, setResult] = useState(null);
   const [copyStatus, setCopyStatus] = useState('Copy Result');
+  const [puzzleFeedbackCopyStatus, setPuzzleFeedbackCopyStatus] = useState({});
   const [rushQueue, setRushQueue] = useState([]);
   const [rushQueueCursor, setRushQueueCursor] = useState(0);
   const [selectedRushMode, setSelectedRushMode] = useState(RUSH_MODE_KEYS.classic);
@@ -595,6 +611,7 @@ export default function App() {
     setMoveLog([]);
     setResult(null);
     setCopyStatus('Copy Result');
+    setPuzzleFeedbackCopyStatus({});
     setFeedback(nextFeedback);
     setSelectedSquare(null);
     setRushPuzzleMistakes(0);
@@ -934,6 +951,32 @@ export default function App() {
       })
       .catch(() => {
         setCopyStatus('Copy failed');
+      });
+  }
+
+  function copyPuzzleFeedback(item, feedbackKey) {
+    const feedbackText = formatPuzzleFeedbackText(item, result?.rushModeLabel || getRushModeLabel(activeRushMode));
+
+    if (!navigator.clipboard?.writeText) {
+      setPuzzleFeedbackCopyStatus((currentStatus) => ({
+        ...currentStatus,
+        [feedbackKey]: 'Copy unavailable',
+      }));
+      return;
+    }
+
+    navigator.clipboard.writeText(feedbackText)
+      .then(() => {
+        setPuzzleFeedbackCopyStatus((currentStatus) => ({
+          ...currentStatus,
+          [feedbackKey]: 'Copied',
+        }));
+      })
+      .catch(() => {
+        setPuzzleFeedbackCopyStatus((currentStatus) => ({
+          ...currentStatus,
+          [feedbackKey]: 'Copy failed',
+        }));
       });
   }
 
@@ -1498,6 +1541,7 @@ export default function App() {
             <div>
               <p className="eyebrow">{formatTheme(getPuzzleThemes(puzzle))} | Mate in {mateIn}</p>
               <h2>{puzzle.title}</h2>
+              <span className="puzzle-id">ID {puzzle.id}</span>
             </div>
             <span className="badge">{puzzle.rating}</span>
           </div>
@@ -1607,7 +1651,7 @@ export default function App() {
             <div className="correct-line-panel" aria-label="Correct line">
               <div className="panel-header">
                 <h3>Correct line</h3>
-                <span>{rushReveal.reason}</span>
+                <span>{rushReveal.reason} | ID {puzzle.id}</span>
               </div>
               <ol className="solution-line">
                 {puzzle.solution.map((move, index) => (
@@ -1759,14 +1803,27 @@ export default function App() {
                   <div className="missed-list">
                     {(result.missedPuzzles || []).map((item, index) => {
                       const solutionLine = item.solution || [item.firstMove].filter(Boolean);
+                      const feedbackKey = `${item.id}-${item.reason}-${index}`;
+                      const feedbackCopyStatus = puzzleFeedbackCopyStatus[feedbackKey] || 'Copy Puzzle Feedback';
 
                       return (
-                        <div className="missed-item" key={`${item.id}-${item.reason}-${index}`}>
+                        <div className="missed-item" key={feedbackKey}>
                           <span className="missed-reason">{item.reason}</span>
-                          <strong>{item.title}</strong>
+                          <div className="missed-title-row">
+                            <strong>{item.title}</strong>
+                            <span className="puzzle-id">ID {item.id}</span>
+                          </div>
                           <small>Mate in {item.mateIn} | {formatTheme(item.themes)}</small>
                           <small>Wrong moves: {item.wrongMoveCount ?? 0}/{RUSH_MAX_PUZZLE_ATTEMPTS}</small>
                           <small>Correct line: {solutionLine.join(' ')}</small>
+                          <button
+                            type="button"
+                            className="feedback-copy-button"
+                            onClick={() => copyPuzzleFeedback(item, feedbackKey)}
+                          >
+                            <Copy size={16} />
+                            {feedbackCopyStatus}
+                          </button>
                         </div>
                       );
                     })}
