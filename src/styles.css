@@ -228,6 +228,18 @@ h2 {
   font-size: 1.45rem;
 }
 
+.daily-rush-card {
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 28%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft), transparent 8%), var(--surface));
+}
+
+.daily-rush-card.completed {
+  border-color: color-mix(in srgb, #d18b00, transparent 30%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #fff0c2, transparent 36%), var(--surface));
+}
+
 .rush-home-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -822,6 +834,13 @@ h2 {
   opacity: 0.62;
 }
 
+.mode-card:disabled,
+.rush-mode-card:disabled,
+.puzzle-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .mode-card strong,
 .mode-card small,
 .puzzle-item strong,
@@ -1325,6 +1344,25 @@ h2 {
   font-size: 1.8rem;
 }
 
+.daily-result-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.daily-result-strip span {
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .result-score {
   margin: 16px 0;
   padding: 10px 16px;
@@ -1706,7 +1744,7 @@ h2 {
   }
 
   .rush-hero-card {
-    grid-row: span 2;
+    grid-row: span 3;
   }
 
   .rush-home-history {

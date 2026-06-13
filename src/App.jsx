@@ -30,6 +30,9 @@ const SKIP_PENALTY = 100;
 const RUSH_SKIP_TIME_PENALTY = 5;
 const RUSH_WRONG_MOVE_TIME_PENALTY = 3;
 const RUSH_MAX_PUZZLE_ATTEMPTS = 2;
+const DAILY_RUSH_PUZZLE_COUNT = 10;
+const DAILY_RUSH_LIVES = 2;
+const DAILY_RUSH_EPOCH = '2026-01-01';
 const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
 const RUSH_FIRST_MISS_FEEDBACK = 'Not forcing. One more try.';
@@ -42,6 +45,7 @@ const RUSH_MODE_KEYS = {
   blitz: 'blitz',
   classic: 'classic',
   survival: 'survival',
+  dailyRush: 'dailyRush',
 };
 
 const RUSH_MODES = {
@@ -74,6 +78,16 @@ const RUSH_MODES = {
     bestScoreKey: 'bestSurvivalRushScore',
     mateInLabel: 'Progressive depth',
     description: '3 lives, no fixed countdown, deeper lines unlock as you solve.',
+  },
+  [RUSH_MODE_KEYS.dailyRush]: {
+    key: RUSH_MODE_KEYS.dailyRush,
+    label: 'Daily Rush',
+    shortLabel: 'Daily',
+    durationSeconds: null,
+    lives: DAILY_RUSH_LIVES,
+    bestScoreKey: 'bestDailyRushScore',
+    mateInLabel: '10 fixed puzzles',
+    description: 'Daily 10-puzzle production-track sequence with 2 lives.',
   },
 };
 
@@ -199,6 +213,7 @@ const DEFAULT_STATS = {
   bestBlitzRushScore: 0,
   bestClassicRushScore: 0,
   bestSurvivalRushScore: 0,
+  bestDailyRushScore: 0,
   bestRushCombo: 0,
   rushGamesPlayed: 0,
   rushHistory: [],
@@ -206,6 +221,9 @@ const DEFAULT_STATS = {
   puzzleCompletions: {},
   completedDailyPuzzleDate: '',
   currentDailyStreak: 0,
+  dailyRushDate: '',
+  dailyRushOfficialResult: null,
+  dailyRushStreak: 0,
   ownedCollectionItems: [],
   unopenedChests: [],
   collectionStats: DEFAULT_COLLECTION_STATS,
@@ -310,8 +328,102 @@ function getDailyPuzzleIndex(dateKey = getTodayKey()) {
   return dailyIndexes[hash % dailyIndexes.length] ?? hash % puzzles.length;
 }
 
+function hashString(value) {
+  return [...String(value)].reduce((hash, char) => {
+    return Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  }, 2166136261) >>> 0;
+}
+
+function createSeededRandom(seedValue) {
+  let seed = hashString(seedValue);
+
+  return () => {
+    seed = (seed + 0x6D2B79F5) >>> 0;
+    let value = seed;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function shuffle(values) {
   return [...values].sort(() => Math.random() - 0.5);
+}
+
+function shuffleSeeded(values, seedValue) {
+  const random = createSeededRandom(seedValue);
+  const shuffled = [...values];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const targetIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[targetIndex]] = [shuffled[targetIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
+function getDailyRushNumber(dateKey) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const [epochYear, epochMonth, epochDay] = DAILY_RUSH_EPOCH.split('-').map(Number);
+  const dateValue = Date.UTC(year, month - 1, day);
+  const epochValue = Date.UTC(epochYear, epochMonth - 1, epochDay);
+
+  return Math.max(1, Math.floor((dateValue - epochValue) / 86400000) + 1);
+}
+
+function puzzleFitsAnyMode(puzzle, targetModes) {
+  return targetModes.some((targetMode) => puzzleFitsMode(puzzle, targetMode));
+}
+
+function getDailyRushMateInRange(slotIndex) {
+  if (slotIndex <= 2) {
+    return { min: 1, max: 1 };
+  }
+
+  if (slotIndex <= 6) {
+    return { min: 1, max: 2 };
+  }
+
+  return { min: 2, max: 3 };
+}
+
+function getDailyRushEligiblePuzzleIndexes() {
+  return puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => isProductionTrackPuzzle(puzzle))
+    .filter(({ puzzle }) => puzzleFitsAnyMode(puzzle, ['rush', 'blitz', 'classic', 'survival']))
+    .map(({ index }) => index);
+}
+
+function buildDailyRushSequence(dateKey = getTodayKey()) {
+  const productionIndexes = getDailyRushEligiblePuzzleIndexes();
+
+  if (productionIndexes.length === 0) {
+    return [];
+  }
+
+  const seededIndexes = shuffleSeeded(productionIndexes, `daily-rush:${dateKey}`);
+  const selectedIndexes = [];
+
+  for (let slotIndex = 0; slotIndex < DAILY_RUSH_PUZZLE_COUNT; slotIndex += 1) {
+    const mateInRange = getDailyRushMateInRange(slotIndex);
+    const preferredIndexes = seededIndexes.filter((index) => {
+      return puzzles[index].mateIn >= mateInRange.min && puzzles[index].mateIn <= mateInRange.max;
+    });
+    const fallbackIndexes = seededIndexes.filter((index) => puzzles[index].mateIn <= mateInRange.max);
+    const sourcePool = preferredIndexes.length > 0
+      ? preferredIndexes
+      : fallbackIndexes.length > 0
+        ? fallbackIndexes
+        : seededIndexes;
+    const unusedPool = sourcePool.filter((index) => !selectedIndexes.includes(index));
+    const finalPool = unusedPool.length > 0 ? unusedPool : sourcePool;
+    const pickSeed = hashString(`${dateKey}:${slotIndex}:${mateInRange.min}-${mateInRange.max}`);
+
+    selectedIndexes.push(finalPool[pickSeed % finalPool.length]);
+  }
+
+  return selectedIndexes;
 }
 
 function getRushModeConfig(rushModeKey) {
@@ -452,6 +564,59 @@ function getRushBadges(result) {
     result.bestCombo >= 5 ? 'Combo 5' : '',
     result.averageSolveTime < 20 && result.solved >= 3 ? 'Fast Hands' : '',
   ].filter(Boolean);
+}
+
+function getDailyRushOutcomeEmoji(outcome) {
+  return {
+    perfect: '🟩',
+    solved: '🟨',
+    missed: '🟥',
+    skipped: '⬛',
+    notReached: '⬛',
+  }[outcome?.status || outcome] || '⬛';
+}
+
+function getDailyRushOutcomeRow(outcomes = [], totalPuzzles = DAILY_RUSH_PUZZLE_COUNT) {
+  return Array.from({ length: totalPuzzles }, (_, index) => {
+    return getDailyRushOutcomeEmoji(outcomes[index] || 'notReached');
+  }).join('');
+}
+
+function formatDailyRushShareText(result) {
+  return [
+    'QuickMate Daily Rush',
+    `#${result.dailyRushNumber} | ${result.dailyRushDate} | ${result.dailyRushLabel}`,
+    `${result.totalScore} score | ${result.solved}/${result.totalPuzzles} solved`,
+    `${result.rank} | combo ${result.bestCombo} | streak ${result.dailyRushStreak}`,
+    getDailyRushOutcomeRow(result.outcomes, result.totalPuzzles),
+    'quickmate.local',
+  ].join('\n');
+}
+
+function getDailyRushStoredResult(result) {
+  return {
+    date: result.dailyRushDate,
+    dailyRushNumber: result.dailyRushNumber,
+    score: result.totalScore,
+    solved: result.solved,
+    totalPuzzles: result.totalPuzzles,
+    livesRemaining: result.livesRemaining,
+    mistakes: result.mistakes,
+    misses: result.misses,
+    skips: result.skips,
+    bestCombo: result.bestCombo,
+    rank: result.rank,
+    streak: result.dailyRushStreak,
+    outcomes: result.outcomes,
+    puzzleIds: result.puzzleIds,
+    completedAt: result.completedAt,
+  };
+}
+
+function getNextDailyRushStreak(currentStats, dateKey) {
+  return currentStats.dailyRushDate === getYesterdayKey(dateKey)
+    ? (currentStats.dailyRushStreak || 0) + 1
+    : 1;
 }
 
 function getRushReviewItem(item, reason, details = {}) {
@@ -631,6 +796,36 @@ function createRushChestReward({ rushMode, score, rank, isNewBest }) {
   };
 }
 
+function getDailyRushChestType(score, rank) {
+  if (score >= 2500 || ['Attacker', 'Closer', 'Checkmate Machine', 'QuickMate Master'].includes(rank)) {
+    return getChestTypeById('royal-chest');
+  }
+
+  if (score >= 1200 || rank === 'Tactician') {
+    return getChestTypeById('tactical-chest');
+  }
+
+  return getChestTypeById('basic-chest');
+}
+
+function createDailyRushChestReward({ score, rank, dateKey }) {
+  const chestType = getDailyRushChestType(score, rank);
+  const earnedAt = new Date().toISOString();
+
+  return {
+    chestId: `daily-rush-${dateKey}-${chestType.id}`,
+    chestTypeId: chestType.id,
+    name: chestType.name,
+    tier: chestType.tier,
+    earnedFrom: `Daily Rush ${dateKey}`,
+    earnedAt,
+    sourceScore: score,
+    sourceRank: rank,
+    bonusReason: 'Official Daily Rush completion',
+    opened: false,
+  };
+}
+
 function getRandomUnownedCollectionItem(ownedCollectionItems) {
   const ownedIds = new Set(ownedCollectionItems);
   const unownedItems = COLLECTION_ITEMS.filter((item) => !ownedIds.has(item.collectionItemId));
@@ -650,6 +845,7 @@ function loadStats() {
     const bestBlitzRushScore = parsed.bestBlitzRushScore || 0;
     const bestClassicRushScore = parsed.bestClassicRushScore ?? legacyBestRushScore;
     const bestSurvivalRushScore = parsed.bestSurvivalRushScore || 0;
+    const bestDailyRushScore = parsed.bestDailyRushScore || parsed.dailyRushOfficialResult?.score || 0;
     const ownedCollectionItems = normalizeOwnedCollectionItems(parsed.ownedCollectionItems);
     const unopenedChests = normalizeUnopenedChests(parsed.unopenedChests);
     return {
@@ -664,12 +860,16 @@ function loadStats() {
       bestBlitzRushScore,
       bestClassicRushScore,
       bestSurvivalRushScore,
+      bestDailyRushScore,
       bestRushCombo: parsed.bestRushCombo
         || Math.max(0, ...(parsed.rushHistory || []).map((run) => run.bestCombo || 0)),
       rushGamesPlayed: parsed.rushGamesPlayed || 0,
       rushHistory: parsed.rushHistory || [],
       bestTimeByPuzzleId: parsed.bestTimeByPuzzleId || {},
       puzzleCompletions: parsed.puzzleCompletions || {},
+      dailyRushDate: parsed.dailyRushDate || '',
+      dailyRushOfficialResult: parsed.dailyRushOfficialResult || null,
+      dailyRushStreak: parsed.dailyRushStreak || 0,
       ownedCollectionItems,
       unopenedChests,
       collectionStats: getCollectionStatsSummary(ownedCollectionItems, unopenedChests, parsed.collectionStats),
@@ -684,7 +884,7 @@ function saveStats(stats) {
 }
 
 function getPuzzleBehavior(currentMode) {
-  return currentMode === 'rush'
+  return currentMode === 'rush' || currentMode === 'dailyRush'
     ? PUZZLE_BEHAVIOR.strictMode
     : PUZZLE_BEHAVIOR.trainingMode;
 }
@@ -729,6 +929,8 @@ function formatContentStatus(status) {
 
 const productionRushPuzzleCount = getPuzzleIndexesForMode('rush', { productionTrackOnly: true }).length;
 const hasProductionRushPuzzles = productionRushPuzzleCount > 0;
+const dailyRushProductionPuzzleCount = getDailyRushEligiblePuzzleIndexes().length;
+const hasDailyRushPuzzles = dailyRushProductionPuzzleCount > 0;
 
 export default function App() {
   const todayKey = getTodayKey();
@@ -757,8 +959,11 @@ export default function App() {
   const [rushStats, setRushStats] = useState(DEFAULT_RUSH_STATS);
   const [rushUsedPuzzleIds, setRushUsedPuzzleIds] = useState([]);
   const [rushMissedPuzzles, setRushMissedPuzzles] = useState([]);
+  const [rushPuzzleOutcomes, setRushPuzzleOutcomes] = useState([]);
   const [rushPuzzleMistakes, setRushPuzzleMistakes] = useState(0);
   const [rushReveal, setRushReveal] = useState(null);
+  const [dailyRushRunDate, setDailyRushRunDate] = useState(todayKey);
+  const [dailyRushPracticeRun, setDailyRushPracticeRun] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [openLadderSections, setOpenLadderSections] = useState({ candidate: true, dev: false });
@@ -772,13 +977,21 @@ export default function App() {
   const boardOrientation = puzzle.sideToMove === 'black' ? 'black' : 'white';
   const mateIn = getMateIn(puzzle);
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
-  const isRush = mode === 'rush';
+  const isDailyRush = mode === 'dailyRush';
+  const isRush = mode === 'rush' || isDailyRush;
   const puzzleBehavior = getPuzzleBehavior(mode);
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
   const selectedRushModeBestScore = getBestRushScoreForMode(stats, selectedRushMode);
   const activeRushModeBestScore = getBestRushScoreForMode(stats, activeRushMode);
+  const todaysDailyRushSequence = useMemo(() => buildDailyRushSequence(todayKey), [todayKey]);
+  const dailyRushOfficialResult = stats.dailyRushDate === todayKey ? stats.dailyRushOfficialResult : null;
+  const dailyRushCompletedToday = Boolean(dailyRushOfficialResult);
+  const dailyRushNumber = getDailyRushNumber(todayKey);
+  const dailyRushStatusLabel = dailyRushCompletedToday ? 'Completed' : 'Open today';
+  const rushRunShouldFinishAfterReveal = isDailyRush
+    && rushUsedPuzzleIds.length >= DAILY_RUSH_PUZZLE_COUNT;
   const boardIsInteractive = screen === 'game'
     && !isComplete
     && Boolean(expectedMove)
@@ -909,6 +1122,37 @@ export default function App() {
     startPuzzle(dailyPuzzleIndex, 'daily');
   }
 
+  function startDailyRush() {
+    const dateKey = getTodayKey();
+    const queue = buildDailyRushSequence(dateKey);
+    const isPracticeReplay = stats.dailyRushDate === dateKey;
+
+    if (queue.length === 0) {
+      setFeedback('No production-track Daily Rush puzzles are available.');
+      return;
+    }
+
+    setActiveRushMode(RUSH_MODE_KEYS.dailyRush);
+    setDailyRushRunDate(dateKey);
+    setDailyRushPracticeRun(isPracticeReplay);
+    setRushQueue(queue);
+    setRushQueueCursor(0);
+    setRushTimeLeft(0);
+    setRushLives(DAILY_RUSH_LIVES);
+    setRushStats(DEFAULT_RUSH_STATS);
+    setRushUsedPuzzleIds([]);
+    setRushMissedPuzzles([]);
+    setRushPuzzleOutcomes([]);
+    setRushPuzzleMistakes(0);
+    setRushReveal(null);
+    resetPuzzle(
+      queue[0],
+      'dailyRush',
+      isPracticeReplay ? "Practice Replay. This will not replace today's official result." : 'Daily Rush: solve 10 fixed puzzles.',
+    );
+    setScreen('game');
+  }
+
   function openRushIntro() {
     setMode('rush');
     setScreen('rushIntro');
@@ -931,9 +1175,16 @@ export default function App() {
   }
 
   function returnToRushFromChest() {
+    const wasDailyRush = result?.mode === 'dailyRush';
+
     setIsComplete(false);
     setResult(null);
     setChestOpenResult(null);
+    if (wasDailyRush) {
+      setScreen('home');
+      return;
+    }
+
     openRushIntro();
   }
 
@@ -955,8 +1206,10 @@ export default function App() {
     setRushStats(DEFAULT_RUSH_STATS);
     setRushUsedPuzzleIds([]);
     setRushMissedPuzzles([]);
+    setRushPuzzleOutcomes([]);
     setRushPuzzleMistakes(0);
     setRushReveal(null);
+    setDailyRushPracticeRun(false);
     resetPuzzle(queue[0], 'rush');
     setScreen('game');
   }
@@ -985,6 +1238,19 @@ export default function App() {
     nextUsedPuzzleIds = rushUsedPuzzleIds,
     nextFeedback = 'Find the forcing move.',
   ) {
+    if (isDailyRush) {
+      const nextCursor = nextUsedPuzzleIds.length;
+
+      if (nextCursor >= rushQueue.length || nextCursor >= DAILY_RUSH_PUZZLE_COUNT) {
+        endRush({ usedPuzzleIdsOverride: nextUsedPuzzleIds });
+        return;
+      }
+
+      setRushQueueCursor(nextCursor);
+      resetPuzzle(rushQueue[nextCursor], 'dailyRush', nextFeedback);
+      return;
+    }
+
     const nextQueue = buildRushQueue(nextSolvedCount, nextUsedPuzzleIds, activeRushMode);
     const nextCursor = 0;
 
@@ -998,76 +1264,155 @@ export default function App() {
     resetPuzzle(nextQueue[nextCursor], 'rush', nextFeedback);
   }
 
-  function endRush() {
-    const averageSolveTime = rushStats.solved > 0
-      ? Math.round(rushStats.totalSolveSeconds / rushStats.solved)
+  function endRush({
+    rushStatsOverride = rushStats,
+    livesOverride = rushLives,
+    missedPuzzlesOverride = rushMissedPuzzles,
+    usedPuzzleIdsOverride = rushUsedPuzzleIds,
+    outcomesOverride = rushPuzzleOutcomes,
+  } = {}) {
+    const finalRushStats = rushStatsOverride;
+    const finalLives = livesOverride;
+    const finalMissedPuzzles = missedPuzzlesOverride;
+    const finalUsedPuzzleIds = usedPuzzleIdsOverride;
+    const finalOutcomes = outcomesOverride;
+    const endingDailyRush = mode === 'dailyRush' || activeRushMode === RUSH_MODE_KEYS.dailyRush;
+    const finalDailyRushDate = dailyRushRunDate || todayKey;
+    const completedAt = new Date().toISOString();
+    const averageSolveTime = finalRushStats.solved > 0
+      ? Math.round(finalRushStats.totalSolveSeconds / finalRushStats.solved)
       : 0;
     const rushMode = activeRushModeConfig;
-    const previousBestModeScore = activeRushModeBestScore;
+    const previousBestModeScore = endingDailyRush
+      ? stats.bestDailyRushScore || 0
+      : activeRushModeBestScore;
     const previousBestRushCombo = stats.bestRushCombo || 0;
-    const rank = getRushRank(rushStats.totalScore);
-    const rankProgress = getRushRankProgress(rushStats.totalScore);
-    const isNewBest = rushStats.totalScore > previousBestModeScore;
-    const earnedChest = createRushChestReward({
-      rushMode,
-      score: rushStats.totalScore,
-      rank,
-      isNewBest,
-    });
+    const rank = getRushRank(finalRushStats.totalScore);
+    const rankProgress = getRushRankProgress(finalRushStats.totalScore);
+    const dailyRushIsOfficial = endingDailyRush
+      && !dailyRushPracticeRun
+      && stats.dailyRushDate !== finalDailyRushDate;
+    const dailyRushStreak = endingDailyRush
+      ? (dailyRushIsOfficial ? getNextDailyRushStreak(stats, finalDailyRushDate) : stats.dailyRushStreak || 0)
+      : 0;
+    const isNewBest = endingDailyRush
+      ? dailyRushIsOfficial && finalRushStats.totalScore > previousBestModeScore
+      : finalRushStats.totalScore > previousBestModeScore;
+    const earnedChest = endingDailyRush
+      ? (dailyRushIsOfficial
+          ? createDailyRushChestReward({
+              score: finalRushStats.totalScore,
+              rank,
+              dateKey: finalDailyRushDate,
+            })
+          : null)
+      : createRushChestReward({
+          rushMode,
+          score: finalRushStats.totalScore,
+          rank,
+          isNewBest,
+        });
     const nextResult = {
-      mode: 'rush',
+      mode: endingDailyRush ? 'dailyRush' : 'rush',
       rushMode: rushMode.key,
       rushModeLabel: rushMode.label,
-      livesRemaining: rushLives,
-      solved: rushStats.solved,
-      perfectSolves: rushStats.perfectSolves,
-      mistakes: rushStats.mistakes,
-      misses: rushStats.misses,
-      skips: rushStats.skips,
-      totalScore: rushStats.totalScore,
+      livesRemaining: finalLives,
+      solved: finalRushStats.solved,
+      perfectSolves: finalRushStats.perfectSolves,
+      mistakes: finalRushStats.mistakes,
+      misses: finalRushStats.misses,
+      skips: finalRushStats.skips,
+      totalScore: finalRushStats.totalScore,
       averageSolveTime,
-      bestCombo: rushStats.bestCombo,
+      bestCombo: finalRushStats.bestCombo,
       rank,
       rankProgress,
       isNewBest,
-      isNewBestCombo: rushStats.bestCombo > previousBestRushCombo,
-      bestRushScore: Math.max(getBestOverallRushScore(stats), rushStats.totalScore),
-      bestModeScore: Math.max(previousBestModeScore, rushStats.totalScore),
-      bestRushCombo: Math.max(previousBestRushCombo, rushStats.bestCombo),
-      missedPuzzles: rushMissedPuzzles,
+      isNewBestCombo: !endingDailyRush && finalRushStats.bestCombo > previousBestRushCombo,
+      bestRushScore: Math.max(getBestOverallRushScore(stats), finalRushStats.totalScore),
+      bestModeScore: endingDailyRush && !dailyRushIsOfficial
+        ? previousBestModeScore
+        : Math.max(previousBestModeScore, finalRushStats.totalScore),
+      bestRushCombo: Math.max(previousBestRushCombo, finalRushStats.bestCombo),
+      missedPuzzles: finalMissedPuzzles,
       earnedChest,
+      dailyRushDate: endingDailyRush ? finalDailyRushDate : '',
+      dailyRushNumber: endingDailyRush ? getDailyRushNumber(finalDailyRushDate) : 0,
+      dailyRushLabel: endingDailyRush
+        ? (dailyRushIsOfficial ? 'Official Result' : 'Practice Replay')
+        : '',
+      dailyRushIsOfficial,
+      dailyRushStreak,
+      totalPuzzles: endingDailyRush ? DAILY_RUSH_PUZZLE_COUNT : undefined,
+      puzzleIds: endingDailyRush
+        ? rushQueue.slice(0, DAILY_RUSH_PUZZLE_COUNT).map((index) => puzzles[index].id)
+        : finalUsedPuzzleIds,
+      outcomes: endingDailyRush ? finalOutcomes.slice(0, DAILY_RUSH_PUZZLE_COUNT) : finalOutcomes,
+      completedAt,
     };
     const historyEntry = {
-      date: new Date().toISOString(),
+      date: completedAt,
       rushMode: rushMode.key,
       rushModeLabel: rushMode.label,
-      score: rushStats.totalScore,
+      score: finalRushStats.totalScore,
       rank,
-      livesRemaining: rushLives,
-      solved: rushStats.solved,
-      mistakes: rushStats.mistakes,
-      misses: rushStats.misses,
-      skips: rushStats.skips,
-      bestCombo: rushStats.bestCombo,
+      livesRemaining: finalLives,
+      solved: finalRushStats.solved,
+      mistakes: finalRushStats.mistakes,
+      misses: finalRushStats.misses,
+      skips: finalRushStats.skips,
+      bestCombo: finalRushStats.bestCombo,
     };
 
     setIsComplete(true);
     setResult(nextResult);
-    setFeedback('Rush complete.');
+    setFeedback(endingDailyRush ? 'Daily Rush complete.' : 'Rush complete.');
     setStats((currentStats) => {
       const ownedCollectionItems = normalizeOwnedCollectionItems(currentStats.ownedCollectionItems);
-      const unopenedChests = [...normalizeUnopenedChests(currentStats.unopenedChests), earnedChest];
+      const currentUnopenedChests = normalizeUnopenedChests(currentStats.unopenedChests);
+      const dailyRushIsOfficialForStats = endingDailyRush
+        && !dailyRushPracticeRun
+        && currentStats.dailyRushDate !== finalDailyRushDate;
+      const dailyRushChest = endingDailyRush && dailyRushIsOfficialForStats ? earnedChest : null;
+      const chestToStore = endingDailyRush ? dailyRushChest : earnedChest;
+      const unopenedChests = chestToStore
+        ? [...currentUnopenedChests, chestToStore]
+        : currentUnopenedChests;
+      const nextDailyRushStreak = dailyRushIsOfficialForStats
+        ? getNextDailyRushStreak(currentStats, finalDailyRushDate)
+        : currentStats.dailyRushStreak || 0;
       const nextStats = {
         ...currentStats,
-        [rushMode.bestScoreKey]: Math.max(currentStats[rushMode.bestScoreKey] || 0, rushStats.totalScore),
-        bestRushScore: Math.max(getBestOverallRushScore(currentStats), rushStats.totalScore),
-        bestRushCombo: Math.max(currentStats.bestRushCombo || 0, rushStats.bestCombo),
-        rushGamesPlayed: (currentStats.rushGamesPlayed || 0) + 1,
-        rushHistory: [historyEntry, ...(currentStats.rushHistory || [])].slice(0, 5),
         ownedCollectionItems,
         unopenedChests,
         collectionStats: getCollectionStatsSummary(ownedCollectionItems, unopenedChests, currentStats.collectionStats),
       };
+
+      if (endingDailyRush) {
+        nextStats.bestDailyRushScore = dailyRushIsOfficialForStats
+          ? Math.max(currentStats.bestDailyRushScore || 0, finalRushStats.totalScore)
+          : currentStats.bestDailyRushScore || 0;
+
+        if (dailyRushIsOfficialForStats) {
+          const officialResult = {
+            ...nextResult,
+            dailyRushStreak: nextDailyRushStreak,
+          };
+
+          nextStats.dailyRushDate = finalDailyRushDate;
+          nextStats.dailyRushStreak = nextDailyRushStreak;
+          nextStats.dailyRushOfficialResult = getDailyRushStoredResult(officialResult);
+        }
+      } else {
+        nextStats[rushMode.bestScoreKey] = Math.max(
+          currentStats[rushMode.bestScoreKey] || 0,
+          finalRushStats.totalScore,
+        );
+        nextStats.bestRushScore = Math.max(getBestOverallRushScore(currentStats), finalRushStats.totalScore);
+        nextStats.bestRushCombo = Math.max(currentStats.bestRushCombo || 0, finalRushStats.bestCombo);
+        nextStats.rushGamesPlayed = (currentStats.rushGamesPlayed || 0) + 1;
+        nextStats.rushHistory = [historyEntry, ...(currentStats.rushHistory || [])].slice(0, 5);
+      }
 
       saveStats(nextStats);
       return nextStats;
@@ -1079,7 +1424,7 @@ export default function App() {
       return;
     }
 
-    if (rushLives <= 0 || (rushIsTimed && rushTimeLeft <= 0)) {
+    if (rushLives <= 0 || (rushIsTimed && rushTimeLeft <= 0) || rushRunShouldFinishAfterReveal) {
       endRush();
       return;
     }
@@ -1094,6 +1439,14 @@ export default function App() {
 
     const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
     const nextLives = Math.max(0, rushLives - 1);
+    const nextOutcomes = [
+      ...rushPuzzleOutcomes,
+      {
+        id: puzzle.id,
+        status: 'skipped',
+        wrongMoveCount: rushPuzzleMistakes,
+      },
+    ];
 
     setRushMissedPuzzles((items) => [
       ...items,
@@ -1107,6 +1460,7 @@ export default function App() {
     }));
     setRushLives(nextLives);
     setRushUsedPuzzleIds(nextUsedPuzzleIds);
+    setRushPuzzleOutcomes(nextOutcomes);
     if (rushIsTimed) {
       setRushTimeLeft((value) => Math.max(0, value - RUSH_SKIP_TIME_PENALTY));
     }
@@ -1220,23 +1574,42 @@ export default function App() {
     }
 
     updateStatsForSolve(nextResult);
-    setRushStats((currentStats) => {
-      return {
-        ...currentStats,
-        solved: currentStats.solved + 1,
-        perfectSolves: currentStats.perfectSolves + (isPerfectSolve ? 1 : 0),
-        currentCombo: nextCombo,
-        bestCombo: Math.max(currentStats.bestCombo, nextCombo),
-        totalScore: currentStats.totalScore + awardedScore,
-        totalSolveSeconds: currentStats.totalSolveSeconds + seconds,
-      };
-    });
+    const nextRushStats = {
+      ...rushStats,
+      solved: rushStats.solved + 1,
+      perfectSolves: rushStats.perfectSolves + (isPerfectSolve ? 1 : 0),
+      currentCombo: nextCombo,
+      bestCombo: Math.max(rushStats.bestCombo, nextCombo),
+      totalScore: rushStats.totalScore + awardedScore,
+      totalSolveSeconds: rushStats.totalSolveSeconds + seconds,
+    };
+
+    setRushStats(nextRushStats);
     if (timeBonus > 0) {
       setRushTimeLeft((value) => Math.min(activeRushModeConfig.durationSeconds, value + timeBonus));
     }
 
     const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
+    const nextOutcomes = [
+      ...rushPuzzleOutcomes,
+      {
+        id: puzzle.id,
+        status: isPerfectSolve ? 'perfect' : 'solved',
+        wrongMoveCount: rushPuzzleMistakes,
+      },
+    ];
+
     setRushUsedPuzzleIds(nextUsedPuzzleIds);
+    setRushPuzzleOutcomes(nextOutcomes);
+    if (isDailyRush && nextUsedPuzzleIds.length >= DAILY_RUSH_PUZZLE_COUNT) {
+      endRush({
+        rushStatsOverride: nextRushStats,
+        usedPuzzleIdsOverride: nextUsedPuzzleIds,
+        outcomesOverride: nextOutcomes,
+      });
+      return;
+    }
+
     advanceRushPuzzle(rushStats.solved + 1, nextUsedPuzzleIds, feedbackParts.join(' | '));
   }
 
@@ -1245,18 +1618,20 @@ export default function App() {
       return;
     }
 
-    const resultText = [
-      result.mode === 'rush'
-        ? `QuickMate ${result.rushModeLabel || 'Rush'}`
-        : `QuickMate ${result.mode === 'daily' ? `Daily ${todayKey}` : puzzle.title}`,
-      result.mode === 'rush'
-        ? `${result.totalScore} points | ${result.solved} solved | ${result.misses} misses | ${result.skips} skips`
-        : `${result.score} points in ${formatTime(result.seconds)}`,
-      result.mode === 'rush'
-        ? `${result.rank} | ${result.livesRemaining} lives | combo ${result.bestCombo} | avg ${formatTime(result.averageSolveTime)}`
-        : `Mate in ${result.mateIn} | ${result.mistakes} mistakes | ${result.hints} hints`,
-      'quickmate.local',
-    ].join('\n');
+    const resultText = result.mode === 'dailyRush'
+      ? formatDailyRushShareText(result)
+      : [
+          result.mode === 'rush'
+            ? `QuickMate ${result.rushModeLabel || 'Rush'}`
+            : `QuickMate ${result.mode === 'daily' ? `Daily ${todayKey}` : puzzle.title}`,
+          result.mode === 'rush'
+            ? `${result.totalScore} points | ${result.solved} solved | ${result.misses} misses | ${result.skips} skips`
+            : `${result.score} points in ${formatTime(result.seconds)}`,
+          result.mode === 'rush'
+            ? `${result.rank} | ${result.livesRemaining} lives | combo ${result.bestCombo} | avg ${formatTime(result.averageSolveTime)}`
+            : `Mate in ${result.mateIn} | ${result.mistakes} mistakes | ${result.hints} hints`,
+          'quickmate.local',
+        ].join('\n');
 
     if (!navigator.clipboard?.writeText) {
       setCopyStatus('Copy unavailable');
@@ -1408,15 +1783,24 @@ export default function App() {
         currentCombo: 0,
       }));
 
+      if (rushIsTimed) {
+        setRushTimeLeft((value) => Math.max(0, value - RUSH_WRONG_MOVE_TIME_PENALTY));
+      }
+
       if (!isMissed) {
-        if (rushIsTimed) {
-          setRushTimeLeft((value) => Math.max(0, value - RUSH_WRONG_MOVE_TIME_PENALTY));
-        }
         setFeedback(RUSH_FIRST_MISS_FEEDBACK);
         return;
       }
 
       const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
+      const nextOutcomes = [
+        ...rushPuzzleOutcomes,
+        {
+          id: puzzle.id,
+          status: 'missed',
+          wrongMoveCount: nextPuzzleMistakes,
+        },
+      ];
 
       setRushMissedPuzzles((items) => [
         ...items,
@@ -1424,6 +1808,7 @@ export default function App() {
       ]);
       setRushLives(nextLives);
       setRushUsedPuzzleIds(nextUsedPuzzleIds);
+      setRushPuzzleOutcomes(nextOutcomes);
       setSelectedSquare(null);
       setRushReveal({ reason: 'Missed', wrongMoveCount: nextPuzzleMistakes });
       setFeedback(nextLives === 0
@@ -1555,7 +1940,12 @@ export default function App() {
         type="button"
         key={item.id}
         className={`puzzle-item ${index === puzzleIndex ? 'active' : ''} ${status}`}
-        onClick={() => startPuzzle(index, isRush ? 'rush' : mode === 'daily' ? 'daily' : 'ladder')}
+        onClick={() => {
+          if (!isRush) {
+            startPuzzle(index, mode === 'daily' ? 'daily' : 'ladder');
+          }
+        }}
+        disabled={isRush}
       >
         <span>
           <strong>{item.title}</strong>
@@ -1651,7 +2041,7 @@ export default function App() {
             </div>
             <div className="streak-pill">
               <Sparkles size={17} />
-              <span>{stats.currentDailyStreak} day streak</span>
+              <span>{stats.dailyRushStreak || 0} Daily Rush streak</span>
             </div>
           </div>
 
@@ -1663,6 +2053,27 @@ export default function App() {
                 <small>Blitz, Classic, or Survival | best rank {bestRushRank}</small>
               </span>
               <Play size={24} />
+            </button>
+
+            <button
+              type="button"
+              className={`mode-card daily-rush-card ${dailyRushCompletedToday ? 'completed' : ''}`}
+              onClick={startDailyRush}
+              disabled={!hasDailyRushPuzzles}
+            >
+              <CalendarDays size={26} />
+              <span>
+                <strong>Today's Daily Rush</strong>
+                <small>
+                  {dailyRushStatusLabel} | streak {stats.dailyRushStreak || 0}
+                </small>
+                <small>
+                  {dailyRushCompletedToday
+                    ? `Official score ${dailyRushOfficialResult.score}`
+                    : `${DAILY_RUSH_PUZZLE_COUNT} fixed puzzles | starts ${puzzles[todaysDailyRushSequence[0]]?.title || 'when ready'}`}
+                </small>
+              </span>
+              <Play size={22} />
             </button>
 
             <div className="rush-home-metrics" aria-label="Rush performance">
@@ -1745,8 +2156,8 @@ export default function App() {
 
           <div className="home-stats" aria-label="Saved stats">
             <div>
-              <strong>{stats.currentDailyStreak}</strong>
-              <span>Daily streak</span>
+              <strong>{stats.dailyRushStreak || 0}</strong>
+              <span>Daily Rush streak</span>
             </div>
             <div>
               <strong>{ladderSolvedCount}/{puzzles.length}</strong>
@@ -1808,6 +2219,16 @@ export default function App() {
                     <li>Perfect solves have no wrong moves and build combo multipliers.</li>
                     <li>Fast or perfect solves can add time in timed modes.</li>
                     <li>Survival starts easy and allows deeper mate sequences as you solve and as content expands.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Daily Rush</h3>
+                  <ul className="help-list">
+                    <li>Daily Rush is a 10-puzzle fixed sequence based on today's local date.</li>
+                    <li>Everyone playing the same date gets the same production-track puzzle sequence.</li>
+                    <li>The first completed run of the day is official and can award one daily chest.</li>
+                    <li>Practice replays are allowed after completion but do not replace the official result or award more daily chests.</li>
+                    <li>Copy Daily Result shares score, solved count, rank, streak, and the outcome row.</li>
                   </ul>
                 </section>
                 <section className="help-section">
@@ -2102,6 +2523,7 @@ export default function App() {
             {mode === 'daily' ? 'Daily QuickMate' : ''}
             {mode === 'ladder' ? 'Puzzle Ladder' : ''}
             {mode === 'rush' ? activeRushModeConfig.label : ''}
+            {mode === 'dailyRush' ? 'Daily Rush' : ''}
           </h1>
         </div>
         <div className="topbar-actions">
@@ -2110,9 +2532,11 @@ export default function App() {
               <ChevronLeft size={20} />
             </button>
           )}
-          <button type="button" className="icon-button" onClick={() => resetPuzzle()} aria-label="Reset puzzle">
-            <RotateCcw size={18} />
-          </button>
+          {!isRush && (
+            <button type="button" className="icon-button" onClick={() => resetPuzzle()} aria-label="Reset puzzle">
+              <RotateCcw size={18} />
+            </button>
+          )}
           {!isRush && (
             <button type="button" className="icon-button" onClick={() => goToOffset(1)} aria-label="Next puzzle">
               <ChevronRight size={20} />
@@ -2124,8 +2548,13 @@ export default function App() {
       <section className="workspace">
         <aside className="sidebar" aria-label="Puzzle list">
           <div className="panel-header">
-            <h2>{mode === 'daily' ? 'Daily' : isRush ? 'Rush Queue' : 'Puzzles'}</h2>
-            <span>{mode === 'daily' ? todayKey : isRush ? `${rushQueueCursor + 1}/${rushQueue.length}` : puzzles.length}</span>
+            <h2>{mode === 'daily' ? 'Daily' : isDailyRush ? 'Daily Rush' : isRush ? 'Rush Queue' : 'Puzzles'}</h2>
+            <span>
+              {mode === 'daily' ? todayKey : ''}
+              {isDailyRush ? `${Math.min(rushQueueCursor + 1, DAILY_RUSH_PUZZLE_COUNT)}/${DAILY_RUSH_PUZZLE_COUNT}` : ''}
+              {mode === 'rush' ? `${rushQueueCursor + 1}/${rushQueue.length}` : ''}
+              {!isRush && mode !== 'daily' ? puzzles.length : ''}
+            </span>
           </div>
           <div className="puzzle-list">
             {isRush ? (
@@ -2189,7 +2618,7 @@ export default function App() {
               <div className="stats-grid rush-grid">
                 <div className="stat">
                   <Zap size={18} />
-                  <span>{activeRushModeConfig.shortLabel}</span>
+                  <span>{isDailyRush ? `#${getDailyRushNumber(dailyRushRunDate)}` : activeRushModeConfig.shortLabel}</span>
                   <small>Mode</small>
                 </div>
                 {rushIsTimed && (
@@ -2201,8 +2630,8 @@ export default function App() {
                 )}
                 <div className="stat">
                   <Trophy size={18} />
-                  <span>{activeRushModeBestScore}</span>
-                  <small>Mode Best</small>
+                  <span>{isDailyRush ? stats.dailyRushStreak || 0 : activeRushModeBestScore}</span>
+                  <small>{isDailyRush ? 'Daily streak' : 'Mode Best'}</small>
                 </div>
                 <div className="stat">
                   <BadgeCheck size={18} />
@@ -2216,7 +2645,7 @@ export default function App() {
                 </div>
                 <div className="stat">
                   <BadgeCheck size={18} />
-                  <span>{rushStats.solved}</span>
+                  <span>{isDailyRush ? `${rushStats.solved}/${DAILY_RUSH_PUZZLE_COUNT}` : rushStats.solved}</span>
                   <small>Solved</small>
                 </div>
                 <div className="stat">
@@ -2294,7 +2723,7 @@ export default function App() {
             {isRush && rushReveal ? (
               <button type="button" className="primary-action" onClick={continueRushAfterReveal}>
                 <ChevronRight size={18} />
-                {rushLives <= 0 ? 'Finish Run' : 'Next Puzzle'}
+                {rushLives <= 0 || rushRunShouldFinishAfterReveal ? 'Finish Run' : 'Next Puzzle'}
               </button>
             ) : (
               <>
@@ -2338,18 +2767,35 @@ export default function App() {
 
           <div className="saved-stats">
             <Trophy size={18} />
-            <span>{isRush ? `${activeRushModeConfig.label} best ${activeRushModeBestScore}` : `Best score ${stats.bestScore}`}</span>
+            <span>
+              {isDailyRush
+                ? `${dailyRushPracticeRun ? 'Practice Replay' : 'Official attempt'} | ${dailyRushRunDate}`
+                : isRush
+                  ? `${activeRushModeConfig.label} best ${activeRushModeBestScore}`
+                  : `Best score ${stats.bestScore}`}
+            </span>
           </div>
         </aside>
       </section>
 
       {isComplete && result && (
         <section className="result-screen" role="dialog" aria-modal="true" aria-label="Puzzle result">
-          {result.mode === 'rush' ? (
+          {result.mode === 'rush' || result.mode === 'dailyRush' ? (
             <div className="result-panel">
               <Zap size={42} />
-              <p className="eyebrow">Rush complete</p>
-              <h2>{result.rushModeLabel || 'Rush Mode'}</h2>
+              <p className="eyebrow">{result.mode === 'dailyRush' ? result.dailyRushLabel : 'Rush complete'}</p>
+              <h2>
+                {result.mode === 'dailyRush'
+                  ? `Daily Rush #${result.dailyRushNumber}`
+                  : result.rushModeLabel || 'Rush Mode'}
+              </h2>
+              {result.mode === 'dailyRush' && (
+                <div className="daily-result-strip" aria-label="Daily Rush summary">
+                  <span>{result.dailyRushDate}</span>
+                  <span>{result.solved}/{result.totalPuzzles} solved</span>
+                  <span>{getDailyRushOutcomeRow(result.outcomes, result.totalPuzzles)}</span>
+                </div>
+              )}
               <div className="result-score">
                 <Sparkles size={20} />
                 <strong>{result.totalScore}</strong>
@@ -2361,8 +2807,12 @@ export default function App() {
                   <strong>{result.rank}</strong>
                 </div>
                 <div className={`highlight-card ${result.isNewBest ? 'new-best' : ''}`}>
-                  <span>{result.isNewBest ? 'New Best' : 'Mode Best'}</span>
-                  <strong>{result.bestModeScore}</strong>
+                  <span>
+                    {result.mode === 'dailyRush'
+                      ? result.dailyRushLabel
+                      : result.isNewBest ? 'New Best' : 'Mode Best'}
+                  </span>
+                  <strong>{result.mode === 'dailyRush' ? `${result.solved}/${result.totalPuzzles}` : result.bestModeScore}</strong>
                 </div>
                 <div className={`highlight-card ${result.isNewBestCombo ? 'new-best' : ''}`}>
                   <span>{result.isNewBestCombo ? 'New Best Combo' : 'Best Combo'}</span>
@@ -2396,19 +2846,32 @@ export default function App() {
                 )}
               </div>
               <div className="score-breakdown" aria-label="Rush result">
-                <div><span>Rush mode</span><strong>{result.rushModeLabel || 'Rush Mode'}</strong></div>
+                <div><span>Mode</span><strong>{result.rushModeLabel || 'Rush Mode'}</strong></div>
+                {result.mode === 'dailyRush' && (
+                  <>
+                    <div><span>Daily Rush date</span><strong>{result.dailyRushDate}</strong></div>
+                    <div><span>Daily number</span><strong>#{result.dailyRushNumber}</strong></div>
+                    <div><span>Result type</span><strong>{result.dailyRushLabel}</strong></div>
+                    <div><span>Daily streak</span><strong>{result.dailyRushStreak}</strong></div>
+                  </>
+                )}
                 <div><span>Score</span><strong>{result.totalScore}</strong></div>
-                <div><span>Rush rank</span><strong>{result.rank}</strong></div>
+                <div><span>{result.mode === 'dailyRush' ? 'Rank' : 'Rush rank'}</span><strong>{result.rank}</strong></div>
                 <div><span>Next rank</span><strong>{result.rankProgress.next?.rank || 'Max rank'}</strong></div>
                 <div><span>Needed for next</span><strong>{result.rankProgress.next ? result.rankProgress.pointsNeeded : 0}</strong></div>
                 <div><span>Lives remaining</span><strong>{result.livesRemaining}</strong></div>
-                <div><span>Puzzles solved</span><strong>{result.solved}</strong></div>
+                <div>
+                  <span>Puzzles solved</span>
+                  <strong>{result.mode === 'dailyRush' ? `${result.solved}/${result.totalPuzzles}` : result.solved}</strong>
+                </div>
                 <div><span>Perfect solves</span><strong>{result.perfectSolves}</strong></div>
                 <div><span>Misses</span><strong>{result.misses}</strong></div>
                 <div><span>Mistakes</span><strong>{result.mistakes}</strong></div>
                 <div><span>Skips</span><strong>{result.skips}</strong></div>
                 <div><span>Best combo</span><strong>{result.bestCombo}</strong></div>
-                <div><span>Mode best score</span><strong>{result.bestModeScore}</strong></div>
+                {result.mode === 'rush' && (
+                  <div><span>Mode best score</span><strong>{result.bestModeScore}</strong></div>
+                )}
                 <div><span>Average solve time</span><strong>{formatTime(result.averageSolveTime)}</strong></div>
               </div>
               {getRushBadges(result).length > 0 && (
@@ -2492,7 +2955,7 @@ export default function App() {
                     </button>
                     <button type="button" className="secondary-action" onClick={returnToRushFromChest}>
                       <Zap size={18} />
-                      Back to Rush
+                      {result.mode === 'dailyRush' ? 'Back Home' : 'Back to Rush'}
                     </button>
                   </div>
                 </section>
@@ -2535,7 +2998,7 @@ export default function App() {
                   </div>
                 )}
               </div>
-              {stats.rushHistory.length > 0 && (
+              {result.mode === 'rush' && stats.rushHistory.length > 0 && (
                 <div className="result-history" aria-label="Recent Rush runs">
                   <h3>Recent runs</h3>
                   {stats.rushHistory.map((run) => (
@@ -2548,13 +3011,17 @@ export default function App() {
                 </div>
               )}
               <div className="actions">
-                <button type="button" className="primary-action" onClick={startRush}>
+                <button
+                  type="button"
+                  className="primary-action"
+                  onClick={result.mode === 'dailyRush' ? startDailyRush : startRush}
+                >
                   <Zap size={18} />
-                  Play {selectedRushModeConfig.shortLabel} Again
+                  {result.mode === 'dailyRush' ? 'Practice Replay' : `Play ${selectedRushModeConfig.shortLabel} Again`}
                 </button>
                 <button type="button" className="secondary-action" onClick={copyResult}>
                   <Copy size={18} />
-                  {copyStatus}
+                  {result.mode === 'dailyRush' && copyStatus === 'Copy Result' ? 'Copy Daily Result' : copyStatus}
                 </button>
                 <button type="button" className="secondary-action" onClick={goHome}>
                   <Home size={18} />
