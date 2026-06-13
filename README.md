@@ -69,4 +69,4 @@ Before a puzzle can move out of `contentStatus: "dev"`, verify:
 
 ## Collection System
 
-See `docs/collection-system-plan.md` for the planned cosmetic collection system, including piece sets, board themes, badges, Rush chests, localStorage-only implementation phases, and no-pay-to-win guardrails. The current scaffold lives in `src/collections.js` and is not wired into gameplay yet.
+See `docs/collection-system-plan.md` for the planned cosmetic collection system, including piece sets, board themes, badges, Rush chests, localStorage-only implementation phases, and no-pay-to-win guardrails. The current local implementation awards cosmetic chests from Rush and Pawn Village node clears, while Pawn Village boss rewards can unlock a specific collection piece or a fallback chest. Collection rewards must not grant score boosts, extra lives, timer bonuses, or other gameplay advantages.

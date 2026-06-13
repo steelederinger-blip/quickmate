@@ -106,7 +106,7 @@ const LADDER_WORLD_ZONES = [
     difficultyRange: 'Starter to Easy',
     motifs: ['back-rank basics', 'protected mates', 'promotion finish'],
     bossName: 'Back Rank Guard',
-    rewardPreview: 'Back Rank Guard Badge, Ladder XP',
+    rewardPreview: 'Basic/Tactical Chests, Bronze Rook, Back Rank Guard Badge, Ladder XP',
     unlocked: true,
     color: '#3f7a4f',
   },
@@ -186,6 +186,7 @@ const LADDER_WORLD_ZONES = [
 
 const PAWN_VILLAGE_ZONE_ID = 'pawn-village';
 const PAWN_VILLAGE_BOSS_BADGE = 'Back Rank Guard Badge';
+const PAWN_VILLAGE_BOSS_COLLECTION_REWARD_ID = 'bronze-rook';
 const PAWN_VILLAGE_NODES = [
   {
     id: 'pawn-welcome-mate',
@@ -196,6 +197,7 @@ const PAWN_VILLAGE_NODES = [
     puzzleCount: 3,
     clearRequirement: 2,
     rewardXp: 25,
+    rewardChestTypeId: 'basic-chest',
     motifs: ['back-rank', 'corner-mate', 'rook-file'],
   },
   {
@@ -207,6 +209,7 @@ const PAWN_VILLAGE_NODES = [
     puzzleCount: 3,
     clearRequirement: 2,
     rewardXp: 25,
+    rewardChestTypeId: 'basic-chest',
     motifs: ['back-rank', 'rook-file', 'pinned-defender'],
   },
   {
@@ -218,6 +221,7 @@ const PAWN_VILLAGE_NODES = [
     puzzleCount: 3,
     clearRequirement: 2,
     rewardXp: 25,
+    rewardChestTypeId: 'tactical-chest',
     motifs: ['rook-file', 'queen-sacrifice', 'deflection'],
   },
   {
@@ -229,6 +233,7 @@ const PAWN_VILLAGE_NODES = [
     puzzleCount: 3,
     clearRequirement: 2,
     rewardXp: 25,
+    rewardChestTypeId: 'tactical-chest',
     noHints: true,
     motifs: ['back-rank', 'bishop-diagonal', 'knight-mate'],
   },
@@ -243,6 +248,8 @@ const PAWN_VILLAGE_NODES = [
     lives: 3,
     rewardXp: 100,
     rewardBadge: PAWN_VILLAGE_BOSS_BADGE,
+    rewardCollectionItemId: PAWN_VILLAGE_BOSS_COLLECTION_REWARD_ID,
+    fallbackChestTypeId: 'royal-chest',
     motifs: ['back-rank', 'rook-file', 'deflection', 'pinned-defender'],
   },
 ];
@@ -900,8 +907,49 @@ function getCollectionSetProgress(setId, ownedCollectionItems) {
   };
 }
 
+function getCollectionItemById(collectionItemId) {
+  return COLLECTION_ITEMS.find((item) => item.collectionItemId === collectionItemId) || null;
+}
+
 function getChestTypeById(chestTypeId) {
   return CHEST_TYPES.find((chestType) => chestType.id === chestTypeId) || CHEST_TYPES[0];
+}
+
+function createLadderChestReward({ chestTypeId, nodeId, nodeTitle, bonusReason = 'Pawn Village node clear' }) {
+  const chestType = getChestTypeById(chestTypeId);
+  const earnedAt = new Date().toISOString();
+
+  return {
+    chestId: `ladder-${nodeId}-${chestType.id}-${earnedAt}-${Math.random().toString(36).slice(2, 8)}`,
+    chestTypeId: chestType.id,
+    name: chestType.name,
+    tier: chestType.tier,
+    earnedFrom: `Pawn Village: ${nodeTitle}`,
+    earnedAt,
+    sourceScore: 0,
+    sourceRank: 'Ladder World',
+    bonusReason,
+    opened: false,
+  };
+}
+
+function getLadderNodeRewardLabel(node) {
+  const rewards = [`${node.rewardXp} XP`];
+
+  if (node.rewardChestTypeId) {
+    rewards.push(getChestTypeById(node.rewardChestTypeId).name);
+  }
+
+  if (node.rewardCollectionItemId) {
+    const collectionItem = getCollectionItemById(node.rewardCollectionItemId);
+    rewards.push(collectionItem?.displayName || 'Collection piece');
+  }
+
+  if (node.rewardBadge) {
+    rewards.push(node.rewardBadge);
+  }
+
+  return rewards.join(', ');
 }
 
 function getRushChestType(rushModeKey, score, isNewBest) {
@@ -1379,13 +1427,18 @@ export default function App() {
   }
 
   function returnToRushFromChest() {
-    const wasDailyRush = result?.mode === 'dailyRush';
+    const resultMode = result?.mode;
 
     setIsComplete(false);
     setResult(null);
     setChestOpenResult(null);
-    if (wasDailyRush) {
+    if (resultMode === 'dailyRush') {
       setScreen('home');
+      return;
+    }
+
+    if (resultMode === 'ladderNode') {
+      openPawnVillage();
       return;
     }
 
@@ -1719,9 +1772,47 @@ export default function App() {
     const nodeIndex = PAWN_VILLAGE_NODES.findIndex((node) => node.id === activeLadderNode.id);
     const nextNode = cleared ? PAWN_VILLAGE_NODES[nodeIndex + 1] || null : null;
     const rewardXp = cleared && !alreadyCompleted ? activeLadderNode.rewardXp : 0;
+    const shouldAwardRewards = cleared && !alreadyCompleted;
     const earnedBadge = cleared && activeLadderNode.rewardBadge && !alreadyCompleted
       ? activeLadderNode.rewardBadge
       : '';
+    const currentOwnedCollectionItems = normalizeOwnedCollectionItems(stats.ownedCollectionItems);
+    const currentOwnedCollectionItemIds = new Set(currentOwnedCollectionItems);
+    const bossCollectionRewardItem = activeLadderNode.rewardCollectionItemId
+      ? getCollectionItemById(activeLadderNode.rewardCollectionItemId)
+      : null;
+    const shouldAwardBossCollectionItem = shouldAwardRewards
+      && bossCollectionRewardItem
+      && !currentOwnedCollectionItemIds.has(bossCollectionRewardItem.collectionItemId);
+    const earnedChest = shouldAwardRewards && activeLadderNode.rewardChestTypeId
+      ? createLadderChestReward({
+          chestTypeId: activeLadderNode.rewardChestTypeId,
+          nodeId: activeLadderNode.id,
+          nodeTitle: activeLadderNode.title,
+        })
+      : shouldAwardRewards && activeLadderNode.rewardCollectionItemId && !shouldAwardBossCollectionItem
+        ? createLadderChestReward({
+            chestTypeId: activeLadderNode.fallbackChestTypeId || 'royal-chest',
+            nodeId: activeLadderNode.id,
+            nodeTitle: activeLadderNode.title,
+            bonusReason: bossCollectionRewardItem
+              ? `${bossCollectionRewardItem.displayName} already owned`
+              : 'Collection reward unavailable',
+          })
+        : null;
+    const collectionRewardItem = shouldAwardBossCollectionItem ? bossCollectionRewardItem : null;
+    const previousCollectionSetProgress = collectionRewardItem
+      ? getCollectionSetProgress(collectionRewardItem.setId, currentOwnedCollectionItems)
+      : null;
+    const collectionSetProgress = collectionRewardItem
+      ? getCollectionSetProgress(
+          collectionRewardItem.setId,
+          [...currentOwnedCollectionItems, collectionRewardItem.collectionItemId],
+        )
+      : null;
+    const collectionSetJustCompleted = Boolean(
+      collectionRewardItem && !previousCollectionSetProgress?.isComplete && collectionSetProgress?.isComplete,
+    );
 
     setIsComplete(true);
     setResult({
@@ -1738,6 +1829,10 @@ export default function App() {
       livesRemaining: activeLadderNode.lives ? nextLives : null,
       rewardXp,
       earnedBadge,
+      earnedChest,
+      collectionRewardItem,
+      collectionSetProgress,
+      collectionSetJustCompleted,
       progressCompleted: nextProgress.completedCount,
       progressTotal: nextProgress.totalCount,
       nextNodeId: nextNode?.id || '',
@@ -1756,11 +1851,36 @@ export default function App() {
       const currentCompletedNodeIds = normalizeStringArray(currentStats.completedLadderNodes);
       const nodeAlreadyCompleted = currentCompletedNodeIds.includes(activeLadderNode.id);
       const currentLadderBadges = normalizeStringArray(currentStats.ladderBadges);
+      const nextUnopenedChests = normalizeUnopenedChests(currentStats.unopenedChests);
+      const nextOwnedCollectionItems = normalizeOwnedCollectionItems(currentStats.ownedCollectionItems);
       const nextLadderBadges = activeLadderNode.rewardBadge
         && !currentLadderBadges.includes(activeLadderNode.rewardBadge)
         && !nodeAlreadyCompleted
         ? [...currentLadderBadges, activeLadderNode.rewardBadge]
         : currentLadderBadges;
+      const nodeRewardChest = !nodeAlreadyCompleted ? earnedChest : null;
+      const nodeRewardCollectionItem = !nodeAlreadyCompleted && activeLadderNode.rewardCollectionItemId
+        ? getCollectionItemById(activeLadderNode.rewardCollectionItemId)
+        : null;
+      const collectionItemAlreadyOwned = nodeRewardCollectionItem
+        ? nextOwnedCollectionItems.includes(nodeRewardCollectionItem.collectionItemId)
+        : false;
+      const updatedOwnedCollectionItems = nodeRewardCollectionItem && !collectionItemAlreadyOwned
+        ? [...nextOwnedCollectionItems, nodeRewardCollectionItem.collectionItemId]
+        : nextOwnedCollectionItems;
+      const fallbackChest = nodeRewardCollectionItem && collectionItemAlreadyOwned && !nodeRewardChest
+        ? createLadderChestReward({
+            chestTypeId: activeLadderNode.fallbackChestTypeId || 'royal-chest',
+            nodeId: activeLadderNode.id,
+            nodeTitle: activeLadderNode.title,
+            bonusReason: `${nodeRewardCollectionItem.displayName} already owned`,
+          })
+        : null;
+      const storedChest = nodeRewardChest || fallbackChest;
+      const updatedUnopenedChests = storedChest
+        && !nextUnopenedChests.some((savedChest) => savedChest.chestId === storedChest.chestId)
+        ? [...nextUnopenedChests, storedChest]
+        : nextUnopenedChests;
       const nextStatsValue = {
         ...currentStats,
         completedLadderNodes: nodeAlreadyCompleted
@@ -1769,6 +1889,13 @@ export default function App() {
         currentZone: PAWN_VILLAGE_ZONE_ID,
         ladderXp: (currentStats.ladderXp || 0) + (nodeAlreadyCompleted ? 0 : activeLadderNode.rewardXp),
         ladderBadges: nextLadderBadges,
+        ownedCollectionItems: updatedOwnedCollectionItems,
+        unopenedChests: updatedUnopenedChests,
+        collectionStats: getCollectionStatsSummary(
+          updatedOwnedCollectionItems,
+          updatedUnopenedChests,
+          currentStats.collectionStats,
+        ),
       };
 
       saveStats(nextStatsValue);
@@ -2860,7 +2987,7 @@ export default function App() {
                     <div className="node-details">
                       <div><span>Puzzles</span><strong>{node.puzzleCount}</strong></div>
                       <div><span>Clear</span><strong>{node.clearRequirement}/{node.puzzleCount}</strong></div>
-                      <div><span>Reward</span><strong>{node.rewardXp} XP</strong></div>
+                      <div><span>Reward</span><strong>{getLadderNodeRewardLabel(node)}</strong></div>
                       {node.lives && <div><span>Lives</span><strong>{node.lives}</strong></div>}
                     </div>
                     <div className="zone-motifs" aria-label={`${node.title} motifs`}>
@@ -2985,6 +3112,9 @@ export default function App() {
                         <span style={{ width: `${(pawnVillageProgress.completedCount / pawnVillageProgress.totalCount) * 100}%` }} />
                       </div>
                       {hasBackRankGuardBadge && <small className="zone-badge-earned">{PAWN_VILLAGE_BOSS_BADGE} earned</small>}
+                      <small className="zone-reward-preview">
+                        Rewards: Basic and Tactical Chests, Bronze Rook boss reward, XP.
+                      </small>
                     </div>
                   )}
                   {!zone.unlocked && <small className="zone-lock-copy">Coming soon</small>}
@@ -3464,6 +3594,127 @@ export default function App() {
                   <p className="eyebrow">Badge Earned</p>
                   <h3>{result.earnedBadge}</h3>
                   <small>Pawn Village progress complete.</small>
+                </section>
+              )}
+              {result.collectionRewardItem && (
+                <section
+                  className={`chest-open-result ${result.collectionSetJustCompleted ? 'set-complete' : ''}`}
+                  aria-label="Collection piece unlocked"
+                >
+                  <div className="unlock-hero">
+                    <div
+                      className={`unlock-piece-emblem ${getRarityClassName(result.collectionRewardItem.rarity)}`}
+                      aria-hidden="true"
+                    >
+                      {result.collectionRewardItem.pieceType.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="eyebrow">Collection Piece Unlocked</p>
+                      <h3>{result.collectionRewardItem.displayName}</h3>
+                      <div className="unlock-meta-row">
+                        <span className={`rarity-pill ${getRarityClassName(result.collectionRewardItem.rarity)}`}>
+                          {result.collectionRewardItem.rarity}
+                        </span>
+                        <span className="piece-type-pill">{result.collectionRewardItem.pieceType}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`set-progress-card ${result.collectionSetJustCompleted ? 'complete' : ''}`}>
+                    <div>
+                      <span>Set progress</span>
+                      <strong>
+                        {result.collectionSetProgress?.setName || result.collectionRewardItem.setName}:{' '}
+                        {result.collectionSetProgress?.ownedCount ?? 0}/
+                        {result.collectionSetProgress?.totalCount ?? 6}
+                      </strong>
+                    </div>
+                    {result.collectionSetJustCompleted && (
+                      <span className="set-complete-banner">Set Complete!</span>
+                    )}
+                  </div>
+                  <div className="score-breakdown compact unlock-details" aria-label="Ladder collection reward details">
+                    <div><span>Source</span><strong>{result.nodeTitle}</strong></div>
+                    <div><span>Reward preview</span><strong>{result.collectionRewardItem.cosmeticReward}</strong></div>
+                  </div>
+                </section>
+              )}
+              {result.earnedChest && !chestOpenResult && (
+                <section className="earned-chest-card" aria-label="Chest earned">
+                  <p className="eyebrow">Chest Earned</p>
+                  <h3>{result.earnedChest.name}</h3>
+                  <span>{result.earnedChest.tier} tier</span>
+                  {result.earnedChest.bonusReason && <small>{result.earnedChest.bonusReason}</small>}
+                  <button
+                    type="button"
+                    className="primary-action"
+                    onClick={openEarnedChest}
+                    disabled={result.earnedChest.opened}
+                  >
+                    <Sparkles size={18} />
+                    {result.earnedChest.opened ? 'Chest Opened' : 'Open Chest'}
+                  </button>
+                </section>
+              )}
+              {chestOpenResult && (
+                <section
+                  className={`chest-open-result ${chestOpenResult.setJustCompleted ? 'set-complete' : ''}`}
+                  aria-label="Chest opened"
+                >
+                  {chestOpenResult.unlockedItem ? (
+                    <>
+                      <div className="unlock-hero">
+                        <div
+                          className={`unlock-piece-emblem ${getRarityClassName(chestOpenResult.unlockedItem.rarity)}`}
+                          aria-hidden="true"
+                        >
+                          {chestOpenResult.unlockedItem.pieceType.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="eyebrow">New Piece Unlocked</p>
+                          <h3>{chestOpenResult.unlockedItem.displayName}</h3>
+                          <div className="unlock-meta-row">
+                            <span className={`rarity-pill ${getRarityClassName(chestOpenResult.unlockedItem.rarity)}`}>
+                              {chestOpenResult.unlockedItem.rarity}
+                            </span>
+                            <span className="piece-type-pill">{chestOpenResult.unlockedItem.pieceType}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`set-progress-card ${chestOpenResult.setJustCompleted ? 'complete' : ''}`}>
+                        <div>
+                          <span>Set progress</span>
+                          <strong>
+                            {chestOpenResult.setProgress?.setName || chestOpenResult.unlockedItem.setName}:{' '}
+                            {chestOpenResult.setProgress?.ownedCount ?? 0}/
+                            {chestOpenResult.setProgress?.totalCount ?? 6}
+                          </strong>
+                        </div>
+                        {chestOpenResult.setJustCompleted && (
+                          <span className="set-complete-banner">Set Complete!</span>
+                        )}
+                      </div>
+                      <div className="score-breakdown compact unlock-details" aria-label="Collection unlock details">
+                        <div><span>Chest</span><strong>{chestOpenResult.chest.name}</strong></div>
+                        <div><span>Reward preview</span><strong>{chestOpenResult.unlockedItem.cosmeticReward}</strong></div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="eyebrow">Chest Opened</p>
+                      <h3>{chestOpenResult.completeMessage}</h3>
+                      <p className="rank-chase">No duplicate pieces are awarded in Collection Rewards v1.</p>
+                    </>
+                  )}
+                  <div className="actions">
+                    <button type="button" className="primary-action" onClick={viewCollectionFromChest}>
+                      <Trophy size={18} />
+                      View Collection
+                    </button>
+                    <button type="button" className="secondary-action" onClick={returnToRushFromChest}>
+                      <ListChecks size={18} />
+                      Back to Pawn Village
+                    </button>
+                  </div>
                 </section>
               )}
               {result.comingSoon && (

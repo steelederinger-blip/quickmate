@@ -209,10 +209,20 @@ Field notes:
 ## Reward Sources
 
 - Rush chests: earned from Rush milestones, streaks, or run performance.
-- Ladder node clears: first-clear rewards for normal progression.
-- Boss battle wins: larger rewards tied to zone identity.
+- Ladder node clears: first-clear rewards for normal progression, including XP and local cosmetic chests.
+- Boss battle wins: larger rewards tied to zone identity, including badges and unique collection pieces.
 - Daily Rush streaks: light recurring rewards for returning players.
 - Zone completions: major rewards for clearing every required node in a zone.
+
+### Pawn Village v1 Rewards
+
+- Welcome Mate: 25 XP and a Basic Chest on first clear.
+- Back Rank Basics: 25 XP and a Basic Chest on first clear.
+- Queen and Rook Finish: 25 XP and a Tactical Chest on first clear.
+- No-Hint Challenge: 25 XP and a Tactical Chest on first clear.
+- Boss: Back Rank Guard: 100 XP, the Back Rank Guard Badge, and the Bronze Rook collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
+- Ladder rewards are cosmetic/status-based only; they must not grant extra lives, score boosts, timer bonuses, or other gameplay advantages.
 
 ## MVP Implementation Phases
 

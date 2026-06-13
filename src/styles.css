@@ -578,6 +578,11 @@ h2 {
   text-transform: uppercase;
 }
 
+.zone-reward-preview {
+  color: var(--muted);
+  font-weight: 850;
+}
+
 .world-actions {
   align-items: stretch;
 }
@@ -682,6 +687,7 @@ h2 {
 
 .node-details strong {
   color: var(--text);
+  line-height: 1.25;
 }
 
 .collection-screen h1 {
