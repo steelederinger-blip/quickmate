@@ -30,7 +30,8 @@ It is a playability test for Blitz, Classic, and Survival before promoting any c
 - Blitz should emphasize fast mate-in-1 to mate-in-3 patterns.
 - Classic can include mate-in-4 content once the candidate is reviewed for time-pressure fit.
 - Survival should progressively allow deeper mate-in values as solved count increases and the content pool grows.
-- Daily prefers `candidate` and `approved` puzzles, then falls back to dev content only if no production-track puzzle exists.
+- Daily Rush uses production-track puzzles only.
+- Daily Warmup prefers `candidate` and `approved` puzzles, then falls back to dev content only if no production-track puzzle exists.
 - Ladder can show dev puzzles separately for development testing.
 
 ## Required Metadata

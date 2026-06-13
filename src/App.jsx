@@ -1623,7 +1623,7 @@ export default function App() {
       : [
           result.mode === 'rush'
             ? `QuickMate ${result.rushModeLabel || 'Rush'}`
-            : `QuickMate ${result.mode === 'daily' ? `Daily ${todayKey}` : puzzle.title}`,
+            : `QuickMate ${result.mode === 'daily' ? `Daily Warmup ${todayKey}` : puzzle.title}`,
           result.mode === 'rush'
             ? `${result.totalScore} points | ${result.solved} solved | ${result.misses} misses | ${result.skips} skips`
             : `${result.score} points in ${formatTime(result.seconds)}`,
@@ -2125,34 +2125,43 @@ export default function App() {
             </section>
           </section>
 
-          <div className="mode-grid secondary-mode-grid">
-            <button type="button" className="mode-card" onClick={startDaily}>
-              <CalendarDays size={24} />
-              <span>
-                <strong>Daily QuickMate</strong>
-                <small>{dailyDone ? `${stats.currentDailyStreak} day streak` : `Today: ${puzzles[dailyPuzzleIndex].title}`}</small>
-              </span>
-              <Play size={20} />
-            </button>
+          <section className="practice-section" aria-label="Practice and progression">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Practice</p>
+                <h2>Warm up and progress.</h2>
+              </div>
+            </div>
+            <div className="mode-grid secondary-mode-grid">
+              <button type="button" className="mode-card practice-card" onClick={startDaily}>
+                <CalendarDays size={24} />
+                <span>
+                  <strong>Daily Warmup</strong>
+                  <small>One quick puzzle to warm up before Rush.</small>
+                  <small>{dailyDone ? `${stats.currentDailyStreak} warmup streak` : `Today: ${puzzles[dailyPuzzleIndex].title}`}</small>
+                </span>
+                <Play size={20} />
+              </button>
 
-            <button type="button" className="mode-card" onClick={openLadderWorld}>
-              <ListChecks size={24} />
-              <span>
-                <strong>Ladder World</strong>
-                <small>Pawn Village unlocked | {ladderSolvedCount}/{puzzles.length} solved</small>
-              </span>
-              <Play size={20} />
-            </button>
+              <button type="button" className="mode-card" onClick={openLadderWorld}>
+                <ListChecks size={24} />
+                <span>
+                  <strong>Ladder World</strong>
+                  <small>Pawn Village unlocked | {ladderSolvedCount}/{puzzles.length} solved</small>
+                </span>
+                <Play size={20} />
+              </button>
 
-            <button type="button" className="mode-card" onClick={openCollection}>
-              <Trophy size={24} />
-              <span>
-                <strong>Collection</strong>
-                <small>Piece sets, cosmetics, and status rewards</small>
-              </span>
-              <Play size={20} />
-            </button>
-          </div>
+              <button type="button" className="mode-card" onClick={openCollection}>
+                <Trophy size={24} />
+                <span>
+                  <strong>Collection</strong>
+                  <small>Piece sets, cosmetics, and status rewards</small>
+                </span>
+                <Play size={20} />
+              </button>
+            </div>
+          </section>
 
           <div className="home-stats" aria-label="Saved stats">
             <div>
@@ -2232,9 +2241,10 @@ export default function App() {
                   </ul>
                 </section>
                 <section className="help-section">
-                  <h3>Daily and Ladder</h3>
+                  <h3>Daily Warmup and Ladder</h3>
                   <ul className="help-list">
-                    <li>Daily and Ladder are training modes.</li>
+                    <li>Daily Warmup is one quick puzzle to warm up before Rush.</li>
+                    <li>Daily Warmup and Ladder are training modes.</li>
                     <li>Wrong legal moves count as mistakes, but you can keep trying.</li>
                   </ul>
                 </section>
@@ -2520,7 +2530,7 @@ export default function App() {
             QuickMate
           </button>
           <h1>
-            {mode === 'daily' ? 'Daily QuickMate' : ''}
+            {mode === 'daily' ? 'Daily Warmup' : ''}
             {mode === 'ladder' ? 'Puzzle Ladder' : ''}
             {mode === 'rush' ? activeRushModeConfig.label : ''}
             {mode === 'dailyRush' ? 'Daily Rush' : ''}
@@ -2548,7 +2558,7 @@ export default function App() {
       <section className="workspace">
         <aside className="sidebar" aria-label="Puzzle list">
           <div className="panel-header">
-            <h2>{mode === 'daily' ? 'Daily' : isDailyRush ? 'Daily Rush' : isRush ? 'Rush Queue' : 'Puzzles'}</h2>
+            <h2>{mode === 'daily' ? 'Daily Warmup' : isDailyRush ? 'Daily Rush' : isRush ? 'Rush Queue' : 'Puzzles'}</h2>
             <span>
               {mode === 'daily' ? todayKey : ''}
               {isDailyRush ? `${Math.min(rushQueueCursor + 1, DAILY_RUSH_PUZZLE_COUNT)}/${DAILY_RUSH_PUZZLE_COUNT}` : ''}

@@ -1,6 +1,6 @@
 # QuickMate
 
-QuickMate is a mobile-first React/Vite chess puzzle trainer focused on fast mate-solving. It includes Daily QuickMate, a grouped Puzzle Ladder, and a timed Rush Mode using a local Puzzle Pack v1.
+QuickMate is a mobile-first React/Vite chess puzzle trainer focused on fast mate-solving. It includes Rush Mode, Daily Rush, Daily Warmup, Ladder World, Collection, and a grouped Classic Ladder using a local puzzle pack.
 
 The original 25-puzzle pack is development/test content. It exists to exercise the app flow, scoring, validation, and mode behavior, but it is not production-quality puzzle content.
 
@@ -53,7 +53,7 @@ This validates the puzzle pack and creates a fresh production build in `dist`.
 
 The dev pack is generated from a small set of synthetic queen, rook, and knight patterns. The v2 candidates include the v2.2 Rush candidate pack: 25 mate-in-1, 30 mate-in-2, 15 mate-in-3, and 5 mate-in-4 candidates for testing better Blitz, Classic, and Survival content. They are not approved production content.
 
-Rush Mode only selects production-track puzzles: `candidate` or `approved`. It excludes `dev` and `rejected` puzzles, and repeats production-track puzzles during long runs instead of falling back to dev content. Rush content should scale from quick mates to deeper forced-mate sequences as the player advances. Blitz focuses on mate-in-1 to mate-in-3 candidates; Classic and Survival can include mate-in-4 candidates as the production-track pool expands. Daily prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
+Rush Mode and Daily Rush only select production-track puzzles: `candidate` or `approved`. They exclude `dev` and `rejected` puzzles, and repeat production-track puzzles during long runs instead of falling back to dev content. Rush content should scale from quick mates to deeper forced-mate sequences as the player advances. Blitz focuses on mate-in-1 to mate-in-3 candidates; Classic and Survival can include mate-in-4 candidates as the production-track pool expands. Daily Warmup is one quick puzzle to warm up before Rush; it prefers production-track puzzles, then falls back to dev content only if no candidate or approved puzzles exist. Ladder still shows dev puzzles separately for development testing.
 
 ## Production Puzzle Quality Gate
 
