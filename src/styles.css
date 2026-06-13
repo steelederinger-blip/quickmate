@@ -1365,7 +1365,8 @@ h2 {
   }
 }
 
-.primary-action:disabled {
+.primary-action:disabled,
+.secondary-action:disabled {
   cursor: not-allowed;
   opacity: 0.55;
   transform: none;

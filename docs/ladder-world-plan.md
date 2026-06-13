@@ -31,12 +31,12 @@ The design should feel like chess plus a mobile progression world: zones, nodes,
 ### Knight Woods
 
 - Zone focus: knight patterns, forks, smothered shapes, unusual attacking geometry
-- Suggested mateIn range: 1 to 2
+- Suggested mateIn range: 2 to 3
 - Difficulty range: easy to medium
-- Puzzle themes/motifs: knight-mate, smothered-mate, fork-to-mate, escape-square coverage, corner nets
-- Boss name: The Forest Knight
-- Boss concept: a boss sequence where every solution depends on knight coverage or knight mate threats
-- Reward ideas: Knight Woods badge, Shadow Knight fragment, coins, XP
+- Puzzle themes/motifs: knight-mate, smothered-mate, fork-to-mate, king traps, decoys, deflections, discovered checks
+- Boss name: The Smothered King
+- Boss concept: a boss sequence where knight coverage, cramped kings, and decoy/deflection motifs close the mating net
+- Reward ideas: Knight Woods Badge, Bronze Knight, Tactical/Royal chests, XP
 - Collectible pieces: Classic Knight, Bronze Knight, Shadow Knight
 
 ### Bishop Tower
@@ -223,6 +223,15 @@ Field notes:
 - Boss: Back Rank Guard: 100 XP, the Back Rank Guard Badge, and the Bronze Rook collection piece on first clear.
 - If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
 - Ladder rewards are cosmetic/status-based only; they must not grant extra lives, score boosts, timer bonuses, or other gameplay advantages.
+
+### Knight Woods v1 Rewards
+
+- Knight Fork Intro: 35 XP and a Tactical Chest on first clear.
+- Smothered Mate Trail: 35 XP and a Tactical Chest on first clear.
+- Forest Trap: 35 XP and a Tactical Chest on first clear.
+- No-Queen Challenge: 35 XP and a Royal Chest on first clear.
+- Boss: The Smothered King: 125 XP, the Knight Woods Badge, and the Bronze Knight collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
 
 ## MVP Implementation Phases
 
