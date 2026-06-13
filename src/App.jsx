@@ -185,6 +185,7 @@ function getLadderMateGroupKey(mateIn) {
 
 const DEFAULT_COLLECTION_STATS = {
   totalPiecesOwned: 0,
+  piecesUnlocked: 0,
   setsCompleted: 0,
   unopenedChests: 0,
   chestsOpened: 0,
@@ -543,13 +544,44 @@ function getCollectionStatsSummary(ownedCollectionItems, unopenedChests, previou
   const setsCompleted = PIECE_SETS.filter((pieceSet) => {
     return pieceSet.pieces.every((piece) => ownedIds.has(piece.collectionItemId));
   }).length;
+  const totalPiecesOwned = ownedIds.size;
 
   return {
     ...DEFAULT_COLLECTION_STATS,
     ...previousStats,
-    totalPiecesOwned: ownedIds.size,
+    totalPiecesOwned,
+    piecesUnlocked: Math.max(previousStats.piecesUnlocked || 0, totalPiecesOwned),
     setsCompleted,
     unopenedChests: unopenedChests.length,
+  };
+}
+
+function getRarityClassName(rarity) {
+  return `rarity-${String(rarity || 'common').toLowerCase()}`;
+}
+
+function getCollectionSetProgress(setId, ownedCollectionItems) {
+  const pieceSet = PIECE_SETS.find((item) => item.setId === setId);
+  const ownedIds = new Set(ownedCollectionItems);
+
+  if (!pieceSet) {
+    return {
+      setName: 'Collection Set',
+      ownedCount: 0,
+      totalCount: 0,
+      isComplete: false,
+      cosmeticReward: '',
+    };
+  }
+
+  const ownedCount = pieceSet.pieces.filter((piece) => ownedIds.has(piece.collectionItemId)).length;
+
+  return {
+    setName: pieceSet.setName,
+    ownedCount,
+    totalCount: pieceSet.pieces.length,
+    isComplete: ownedCount === pieceSet.pieces.length,
+    cosmeticReward: pieceSet.cosmeticReward,
   };
 }
 
@@ -1276,9 +1308,15 @@ export default function App() {
     const unopenedChests = normalizeUnopenedChests(stats.unopenedChests)
       .filter((savedChest) => savedChest.chestId !== chest.chestId);
     const unlockedItem = getRandomUnownedCollectionItem(ownedCollectionItems);
+    const previousSetProgress = unlockedItem
+      ? getCollectionSetProgress(unlockedItem.setId, ownedCollectionItems)
+      : null;
     const nextOwnedCollectionItems = unlockedItem
       ? [...ownedCollectionItems, unlockedItem.collectionItemId]
       : ownedCollectionItems;
+    const nextSetProgress = unlockedItem
+      ? getCollectionSetProgress(unlockedItem.setId, nextOwnedCollectionItems)
+      : null;
     const previousCollectionStats = {
       ...DEFAULT_COLLECTION_STATS,
       ...stats.collectionStats,
@@ -1289,6 +1327,9 @@ export default function App() {
       {
         ...previousCollectionStats,
         chestsOpened: previousCollectionStats.chestsOpened + 1,
+        piecesUnlocked: unlockedItem
+          ? Math.max(previousCollectionStats.piecesUnlocked || 0, nextOwnedCollectionItems.length)
+          : previousCollectionStats.piecesUnlocked || 0,
       },
     );
     const nextStats = {
@@ -1312,6 +1353,9 @@ export default function App() {
     setChestOpenResult({
       chest,
       unlockedItem,
+      previousSetProgress,
+      setProgress: nextSetProgress,
+      setJustCompleted: Boolean(unlockedItem && !previousSetProgress?.isComplete && nextSetProgress?.isComplete),
       completeMessage: unlockedItem ? '' : 'Collection complete for current set pool',
     });
   }
@@ -1822,12 +1866,16 @@ export default function App() {
 
           <section className="collection-stats" aria-label="Collection stats">
             <div>
-              <strong>{collectionStats.totalPiecesOwned}</strong>
-              <span>Pieces owned</span>
+              <strong>{collectionStats.piecesUnlocked}</strong>
+              <span>Pieces unlocked</span>
             </div>
             <div>
               <strong>{collectionStats.setsCompleted}</strong>
               <span>Sets completed</span>
+            </div>
+            <div>
+              <strong>{collectionStats.chestsOpened}</strong>
+              <span>Chests opened</span>
             </div>
             <div>
               <strong>{collectionStats.unopenedChests}</strong>
@@ -1842,16 +1890,19 @@ export default function App() {
 
               return (
                 <article
-                  className={`collection-set-card ${isComplete ? 'unlocked' : 'locked'}`}
+                  className={`collection-set-card ${isComplete ? 'unlocked completed' : 'locked'}`}
                   key={pieceSet.setId}
                 >
                   <div className="collection-set-header">
                     <div>
-                      <p className="eyebrow">{pieceSet.rarity}</p>
+                      <span className={`rarity-pill compact ${getRarityClassName(pieceSet.rarity)}`}>
+                        {pieceSet.rarity}
+                      </span>
                       <h2>{pieceSet.setName}</h2>
                     </div>
                     <span className="collection-progress">{ownedCount}/{pieceSet.pieces.length}</span>
                   </div>
+                  {isComplete && <span className="set-complete-label">Set Complete!</span>}
                   <div className="collection-reward">
                     <span>Reward preview</span>
                     <strong>{pieceSet.cosmeticReward}</strong>
@@ -2385,15 +2436,45 @@ export default function App() {
                 </section>
               )}
               {chestOpenResult && (
-                <section className="chest-open-result" aria-label="Chest opened">
+                <section
+                  className={`chest-open-result ${chestOpenResult.setJustCompleted ? 'set-complete' : ''}`}
+                  aria-label="Chest opened"
+                >
                   {chestOpenResult.unlockedItem ? (
                     <>
-                      <p className="eyebrow">Chest Opened</p>
-                      <h3>Unlocked: {chestOpenResult.unlockedItem.displayName}</h3>
-                      <div className="score-breakdown compact" aria-label="Collection unlock details">
-                        <div><span>Set</span><strong>{chestOpenResult.unlockedItem.setName}</strong></div>
-                        <div><span>Rarity</span><strong>{chestOpenResult.unlockedItem.rarity}</strong></div>
-                        <div><span>Piece</span><strong>{chestOpenResult.unlockedItem.pieceType}</strong></div>
+                      <div className="unlock-hero">
+                        <div
+                          className={`unlock-piece-emblem ${getRarityClassName(chestOpenResult.unlockedItem.rarity)}`}
+                          aria-hidden="true"
+                        >
+                          {chestOpenResult.unlockedItem.pieceType.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="eyebrow">New Piece Unlocked</p>
+                          <h3>{chestOpenResult.unlockedItem.displayName}</h3>
+                          <div className="unlock-meta-row">
+                            <span className={`rarity-pill ${getRarityClassName(chestOpenResult.unlockedItem.rarity)}`}>
+                              {chestOpenResult.unlockedItem.rarity}
+                            </span>
+                            <span className="piece-type-pill">{chestOpenResult.unlockedItem.pieceType}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`set-progress-card ${chestOpenResult.setJustCompleted ? 'complete' : ''}`}>
+                        <div>
+                          <span>Set progress</span>
+                          <strong>
+                            {chestOpenResult.setProgress?.setName || chestOpenResult.unlockedItem.setName}:{' '}
+                            {chestOpenResult.setProgress?.ownedCount ?? 0}/
+                            {chestOpenResult.setProgress?.totalCount ?? 6}
+                          </strong>
+                        </div>
+                        {chestOpenResult.setJustCompleted && (
+                          <span className="set-complete-banner">Set Complete!</span>
+                        )}
+                      </div>
+                      <div className="score-breakdown compact unlock-details" aria-label="Collection unlock details">
+                        <div><span>Chest</span><strong>{chestOpenResult.chest.name}</strong></div>
                         <div><span>Reward preview</span><strong>{chestOpenResult.unlockedItem.cosmeticReward}</strong></div>
                       </div>
                     </>
