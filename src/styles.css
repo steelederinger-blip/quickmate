@@ -2524,10 +2524,6 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.rush-rules div:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
 .collection-set-header,
 .zone-card-header,
 .node-header,
@@ -2553,6 +2549,15 @@ button {
 .rush-mode-card,
 .puzzle-item {
   min-height: 46px;
+}
+
+.score-breakdown div > *,
+.rank-next-row > *,
+.daily-result-strip span,
+.history-item span,
+.missed-title-row > *,
+.panel-header > * {
+  min-width: 0;
 }
 
 @media (max-width: 759px) {
@@ -2587,6 +2592,10 @@ button {
   .badge,
   .rating {
     white-space: normal;
+  }
+
+  .panel-header {
+    flex-wrap: wrap;
   }
 
   .rush-hero-card {
@@ -2637,6 +2646,10 @@ button {
 
   .rush-rules {
     gap: 8px;
+  }
+
+  .rush-rules div:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .rush-rules div {
@@ -2707,6 +2720,10 @@ button {
     margin-top: 12px;
   }
 
+  .rush-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .stat {
     min-height: 74px;
     padding: 9px;
@@ -2764,6 +2781,14 @@ button {
     gap: 7px;
   }
 
+  .zone-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .zone-details div:last-child {
+    grid-column: 1 / -1;
+  }
+
   .zone-details div,
   .node-details div {
     min-height: 48px;
@@ -2809,6 +2834,10 @@ button {
     height: 28px;
   }
 
+  .collection-set-header {
+    align-items: flex-start;
+  }
+
   .result-screen {
     padding: 10px;
   }
@@ -2841,6 +2870,10 @@ button {
     min-height: 34px;
   }
 
+  .score-breakdown div span {
+    max-width: 44%;
+  }
+
   .score-breakdown div strong {
     text-align: right;
   }
@@ -2861,12 +2894,21 @@ button {
 
   .result-panel .actions,
   .chest-open-result .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
+    gap: 8px;
   }
 
   .result-panel .actions > button,
   .chest-open-result .actions > button {
-    flex-basis: 100%;
+    width: 100%;
+    flex: initial;
+  }
+
+  .result-panel .actions > .primary-action,
+  .chest-open-result .actions > .primary-action:first-child {
+    grid-column: 1 / -1;
   }
 
   .help-sections {
@@ -2882,11 +2924,23 @@ button {
     font-size: 0.88rem;
     line-height: 1.35;
   }
+
+  .help-panel,
+  .result-panel {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (min-width: 520px) and (max-width: 1119px) {
   .group-items {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 380px) and (max-width: 759px) {
+  .piece-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
