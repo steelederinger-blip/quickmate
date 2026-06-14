@@ -1626,6 +1626,8 @@ h2 {
 .cinematic-boss-name {
   color: var(--accent-strong);
   font-size: 1.15rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .cinematic-copy {
@@ -1648,6 +1650,7 @@ h2 {
 .cinematic-rewards span {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   min-height: 36px;
   min-width: 0;
@@ -1659,6 +1662,7 @@ h2 {
   background: rgba(242, 189, 75, 0.12);
   font-size: 0.82rem;
   font-weight: 900;
+  text-align: center;
   overflow-wrap: anywhere;
 }
 
@@ -3130,31 +3134,46 @@ button {
   .cinematic-moment {
     width: 100%;
     max-height: calc(100vh - 20px);
-    padding: 22px 14px 16px;
+    padding: 16px 12px 14px;
   }
 
   .cinematic-icon {
-    width: 62px;
-    height: 62px;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 4px;
   }
 
   .cinematic-moment h2 {
-    font-size: 1.9rem;
+    margin: 0 0 2px;
+    font-size: 1.72rem;
   }
 
   .cinematic-boss-name {
-    font-size: 1.02rem;
-    overflow-wrap: anywhere;
+    font-size: 1rem;
+  }
+
+  .cinematic-copy {
+    margin: 8px 0 12px;
+    font-size: 0.92rem;
+    line-height: 1.35;
   }
 
   .cinematic-rewards {
     display: grid;
     grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
   }
 
   .cinematic-rewards span {
-    justify-content: center;
+    min-height: 32px;
+    padding: 6px 8px;
     border-radius: 10px;
+    font-size: 0.78rem;
+  }
+
+  .cinematic-continue {
+    min-height: 48px;
   }
 
   .result-panel h2 {

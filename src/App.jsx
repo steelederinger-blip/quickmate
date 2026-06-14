@@ -1793,7 +1793,7 @@ function formatContentStatus(status) {
 const BOSS_CINEMATIC_COPY = {
   [PAWN_VILLAGE_ZONE_ID]: {
     tone: 'gold',
-    text: 'The first gate falls. Your campaign path is open.',
+    text: 'The first gate falls. The path is open.',
   },
   [KNIGHT_WOODS_ZONE_ID]: {
     tone: 'teal',
