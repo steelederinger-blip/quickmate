@@ -88,7 +88,7 @@ const PIECE_SET_CONFIGS = [
     setId: 'royal-set',
     setName: 'Royal Set',
     rarity: 'Epic',
-    unlockSource: "Bishop Tower, Rook Fortress, Queen's Court, Royal Chests, and boss battle wins",
+    unlockSource: "Bishop Tower, Rook Fortress, Queen's Court, King's Gate, Royal Chests, and boss battle wins",
     cosmeticReward: 'Royal board theme',
   },
   {

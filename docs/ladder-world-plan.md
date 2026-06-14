@@ -74,13 +74,13 @@ The design should feel like chess plus a mobile progression world: zones, nodes,
 
 ### King's Gate
 
-- Zone focus: defensive resources, exact forcing lines, final-rank control, boss-gate pressure
-- Suggested mateIn range: 2 to 4
+- Zone focus: king hunts, center-board mates, forcing lines, open-board attacks, and boss-gate pressure
+- Suggested mateIn range: 4 to 6
 - Difficulty range: advanced to expert
-- Puzzle themes/motifs: king-hunt, double-check, discovered-check, quiet move, gate unlock sequence, no-escape nets
-- Boss name: The Gatekeeper King
-- Boss concept: a gate boss that requires several clean solves with limited lives before Grandmaster Keep unlocks
-- Reward ideas: King's Gate badge, Shadow King, gate key cosmetic, large XP bundle
+- Puzzle themes/motifs: king-hunt, center-board-mate, double-check, discovered-check, clearance, deflection, decoy, sacrifice, queen-sacrifice, rook-file, bishop-diagonal
+- Boss name: The Running King
+- Boss concept: a late-game boss that tests deep forcing lines against an exposed king
+- Reward ideas: King's Gate Badge, Royal King, Royal/Legendary chests, large XP bundle
 - Collectible pieces: Classic King, Shadow King, Royal King
 
 ### Grandmaster Keep
@@ -258,6 +258,15 @@ Field notes:
 - Queen Sacrifice: 70 XP and a Royal Chest on first clear.
 - Double Check Court: 70 XP and a Legendary Chest on first clear.
 - Boss: The Queen's Trial: 225 XP, the Queen's Court Badge, and the Royal Queen collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Legendary Chest fallback instead.
+
+### King's Gate v1 Rewards
+
+- Open Board Hunt: 90 XP and a Royal Chest on first clear.
+- Center King: 90 XP and a Royal Chest on first clear.
+- Forced March: 90 XP and a Legendary Chest on first clear.
+- Gate Breaker: 90 XP and a Legendary Chest on first clear.
+- Boss: The Running King: 300 XP, the King's Gate Badge, and the Royal King collection piece on first clear.
 - If the boss-specific piece is already owned, the boss awards a Legendary Chest fallback instead.
 
 ## MVP Implementation Phases

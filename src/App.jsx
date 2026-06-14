@@ -162,11 +162,11 @@ const LADDER_WORLD_ZONES = [
     id: 'kings-gate',
     name: "King's Gate",
     focus: 'Defensive resources, exact forcing lines, and boss-gate pressure.',
-    mateInRange: 'Mate in 2-4',
+    mateInRange: 'Mate in 4-6',
     difficultyRange: 'Advanced to Expert',
-    motifs: ['double-check', 'quiet move', 'no-escape nets'],
-    bossName: 'The Gatekeeper King',
-    rewardPreview: 'Shadow King, gate key cosmetic',
+    motifs: ['king-hunt', 'center-board-mate', 'forcing lines'],
+    bossName: 'The Running King',
+    rewardPreview: "Royal/Legendary Chests, Royal King, King's Gate Badge, Ladder XP",
     unlocked: false,
     color: '#7b4a32',
   },
@@ -199,6 +199,9 @@ const ROOK_FORTRESS_BOSS_COLLECTION_REWARD_ID = 'royal-rook';
 const QUEENS_COURT_ZONE_ID = 'queens-court';
 const QUEENS_COURT_BOSS_BADGE = "Queen's Court Badge";
 const QUEENS_COURT_BOSS_COLLECTION_REWARD_ID = 'royal-queen';
+const KINGS_GATE_ZONE_ID = 'kings-gate';
+const KINGS_GATE_BOSS_BADGE = "King's Gate Badge";
+const KINGS_GATE_BOSS_COLLECTION_REWARD_ID = 'royal-king';
 const PAWN_VILLAGE_NODES = [
   {
     id: 'pawn-welcome-mate',
@@ -581,12 +584,89 @@ const QUEENS_COURT_NODES = [
   },
 ];
 
+const KINGS_GATE_NODES = [
+  {
+    id: 'king-open-board-hunt',
+    zoneId: KINGS_GATE_ZONE_ID,
+    type: 'normal',
+    title: 'Open Board Hunt',
+    description: 'Start the gate with open-board attacks and forcing king-hunt sequences.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 90,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 6,
+    motifs: ['king-hunt', 'double-check', 'queen-sacrifice', 'bishop-diagonal'],
+  },
+  {
+    id: 'king-center-king',
+    zoneId: KINGS_GATE_ZONE_ID,
+    type: 'normal',
+    title: 'Center King',
+    description: 'Force exposed kings through center-board mating nets.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 90,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 6,
+    motifs: ['center-board-mate', 'king-hunt', 'rook-file', 'bishop-diagonal'],
+  },
+  {
+    id: 'king-forced-march',
+    zoneId: KINGS_GATE_ZONE_ID,
+    type: 'normal',
+    title: 'Forced March',
+    description: 'Calculate longer forcing lines that march the king into a final net.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 90,
+    rewardChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 6,
+    motifs: ['king-hunt', 'deflection', 'decoy', 'discovered-check', 'clearance'],
+  },
+  {
+    id: 'king-gate-breaker',
+    zoneId: KINGS_GATE_ZONE_ID,
+    type: 'normal',
+    title: 'Gate Breaker',
+    description: 'Break the gate with sacrifices, clearance, and exact open-board checks.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 90,
+    rewardChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 6,
+    motifs: ['sacrifice', 'queen-sacrifice', 'clearance', 'double-check', 'rook-file'],
+  },
+  {
+    id: 'king-running-king',
+    zoneId: KINGS_GATE_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Running King',
+    description: 'Stop the running king by solving three of five deep forcing lines.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 300,
+    rewardBadge: KINGS_GATE_BOSS_BADGE,
+    rewardCollectionItemId: KINGS_GATE_BOSS_COLLECTION_REWARD_ID,
+    fallbackChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 6,
+    motifs: ['king-hunt', 'center-board-mate', 'double-check', 'deflection', 'decoy'],
+  },
+];
+
 const LADDER_ZONE_NODES = {
   [PAWN_VILLAGE_ZONE_ID]: PAWN_VILLAGE_NODES,
   [KNIGHT_WOODS_ZONE_ID]: KNIGHT_WOODS_NODES,
   [BISHOP_TOWER_ZONE_ID]: BISHOP_TOWER_NODES,
   [ROOK_FORTRESS_ZONE_ID]: ROOK_FORTRESS_NODES,
   [QUEENS_COURT_ZONE_ID]: QUEENS_COURT_NODES,
+  [KINGS_GATE_ZONE_ID]: KINGS_GATE_NODES,
 };
 
 const PLAYABLE_LADDER_ZONE_IDS = [
@@ -595,6 +675,7 @@ const PLAYABLE_LADDER_ZONE_IDS = [
   BISHOP_TOWER_ZONE_ID,
   ROOK_FORTRESS_ZONE_ID,
   QUEENS_COURT_ZONE_ID,
+  KINGS_GATE_ZONE_ID,
 ];
 
 const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
@@ -866,6 +947,10 @@ function getLadderNodeById(nodeId) {
 }
 
 function getLadderZoneScreen(zoneId) {
+  if (zoneId === KINGS_GATE_ZONE_ID) {
+    return 'kingsGate';
+  }
+
   if (zoneId === QUEENS_COURT_ZONE_ID) {
     return 'queensCourt';
   }
@@ -910,6 +995,10 @@ function getLadderZoneBadge(zoneId) {
 
   if (zoneId === QUEENS_COURT_ZONE_ID) {
     return QUEENS_COURT_BOSS_BADGE;
+  }
+
+  if (zoneId === KINGS_GATE_ZONE_ID) {
+    return KINGS_GATE_BOSS_BADGE;
   }
 
   return '';
@@ -1012,6 +1101,10 @@ function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
 
   if (zoneId === QUEENS_COURT_ZONE_ID) {
     return completedSet.has('rook-fortress-king');
+  }
+
+  if (zoneId === KINGS_GATE_ZONE_ID) {
+    return completedSet.has('queen-trial');
   }
 
   return false;
@@ -1670,10 +1763,12 @@ export default function App() {
   const bishopTowerProgress = getLadderZoneProgress(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
   const rookFortressProgress = getLadderZoneProgress(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
   const queensCourtProgress = getLadderZoneProgress(QUEENS_COURT_ZONE_ID, stats.completedLadderNodes || []);
+  const kingsGateProgress = getLadderZoneProgress(KINGS_GATE_ZONE_ID, stats.completedLadderNodes || []);
   const knightWoodsUnlocked = ladderZoneIsUnlocked(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
   const bishopTowerUnlocked = ladderZoneIsUnlocked(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
   const rookFortressUnlocked = ladderZoneIsUnlocked(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
   const queensCourtUnlocked = ladderZoneIsUnlocked(QUEENS_COURT_ZONE_ID, stats.completedLadderNodes || []);
+  const kingsGateUnlocked = ladderZoneIsUnlocked(KINGS_GATE_ZONE_ID, stats.completedLadderNodes || []);
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -1892,6 +1987,10 @@ export default function App() {
 
   function openQueensCourt() {
     openLadderZone(QUEENS_COURT_ZONE_ID);
+  }
+
+  function openKingsGate() {
+    openLadderZone(KINGS_GATE_ZONE_ID);
   }
 
   function startLadderNode(nodeId) {
@@ -3234,10 +3333,12 @@ export default function App() {
                 <span>
                   <strong>Ladder World</strong>
                   <small>
-                    {queensCourtUnlocked
+                    {kingsGateUnlocked
+                      ? "King's Gate unlocked"
+                      : queensCourtUnlocked
                       ? "Queen's Court unlocked"
                       : rookFortressUnlocked
-                      ? 'Rook Fortress unlocked'
+                        ? 'Rook Fortress unlocked'
                       : bishopTowerUnlocked
                         ? 'Bishop Tower unlocked'
                       : knightWoodsUnlocked
@@ -3469,16 +3570,19 @@ export default function App() {
     || screen === 'bishopTower'
     || screen === 'rookFortress'
     || screen === 'queensCourt'
+    || screen === 'kingsGate'
   ) {
-    const ladderZoneId = screen === 'queensCourt'
-      ? QUEENS_COURT_ZONE_ID
-      : screen === 'rookFortress'
-        ? ROOK_FORTRESS_ZONE_ID
-        : screen === 'bishopTower'
-          ? BISHOP_TOWER_ZONE_ID
-          : screen === 'knightWoods'
-            ? KNIGHT_WOODS_ZONE_ID
-            : PAWN_VILLAGE_ZONE_ID;
+    const ladderZoneId = screen === 'kingsGate'
+      ? KINGS_GATE_ZONE_ID
+      : screen === 'queensCourt'
+        ? QUEENS_COURT_ZONE_ID
+        : screen === 'rookFortress'
+          ? ROOK_FORTRESS_ZONE_ID
+          : screen === 'bishopTower'
+            ? BISHOP_TOWER_ZONE_ID
+            : screen === 'knightWoods'
+              ? KNIGHT_WOODS_ZONE_ID
+              : PAWN_VILLAGE_ZONE_ID;
     const ladderZone = getLadderZoneById(ladderZoneId);
     const ladderZoneNodes = getLadderZoneNodes(ladderZoneId);
     const ladderZoneProgress = getLadderZoneProgress(ladderZoneId, stats.completedLadderNodes || []);
@@ -3630,6 +3734,10 @@ export default function App() {
               <span>Queen's Court</span>
             </div>
             <div>
+              <strong>{kingsGateProgress.completedCount}/{kingsGateProgress.totalCount}</strong>
+              <span>King's Gate</span>
+            </div>
+            <div>
               <strong>{stats.ladderXp || 0}</strong>
               <span>Ladder XP</span>
             </div>
@@ -3655,7 +3763,9 @@ export default function App() {
                       ? 'Rewards: Tactical and Royal Chests, Royal Rook boss reward, XP.'
                       : zone.id === QUEENS_COURT_ZONE_ID
                         ? "Rewards: Royal and Legendary Chests, Royal Queen boss reward, XP."
-                        : '';
+                        : zone.id === KINGS_GATE_ZONE_ID
+                          ? "Rewards: Royal and Legendary Chests, Royal King boss reward, XP."
+                          : '';
 
               return (
                 <article
@@ -3725,10 +3835,12 @@ export default function App() {
                           : zone.id === BISHOP_TOWER_ZONE_ID
                             ? 'Defeat The Smothered King to unlock.'
                             : zone.id === ROOK_FORTRESS_ZONE_ID
-                              ? 'Defeat The Diagonal Keeper to unlock.'
-                              : zone.id === QUEENS_COURT_ZONE_ID
-                                ? 'Defeat The Fortress King to unlock.'
-                                : 'Coming soon'}
+                                ? 'Defeat The Diagonal Keeper to unlock.'
+                                : zone.id === QUEENS_COURT_ZONE_ID
+                                  ? 'Defeat The Fortress King to unlock.'
+                                  : zone.id === KINGS_GATE_ZONE_ID
+                                    ? "Defeat The Queen's Trial to unlock."
+                                    : 'Coming soon'}
                       </small>
                     )}
                   </div>
@@ -3757,6 +3869,10 @@ export default function App() {
             <button type="button" className="secondary-action" onClick={openQueensCourt} disabled={!queensCourtUnlocked}>
               <Play size={18} />
               Open Queen's Court
+            </button>
+            <button type="button" className="secondary-action" onClick={openKingsGate} disabled={!kingsGateUnlocked}>
+              <Play size={18} />
+              Open King's Gate
             </button>
             <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
               <ListChecks size={18} />
