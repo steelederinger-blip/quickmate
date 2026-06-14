@@ -138,11 +138,11 @@ const LADDER_WORLD_ZONES = [
     id: 'rook-fortress',
     name: 'Rook Fortress',
     focus: 'Files, ranks, back-rank pressure, clearance, and rook lifts.',
-    mateInRange: 'Mate in 2-3',
+    mateInRange: 'Mate in 2-4',
     difficultyRange: 'Medium to Advanced',
-    motifs: ['rook-file', 'deflection', 'overloaded defender'],
-    bossName: 'The Fortress Warden',
-    rewardPreview: 'Bronze Rook, fortress frame, coin chest',
+    motifs: ['rook-file', 'back-rank', 'overloaded defender'],
+    bossName: 'The Fortress King',
+    rewardPreview: 'Tactical/Royal Chests, Royal Rook, Rook Fortress Badge, Ladder XP',
     unlocked: false,
     color: '#8a6a2f',
   },
@@ -193,6 +193,9 @@ const KNIGHT_WOODS_BOSS_COLLECTION_REWARD_ID = 'bronze-knight';
 const BISHOP_TOWER_ZONE_ID = 'bishop-tower';
 const BISHOP_TOWER_BOSS_BADGE = 'Bishop Tower Badge';
 const BISHOP_TOWER_BOSS_COLLECTION_REWARD_ID = 'shadow-bishop';
+const ROOK_FORTRESS_ZONE_ID = 'rook-fortress';
+const ROOK_FORTRESS_BOSS_BADGE = 'Rook Fortress Badge';
+const ROOK_FORTRESS_BOSS_COLLECTION_REWARD_ID = 'royal-rook';
 const PAWN_VILLAGE_NODES = [
   {
     id: 'pawn-welcome-mate',
@@ -423,13 +426,95 @@ const BISHOP_TOWER_NODES = [
   },
 ];
 
+const ROOK_FORTRESS_NODES = [
+  {
+    id: 'rook-open-file',
+    zoneId: ROOK_FORTRESS_ZONE_ID,
+    type: 'normal',
+    title: 'Open File',
+    description: 'Enter the fortress by turning open files into forcing rook pressure.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 55,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 3,
+    motifs: ['rook-file', 'clearance', 'pinned-defender'],
+  },
+  {
+    id: 'rook-back-rank-pressure',
+    zoneId: ROOK_FORTRESS_ZONE_ID,
+    type: 'normal',
+    title: 'Back Rank Pressure',
+    description: 'Use files, ranks, and trapped kings to convert back-rank threats.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 55,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 4,
+    motifs: ['back-rank', 'rook-file', 'king-trap', 'deflection'],
+  },
+  {
+    id: 'rook-overloaded-defender',
+    zoneId: ROOK_FORTRESS_ZONE_ID,
+    type: 'normal',
+    title: 'Overloaded Defender',
+    description: 'Break defenders that are covering too many rook-file and back-rank duties.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 55,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 4,
+    motifs: ['overloaded-defender', 'deflection', 'rook-file', 'pinned-defender'],
+  },
+  {
+    id: 'rook-sacrifice',
+    zoneId: ROOK_FORTRESS_ZONE_ID,
+    type: 'normal',
+    title: 'Rook Sacrifice',
+    description: 'Find decoys, sacrifices, and clearance moves that open the final file.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 55,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 3,
+    preferredMateInMax: 4,
+    motifs: ['sacrifice', 'decoy', 'rook-file', 'deflection'],
+  },
+  {
+    id: 'rook-fortress-king',
+    zoneId: ROOK_FORTRESS_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Fortress King',
+    description: 'Defeat the fortress by solving three of five rook-led tactics before your lives run out.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 175,
+    rewardBadge: ROOK_FORTRESS_BOSS_BADGE,
+    rewardCollectionItemId: ROOK_FORTRESS_BOSS_COLLECTION_REWARD_ID,
+    fallbackChestTypeId: 'royal-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 4,
+    motifs: ['rook-file', 'back-rank', 'overloaded-defender', 'decoy', 'deflection'],
+  },
+];
+
 const LADDER_ZONE_NODES = {
   [PAWN_VILLAGE_ZONE_ID]: PAWN_VILLAGE_NODES,
   [KNIGHT_WOODS_ZONE_ID]: KNIGHT_WOODS_NODES,
   [BISHOP_TOWER_ZONE_ID]: BISHOP_TOWER_NODES,
+  [ROOK_FORTRESS_ZONE_ID]: ROOK_FORTRESS_NODES,
 };
 
-const PLAYABLE_LADDER_ZONE_IDS = [PAWN_VILLAGE_ZONE_ID, KNIGHT_WOODS_ZONE_ID, BISHOP_TOWER_ZONE_ID];
+const PLAYABLE_LADDER_ZONE_IDS = [
+  PAWN_VILLAGE_ZONE_ID,
+  KNIGHT_WOODS_ZONE_ID,
+  BISHOP_TOWER_ZONE_ID,
+  ROOK_FORTRESS_ZONE_ID,
+];
 
 const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
 const LADDER_MATE_GROUPS = [
@@ -700,6 +785,10 @@ function getLadderNodeById(nodeId) {
 }
 
 function getLadderZoneScreen(zoneId) {
+  if (zoneId === ROOK_FORTRESS_ZONE_ID) {
+    return 'rookFortress';
+  }
+
   if (zoneId === BISHOP_TOWER_ZONE_ID) {
     return 'bishopTower';
   }
@@ -728,6 +817,10 @@ function getLadderZoneBadge(zoneId) {
 
   if (zoneId === BISHOP_TOWER_ZONE_ID) {
     return BISHOP_TOWER_BOSS_BADGE;
+  }
+
+  if (zoneId === ROOK_FORTRESS_ZONE_ID) {
+    return ROOK_FORTRESS_BOSS_BADGE;
   }
 
   return '';
@@ -822,6 +915,10 @@ function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
 
   if (zoneId === BISHOP_TOWER_ZONE_ID) {
     return completedSet.has('knight-smothered-king');
+  }
+
+  if (zoneId === ROOK_FORTRESS_ZONE_ID) {
+    return completedSet.has('bishop-diagonal-keeper');
   }
 
   return false;
@@ -1478,8 +1575,10 @@ export default function App() {
   const pawnVillageProgress = getLadderZoneProgress(PAWN_VILLAGE_ZONE_ID, stats.completedLadderNodes || []);
   const knightWoodsProgress = getLadderZoneProgress(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
   const bishopTowerProgress = getLadderZoneProgress(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
+  const rookFortressProgress = getLadderZoneProgress(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
   const knightWoodsUnlocked = ladderZoneIsUnlocked(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
   const bishopTowerUnlocked = ladderZoneIsUnlocked(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
+  const rookFortressUnlocked = ladderZoneIsUnlocked(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -1690,6 +1789,10 @@ export default function App() {
 
   function openBishopTower() {
     openLadderZone(BISHOP_TOWER_ZONE_ID);
+  }
+
+  function openRookFortress() {
+    openLadderZone(ROOK_FORTRESS_ZONE_ID);
   }
 
   function startLadderNode(nodeId) {
@@ -3032,7 +3135,9 @@ export default function App() {
                 <span>
                   <strong>Ladder World</strong>
                   <small>
-                    {bishopTowerUnlocked
+                    {rookFortressUnlocked
+                      ? 'Rook Fortress unlocked'
+                      : bishopTowerUnlocked
                       ? 'Bishop Tower unlocked'
                       : knightWoodsUnlocked
                         ? 'Knight Woods unlocked'
@@ -3257,12 +3362,14 @@ export default function App() {
     );
   }
 
-  if (screen === 'pawnVillage' || screen === 'knightWoods' || screen === 'bishopTower') {
-    const ladderZoneId = screen === 'bishopTower'
-      ? BISHOP_TOWER_ZONE_ID
-      : screen === 'knightWoods'
-        ? KNIGHT_WOODS_ZONE_ID
-        : PAWN_VILLAGE_ZONE_ID;
+  if (screen === 'pawnVillage' || screen === 'knightWoods' || screen === 'bishopTower' || screen === 'rookFortress') {
+    const ladderZoneId = screen === 'rookFortress'
+      ? ROOK_FORTRESS_ZONE_ID
+      : screen === 'bishopTower'
+        ? BISHOP_TOWER_ZONE_ID
+        : screen === 'knightWoods'
+          ? KNIGHT_WOODS_ZONE_ID
+          : PAWN_VILLAGE_ZONE_ID;
     const ladderZone = getLadderZoneById(ladderZoneId);
     const ladderZoneNodes = getLadderZoneNodes(ladderZoneId);
     const ladderZoneProgress = getLadderZoneProgress(ladderZoneId, stats.completedLadderNodes || []);
@@ -3406,6 +3513,10 @@ export default function App() {
               <span>Bishop Tower</span>
             </div>
             <div>
+              <strong>{rookFortressProgress.completedCount}/{rookFortressProgress.totalCount}</strong>
+              <span>Rook Fortress</span>
+            </div>
+            <div>
               <strong>{stats.ladderXp || 0}</strong>
               <span>Ladder XP</span>
             </div>
@@ -3427,7 +3538,9 @@ export default function App() {
                   ? 'Rewards: Tactical and Royal Chests, Bronze Knight boss reward, XP.'
                   : zone.id === BISHOP_TOWER_ZONE_ID
                     ? 'Rewards: Tactical and Royal Chests, Shadow Bishop boss reward, XP.'
-                    : '';
+                    : zone.id === ROOK_FORTRESS_ZONE_ID
+                      ? 'Rewards: Tactical and Royal Chests, Royal Rook boss reward, XP.'
+                      : '';
 
               return (
                 <article
@@ -3496,7 +3609,9 @@ export default function App() {
                           ? 'Defeat Back Rank Guard to unlock.'
                           : zone.id === BISHOP_TOWER_ZONE_ID
                             ? 'Defeat The Smothered King to unlock.'
-                            : 'Coming soon'}
+                            : zone.id === ROOK_FORTRESS_ZONE_ID
+                              ? 'Defeat The Diagonal Keeper to unlock.'
+                              : 'Coming soon'}
                       </small>
                     )}
                   </div>
@@ -3517,6 +3632,10 @@ export default function App() {
             <button type="button" className="secondary-action" onClick={openBishopTower} disabled={!bishopTowerUnlocked}>
               <Play size={18} />
               Open Bishop Tower
+            </button>
+            <button type="button" className="secondary-action" onClick={openRookFortress} disabled={!rookFortressUnlocked}>
+              <Play size={18} />
+              Open Rook Fortress
             </button>
             <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
               <ListChecks size={18} />

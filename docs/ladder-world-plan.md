@@ -53,13 +53,13 @@ The design should feel like chess plus a mobile progression world: zones, nodes,
 ### Rook Fortress
 
 - Zone focus: files, ranks, back-rank pressure, clearance, rook lifts
-- Suggested mateIn range: 2 to 3
+- Suggested mateIn range: 2 to 4
 - Difficulty range: medium to advanced
-- Puzzle themes/motifs: rook-file, back-rank, deflection, decoy, clearance, overloaded defender
-- Boss name: The Fortress Warden
-- Boss concept: a defensive boss where the player must break through file blockers and pinned guards
-- Reward ideas: Rook Fortress badge, Bronze Rook, fortress frame cosmetic, larger coin chest
-- Collectible pieces: Classic Rook, Bronze Rook, Shadow Rook
+- Puzzle themes/motifs: rook-file, back-rank, deflection, decoy, overloaded defender, pinned defender, clearance, sacrifice, king traps
+- Boss name: The Fortress King
+- Boss concept: a defensive boss where the player must break through open-file blockers, overloaded defenders, and back-rank pressure
+- Reward ideas: Rook Fortress Badge, Royal Rook, Tactical/Royal chests, XP
+- Collectible pieces: Classic Rook, Bronze Rook, Shadow Rook, Royal Rook
 
 ### Queen's Court
 
@@ -240,6 +240,15 @@ Field notes:
 - Discovered Line: 45 XP and a Royal Chest on first clear.
 - Clearance Path: 45 XP and a Royal Chest on first clear.
 - Boss: The Diagonal Keeper: 150 XP, the Bishop Tower Badge, and the Shadow Bishop collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
+
+### Rook Fortress v1 Rewards
+
+- Open File: 55 XP and a Tactical Chest on first clear.
+- Back Rank Pressure: 55 XP and a Royal Chest on first clear.
+- Overloaded Defender: 55 XP and a Royal Chest on first clear.
+- Rook Sacrifice: 55 XP and a Royal Chest on first clear.
+- Boss: The Fortress King: 175 XP, the Rook Fortress Badge, and the Royal Rook collection piece on first clear.
 - If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
 
 ## MVP Implementation Phases
