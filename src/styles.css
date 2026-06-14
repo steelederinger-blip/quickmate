@@ -1562,6 +1562,171 @@ h2 {
   font-size: 1.8rem;
 }
 
+.cinematic-moment {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: min(560px, 100%);
+  max-height: calc(100vh - 28px);
+  overflow: hidden auto;
+  padding: 28px 22px 22px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 22%);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top, rgba(242, 189, 75, 0.16), transparent 17rem),
+    linear-gradient(160deg, rgba(21, 28, 41, 0.98), rgba(8, 11, 16, 0.98));
+  box-shadow: var(--shadow), 0 0 44px rgba(242, 189, 75, 0.13);
+  text-align: center;
+  isolation: isolate;
+  animation: cinematic-slide-in 340ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.cinematic-moment::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 231, 160, 0.13), transparent),
+    radial-gradient(circle at bottom right, rgba(32, 230, 210, 0.12), transparent 15rem);
+  opacity: 0.9;
+}
+
+.cinematic-glow {
+  position: absolute;
+  inset: auto -24px -80px;
+  z-index: -1;
+  height: 180px;
+  background: radial-gradient(circle, rgba(242, 189, 75, 0.2), transparent 62%);
+  pointer-events: none;
+}
+
+.cinematic-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 20%);
+  border-radius: 50%;
+  color: var(--accent-strong);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.22), transparent 28px),
+    rgba(242, 189, 75, 0.13);
+  box-shadow: 0 0 32px rgba(242, 189, 75, 0.2);
+  animation: cinematic-badge-rise 520ms ease-out both;
+}
+
+.cinematic-moment h2 {
+  margin: 2px 0 4px;
+  font-size: clamp(1.8rem, 8vw, 2.8rem);
+  letter-spacing: 0;
+}
+
+.cinematic-boss-name {
+  color: var(--accent-strong);
+  font-size: 1.15rem;
+}
+
+.cinematic-copy {
+  max-width: 34rem;
+  margin: 10px 0 18px;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.cinematic-rewards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.cinematic-rewards span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: rgba(242, 189, 75, 0.12);
+  font-size: 0.82rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.cinematic-continue {
+  justify-content: center;
+  width: min(320px, 100%);
+}
+
+.cinematic-teal {
+  border-color: color-mix(in srgb, var(--speed-teal), transparent 24%);
+  box-shadow: var(--shadow), 0 0 44px rgba(32, 230, 210, 0.13);
+}
+
+.cinematic-teal .cinematic-icon,
+.cinematic-teal .cinematic-rewards span {
+  color: #c6fff8;
+  border-color: color-mix(in srgb, var(--speed-teal), transparent 24%);
+  background: var(--speed-teal-soft);
+}
+
+.cinematic-royal {
+  border-color: color-mix(in srgb, var(--royal), transparent 20%);
+  box-shadow: var(--shadow), 0 0 44px rgba(111, 92, 255, 0.16);
+}
+
+.cinematic-royal .cinematic-icon,
+.cinematic-royal .cinematic-rewards span {
+  color: #dfdcff;
+  border-color: color-mix(in srgb, var(--royal), transparent 22%);
+  background: var(--royal-soft);
+}
+
+.cinematic-legendary {
+  border-color: color-mix(in srgb, var(--rarity-legendary), transparent 12%);
+  box-shadow: var(--shadow), 0 0 54px rgba(255, 200, 91, 0.2);
+}
+
+@keyframes cinematic-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cinematic-badge-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-moment,
+  .cinematic-icon {
+    animation: none;
+  }
+}
+
 .daily-result-strip {
   display: flex;
   flex-wrap: wrap;
@@ -2960,6 +3125,36 @@ button {
     width: 100%;
     max-height: calc(100vh - 20px);
     padding: 16px;
+  }
+
+  .cinematic-moment {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    padding: 22px 14px 16px;
+  }
+
+  .cinematic-icon {
+    width: 62px;
+    height: 62px;
+  }
+
+  .cinematic-moment h2 {
+    font-size: 1.9rem;
+  }
+
+  .cinematic-boss-name {
+    font-size: 1.02rem;
+    overflow-wrap: anywhere;
+  }
+
+  .cinematic-rewards {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .cinematic-rewards span {
+    justify-content: center;
+    border-radius: 10px;
   }
 
   .result-panel h2 {

@@ -1790,6 +1790,114 @@ function formatContentStatus(status) {
   }[status] || 'Unspecified Puzzles';
 }
 
+const BOSS_CINEMATIC_COPY = {
+  [PAWN_VILLAGE_ZONE_ID]: {
+    tone: 'gold',
+    text: 'The first gate falls. Your campaign path is open.',
+  },
+  [KNIGHT_WOODS_ZONE_ID]: {
+    tone: 'teal',
+    text: 'The trap is sprung, and the woods go quiet.',
+  },
+  [BISHOP_TOWER_ZONE_ID]: {
+    tone: 'royal',
+    text: 'The diagonal line is yours. The tower is clear.',
+  },
+  [ROOK_FORTRESS_ZONE_ID]: {
+    tone: 'gold',
+    text: 'The fortress rank breaks under clean pressure.',
+  },
+  [QUEENS_COURT_ZONE_ID]: {
+    tone: 'royal',
+    text: 'The court yields to a stronger forcing line.',
+  },
+  [KINGS_GATE_ZONE_ID]: {
+    tone: 'teal',
+    text: 'The running king has nowhere left to go.',
+  },
+  [GRANDMASTER_KEEP_ZONE_ID]: {
+    tone: 'legendary',
+    text: 'The final trial is complete. The first campaign is yours.',
+  },
+};
+
+function getBossNameFromNodeTitle(nodeTitle = '') {
+  return nodeTitle.replace(/^Boss:\s*/i, '') || 'Ladder Boss';
+}
+
+function buildBossCinematicRewards(result) {
+  const rewards = [];
+
+  if (result.rewardXp > 0) {
+    rewards.push(`+${result.rewardXp} XP`);
+  }
+
+  if (result.earnedBadge) {
+    rewards.push(result.earnedBadge);
+  }
+
+  if (result.collectionRewardItem) {
+    rewards.push(result.collectionRewardItem.displayName);
+  } else if (result.earnedChest) {
+    rewards.push(result.earnedChest.name);
+  }
+
+  if (result.alreadyCompleted && rewards.length === 0) {
+    rewards.push('Rewards already claimed');
+  }
+
+  return rewards.length > 0 ? rewards : ['Boss clear recorded'];
+}
+
+function createBossCinematicMoment(result) {
+  const copy = BOSS_CINEMATIC_COPY[result.zoneId] || BOSS_CINEMATIC_COPY[PAWN_VILLAGE_ZONE_ID];
+
+  return {
+    type: 'boss-defeat',
+    title: 'Boss Defeated',
+    zoneName: result.zoneName || 'Ladder World',
+    bossName: getBossNameFromNodeTitle(result.nodeTitle),
+    rewards: buildBossCinematicRewards(result),
+    text: copy.text,
+    tone: copy.tone,
+  };
+}
+
+function CinematicMoment({ moment, onDismiss }) {
+  if (!moment) {
+    return null;
+  }
+
+  return (
+    <section
+      className={`cinematic-moment cinematic-${moment.tone || 'gold'}`}
+      aria-labelledby="cinematic-title"
+      aria-describedby="cinematic-description"
+    >
+      <div className="cinematic-glow" aria-hidden="true" />
+      <div className="cinematic-icon" aria-hidden="true">
+        <Trophy size={38} />
+      </div>
+      <p className="eyebrow">{moment.zoneName}</p>
+      <h2 id="cinematic-title">{moment.title}</h2>
+      <strong className="cinematic-boss-name">{moment.bossName}</strong>
+      <p id="cinematic-description" className="cinematic-copy">{moment.text}</p>
+      <div className="cinematic-rewards" aria-label="Reward summary">
+        {moment.rewards.map((reward) => (
+          <span key={reward}>
+            <BadgeCheck size={16} />
+            {reward}
+          </span>
+        ))}
+      </div>
+      <button type="button" className="primary-action cinematic-continue" onClick={onDismiss}>
+        <ChevronRight size={18} />
+        Continue
+      </button>
+    </section>
+  );
+}
+
 const productionRushPuzzleCount = getPuzzleIndexesForMode('rush', { productionTrackOnly: true }).length;
 const hasProductionRushPuzzles = productionRushPuzzleCount > 0;
 const dailyRushProductionPuzzleCount = getDailyRushEligiblePuzzleIndexes().length;
@@ -1840,6 +1948,7 @@ export default function App() {
   const [openLadderMateGroups, setOpenLadderMateGroups] = useState({ 'candidate:1': true });
   const [chestOpenResult, setChestOpenResult] = useState(null);
   const [brandLogoStatus, setBrandLogoStatus] = useState('loading');
+  const [cinematicMoment, setCinematicMoment] = useState(null);
 
   const puzzle = puzzles[puzzleIndex];
   const game = useMemo(() => new Chess(fen), [fen]);
@@ -2003,6 +2112,7 @@ export default function App() {
     setCopyStatus('Copy Result');
     setPuzzleFeedbackCopyStatus({});
     setChestOpenResult(null);
+    setCinematicMoment(null);
     setFeedback(nextFeedback);
     setSelectedSquare(null);
     setRushPuzzleMistakes(0);
@@ -2132,6 +2242,7 @@ export default function App() {
     setIsComplete(false);
     setResult(null);
     setChestOpenResult(null);
+    setCinematicMoment(null);
     setScreen('collection');
   }
 
@@ -2142,6 +2253,7 @@ export default function App() {
     setIsComplete(false);
     setResult(null);
     setChestOpenResult(null);
+    setCinematicMoment(null);
     if (resultMode === 'dailyRush') {
       setScreen('home');
       return;
@@ -2530,8 +2642,7 @@ export default function App() {
       collectionRewardItem && !previousCollectionSetProgress?.isComplete && collectionSetProgress?.isComplete,
     );
 
-    setIsComplete(true);
-    setResult({
+    const nextResult = {
       mode: 'ladderNode',
       zoneId: activeLadderNode.zoneId,
       zoneName: activeZone.name,
@@ -2562,7 +2673,15 @@ export default function App() {
         ? 'You cleared the first QuickMate campaign.'
         : '',
       comingSoon: cleared && activeLadderNode.type === 'boss' && nextZone && !nextZoneUnlocked ? nextZone.name : '',
-    });
+    };
+
+    setIsComplete(true);
+    setResult(nextResult);
+    setCinematicMoment(
+      nextResult.cleared && nextResult.nodeType === 'boss'
+        ? createBossCinematicMoment(nextResult)
+        : null,
+    );
     setFeedback(cleared
       ? (activeLadderNode.type === 'boss' ? 'Boss defeated.' : 'Node clear.')
       : 'Node failed. Try again.');
@@ -3225,8 +3344,13 @@ export default function App() {
     setResult(null);
     setCopyStatus('Copy Result');
     setChestOpenResult(null);
+    setCinematicMoment(null);
     setActiveLadderNodeId('');
     setScreen('home');
+  }
+
+  function dismissCinematicMoment() {
+    setCinematicMoment(null);
   }
 
   function renderPuzzleItem(item, index) {
@@ -4470,7 +4594,9 @@ export default function App() {
 
       {isComplete && result && (
         <section className="result-screen" role="dialog" aria-modal="true" aria-label="Puzzle result">
-          {result.mode === 'ladderNode' ? (
+          {cinematicMoment ? (
+            <CinematicMoment moment={cinematicMoment} onDismiss={dismissCinematicMoment} />
+          ) : result.mode === 'ladderNode' ? (
             <div className="result-panel">
               <Trophy size={42} />
               <p className="eyebrow">
