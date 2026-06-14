@@ -1591,6 +1591,16 @@ h2 {
   font-weight: 800;
 }
 
+.campaign-complete-banner {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(120, 151, 196, 0.42);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(46, 73, 104, 0.16), rgba(255, 255, 255, 0.9));
+  color: var(--text);
+  font-weight: 900;
+}
+
 .result-meta {
   display: flex;
   justify-content: center;

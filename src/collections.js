@@ -95,7 +95,7 @@ const PIECE_SET_CONFIGS = [
     setId: 'grandmaster-set',
     setName: 'Grandmaster Set',
     rarity: 'Legendary',
-    unlockSource: 'Grandmaster Keep, Legendary Chests, and major zone completions',
+    unlockSource: 'Grandmaster Keep boss rewards, Legendary Chests, and major zone completions',
     cosmeticReward: 'Grandmaster title and frame',
   },
 ];

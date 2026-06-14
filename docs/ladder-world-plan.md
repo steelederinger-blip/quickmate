@@ -85,13 +85,13 @@ The design should feel like chess plus a mobile progression world: zones, nodes,
 
 ### Grandmaster Keep
 
-- Zone focus: deep calculation, mixed motifs, final mastery, long-term aspirational content
-- Suggested mateIn range: 3 to 4, later 5+
+- Zone focus: deep mates, advanced tactics, long forcing lines, survival-style pressure, and final mastery
+- Suggested mateIn range: 4 to 8+ as production content expands
 - Difficulty range: expert to master
-- Puzzle themes/motifs: multi-theme combinations, quiet-move forcing lines, sacrifice, king-hunt, promotion, overloaded defender
-- Boss name: The Grandmaster
-- Boss concept: an end-zone boss gauntlet with multiple lives, mixed themes, and no obvious repeated pattern
-- Reward ideas: Grandmaster badge, Grandmaster Set pieces, animated title, end-zone completion frame
+- Puzzle themes/motifs: king-hunt, center-board-mate, double-check, discovered-check, clearance, deflection, decoy, sacrifice, queen-sacrifice, overloaded-defender, pinned-defender, promotion, bishop-diagonal, rook-file
+- Boss name: The Grandmaster Trial
+- Boss concept: an end-zone boss gauntlet with seven puzzles, three lives, mixed themes, and no obvious repeated pattern
+- Reward ideas: Grandmaster Keep Badge, Grandmaster King, Legendary chests, animated title, end-zone completion frame
 - Collectible pieces: Grandmaster Pawn, Grandmaster Knight, Grandmaster Bishop, Grandmaster Rook, Grandmaster Queen, Grandmaster King
 
 ## Node Types
@@ -268,6 +268,16 @@ Field notes:
 - Gate Breaker: 90 XP and a Legendary Chest on first clear.
 - Boss: The Running King: 300 XP, the King's Gate Badge, and the Royal King collection piece on first clear.
 - If the boss-specific piece is already owned, the boss awards a Legendary Chest fallback instead.
+
+### Grandmaster Keep v1 Rewards
+
+- Master Entry: 125 XP and a Legendary Chest on first clear.
+- Deep Calculation: 125 XP and a Legendary Chest on first clear.
+- Sacrifice Storm: 125 XP and a Legendary Chest on first clear.
+- Endgame Net: 125 XP and a Legendary Chest on first clear.
+- Boss: The Grandmaster Trial: 500 XP, the Grandmaster Keep Badge, and the Grandmaster King collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Legendary Chest fallback instead.
+- Clearing the boss marks the first QuickMate campaign complete.
 
 ## MVP Implementation Phases
 

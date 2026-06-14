@@ -173,12 +173,12 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'grandmaster-keep',
     name: 'Grandmaster Keep',
-    focus: 'Deep calculation, mixed motifs, and long-term mastery.',
-    mateInRange: 'Mate in 3-4, later 5+',
+    focus: 'Deep mates, advanced tactics, long forcing lines, and survival-style pressure.',
+    mateInRange: 'Mate in 4-8+',
     difficultyRange: 'Expert to Master',
-    motifs: ['multi-theme lines', 'sacrifice', 'promotion'],
-    bossName: 'The Grandmaster',
-    rewardPreview: 'Grandmaster Set pieces, title, animated frame',
+    motifs: ['king-hunt', 'sacrifice', 'promotion'],
+    bossName: 'The Grandmaster Trial',
+    rewardPreview: 'Legendary Chests, Grandmaster King, Grandmaster Keep Badge, Ladder XP',
     unlocked: false,
     color: '#2e4968',
   },
@@ -202,6 +202,9 @@ const QUEENS_COURT_BOSS_COLLECTION_REWARD_ID = 'royal-queen';
 const KINGS_GATE_ZONE_ID = 'kings-gate';
 const KINGS_GATE_BOSS_BADGE = "King's Gate Badge";
 const KINGS_GATE_BOSS_COLLECTION_REWARD_ID = 'royal-king';
+const GRANDMASTER_KEEP_ZONE_ID = 'grandmaster-keep';
+const GRANDMASTER_KEEP_BOSS_BADGE = 'Grandmaster Keep Badge';
+const GRANDMASTER_KEEP_BOSS_COLLECTION_REWARD_ID = 'grandmaster-king';
 const PAWN_VILLAGE_NODES = [
   {
     id: 'pawn-welcome-mate',
@@ -660,6 +663,90 @@ const KINGS_GATE_NODES = [
   },
 ];
 
+const GRANDMASTER_KEEP_NODES = [
+  {
+    id: 'grandmaster-master-entry',
+    zoneId: GRANDMASTER_KEEP_ZONE_ID,
+    type: 'normal',
+    title: 'Master Entry',
+    description: 'Enter the keep with advanced king hunts and exact forcing checks.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 125,
+    rewardChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 99,
+    motifs: ['king-hunt', 'center-board-mate', 'double-check', 'bishop-diagonal'],
+  },
+  {
+    id: 'grandmaster-deep-calculation',
+    zoneId: GRANDMASTER_KEEP_ZONE_ID,
+    type: 'normal',
+    title: 'Deep Calculation',
+    description: 'Calculate long forcing lines where every reply has to be accounted for.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 125,
+    rewardChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 99,
+    motifs: ['discovered-check', 'clearance', 'deflection', 'overloaded-defender'],
+  },
+  {
+    id: 'grandmaster-sacrifice-storm',
+    zoneId: GRANDMASTER_KEEP_ZONE_ID,
+    type: 'normal',
+    title: 'Sacrifice Storm',
+    description: 'Use sacrifices, queen decoys, and overloaded defenders to keep the attack forced.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 125,
+    rewardChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 99,
+    motifs: ['sacrifice', 'queen-sacrifice', 'decoy', 'overloaded-defender', 'pinned-defender'],
+  },
+  {
+    id: 'grandmaster-endgame-net',
+    zoneId: GRANDMASTER_KEEP_ZONE_ID,
+    type: 'normal',
+    title: 'Endgame Net',
+    description: 'Finish the campaign road with promotion threats, rook files, and clean mating nets.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 125,
+    rewardChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 99,
+    motifs: ['promotion', 'rook-file', 'bishop-diagonal', 'center-board-mate', 'clearance'],
+  },
+  {
+    id: 'grandmaster-trial',
+    zoneId: GRANDMASTER_KEEP_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Grandmaster Trial',
+    description: 'Clear five of seven under pressure to finish the first QuickMate campaign.',
+    puzzleCount: 7,
+    clearRequirement: 5,
+    lives: 3,
+    rewardXp: 500,
+    rewardBadge: GRANDMASTER_KEEP_BOSS_BADGE,
+    rewardCollectionItemId: GRANDMASTER_KEEP_BOSS_COLLECTION_REWARD_ID,
+    fallbackChestTypeId: 'legendary-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 99,
+    motifs: [
+      'king-hunt',
+      'center-board-mate',
+      'double-check',
+      'discovered-check',
+      'sacrifice',
+      'promotion',
+      'deflection',
+    ],
+  },
+];
+
 const LADDER_ZONE_NODES = {
   [PAWN_VILLAGE_ZONE_ID]: PAWN_VILLAGE_NODES,
   [KNIGHT_WOODS_ZONE_ID]: KNIGHT_WOODS_NODES,
@@ -667,6 +754,7 @@ const LADDER_ZONE_NODES = {
   [ROOK_FORTRESS_ZONE_ID]: ROOK_FORTRESS_NODES,
   [QUEENS_COURT_ZONE_ID]: QUEENS_COURT_NODES,
   [KINGS_GATE_ZONE_ID]: KINGS_GATE_NODES,
+  [GRANDMASTER_KEEP_ZONE_ID]: GRANDMASTER_KEEP_NODES,
 };
 
 const PLAYABLE_LADDER_ZONE_IDS = [
@@ -676,6 +764,7 @@ const PLAYABLE_LADDER_ZONE_IDS = [
   ROOK_FORTRESS_ZONE_ID,
   QUEENS_COURT_ZONE_ID,
   KINGS_GATE_ZONE_ID,
+  GRANDMASTER_KEEP_ZONE_ID,
 ];
 
 const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
@@ -947,6 +1036,10 @@ function getLadderNodeById(nodeId) {
 }
 
 function getLadderZoneScreen(zoneId) {
+  if (zoneId === GRANDMASTER_KEEP_ZONE_ID) {
+    return 'grandmasterKeep';
+  }
+
   if (zoneId === KINGS_GATE_ZONE_ID) {
     return 'kingsGate';
   }
@@ -999,6 +1092,10 @@ function getLadderZoneBadge(zoneId) {
 
   if (zoneId === KINGS_GATE_ZONE_ID) {
     return KINGS_GATE_BOSS_BADGE;
+  }
+
+  if (zoneId === GRANDMASTER_KEEP_ZONE_ID) {
+    return GRANDMASTER_KEEP_BOSS_BADGE;
   }
 
   return '';
@@ -1105,6 +1202,10 @@ function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
 
   if (zoneId === KINGS_GATE_ZONE_ID) {
     return completedSet.has('queen-trial');
+  }
+
+  if (zoneId === GRANDMASTER_KEEP_ZONE_ID) {
+    return completedSet.has('king-running-king');
   }
 
   return false;
@@ -1764,11 +1865,13 @@ export default function App() {
   const rookFortressProgress = getLadderZoneProgress(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
   const queensCourtProgress = getLadderZoneProgress(QUEENS_COURT_ZONE_ID, stats.completedLadderNodes || []);
   const kingsGateProgress = getLadderZoneProgress(KINGS_GATE_ZONE_ID, stats.completedLadderNodes || []);
+  const grandmasterKeepProgress = getLadderZoneProgress(GRANDMASTER_KEEP_ZONE_ID, stats.completedLadderNodes || []);
   const knightWoodsUnlocked = ladderZoneIsUnlocked(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
   const bishopTowerUnlocked = ladderZoneIsUnlocked(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
   const rookFortressUnlocked = ladderZoneIsUnlocked(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
   const queensCourtUnlocked = ladderZoneIsUnlocked(QUEENS_COURT_ZONE_ID, stats.completedLadderNodes || []);
   const kingsGateUnlocked = ladderZoneIsUnlocked(KINGS_GATE_ZONE_ID, stats.completedLadderNodes || []);
+  const grandmasterKeepUnlocked = ladderZoneIsUnlocked(GRANDMASTER_KEEP_ZONE_ID, stats.completedLadderNodes || []);
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -1991,6 +2094,10 @@ export default function App() {
 
   function openKingsGate() {
     openLadderZone(KINGS_GATE_ZONE_ID);
+  }
+
+  function openGrandmasterKeep() {
+    openLadderZone(GRANDMASTER_KEEP_ZONE_ID);
   }
 
   function startLadderNode(nodeId) {
@@ -2448,6 +2555,9 @@ export default function App() {
       nextZoneId: nextZoneUnlocked ? nextZone.id : '',
       nextZoneName: nextZoneUnlocked ? nextZone.name : '',
       zoneCompleteMessage: cleared && activeLadderNode.type === 'boss' ? `${activeZone.name} complete` : '',
+      campaignCompleteMessage: cleared && activeLadderNode.id === 'grandmaster-trial'
+        ? 'You cleared the first QuickMate campaign.'
+        : '',
       comingSoon: cleared && activeLadderNode.type === 'boss' && nextZone && !nextZoneUnlocked ? nextZone.name : '',
     });
     setFeedback(cleared
@@ -3333,7 +3443,9 @@ export default function App() {
                 <span>
                   <strong>Ladder World</strong>
                   <small>
-                    {kingsGateUnlocked
+                    {grandmasterKeepUnlocked
+                      ? 'Grandmaster Keep unlocked'
+                      : kingsGateUnlocked
                       ? "King's Gate unlocked"
                       : queensCourtUnlocked
                       ? "Queen's Court unlocked"
@@ -3571,18 +3683,21 @@ export default function App() {
     || screen === 'rookFortress'
     || screen === 'queensCourt'
     || screen === 'kingsGate'
+    || screen === 'grandmasterKeep'
   ) {
-    const ladderZoneId = screen === 'kingsGate'
-      ? KINGS_GATE_ZONE_ID
-      : screen === 'queensCourt'
-        ? QUEENS_COURT_ZONE_ID
-        : screen === 'rookFortress'
-          ? ROOK_FORTRESS_ZONE_ID
-          : screen === 'bishopTower'
-            ? BISHOP_TOWER_ZONE_ID
-            : screen === 'knightWoods'
-              ? KNIGHT_WOODS_ZONE_ID
-              : PAWN_VILLAGE_ZONE_ID;
+    const ladderZoneId = screen === 'grandmasterKeep'
+      ? GRANDMASTER_KEEP_ZONE_ID
+      : screen === 'kingsGate'
+        ? KINGS_GATE_ZONE_ID
+        : screen === 'queensCourt'
+          ? QUEENS_COURT_ZONE_ID
+          : screen === 'rookFortress'
+            ? ROOK_FORTRESS_ZONE_ID
+            : screen === 'bishopTower'
+              ? BISHOP_TOWER_ZONE_ID
+              : screen === 'knightWoods'
+                ? KNIGHT_WOODS_ZONE_ID
+                : PAWN_VILLAGE_ZONE_ID;
     const ladderZone = getLadderZoneById(ladderZoneId);
     const ladderZoneNodes = getLadderZoneNodes(ladderZoneId);
     const ladderZoneProgress = getLadderZoneProgress(ladderZoneId, stats.completedLadderNodes || []);
@@ -3738,10 +3853,21 @@ export default function App() {
               <span>King's Gate</span>
             </div>
             <div>
+              <strong>{grandmasterKeepProgress.completedCount}/{grandmasterKeepProgress.totalCount}</strong>
+              <span>Grandmaster Keep</span>
+            </div>
+            <div>
+              <strong>{grandmasterKeepProgress.isComplete ? 'Complete' : grandmasterKeepUnlocked ? 'Open' : 'Locked'}</strong>
+              <span>Campaign</span>
+            </div>
+            <div>
               <strong>{stats.ladderXp || 0}</strong>
               <span>Ladder XP</span>
             </div>
           </section>
+          {grandmasterKeepProgress.isComplete && (
+            <p className="campaign-complete-banner">You cleared the first QuickMate campaign.</p>
+          )}
 
           <section className="world-map" aria-label="Ladder World zones">
             {LADDER_WORLD_ZONES.map((zone, index) => {
@@ -3765,6 +3891,8 @@ export default function App() {
                         ? "Rewards: Royal and Legendary Chests, Royal Queen boss reward, XP."
                         : zone.id === KINGS_GATE_ZONE_ID
                           ? "Rewards: Royal and Legendary Chests, Royal King boss reward, XP."
+                          : zone.id === GRANDMASTER_KEEP_ZONE_ID
+                            ? 'Rewards: Legendary Chests, Grandmaster King boss reward, XP.'
                           : '';
 
               return (
@@ -3840,7 +3968,9 @@ export default function App() {
                                   ? 'Defeat The Fortress King to unlock.'
                                   : zone.id === KINGS_GATE_ZONE_ID
                                     ? "Defeat The Queen's Trial to unlock."
-                                    : 'Coming soon'}
+                                    : zone.id === GRANDMASTER_KEEP_ZONE_ID
+                                      ? 'Defeat The Running King to unlock.'
+                                      : 'Coming soon'}
                       </small>
                     )}
                   </div>
@@ -3873,6 +4003,10 @@ export default function App() {
             <button type="button" className="secondary-action" onClick={openKingsGate} disabled={!kingsGateUnlocked}>
               <Play size={18} />
               Open King's Gate
+            </button>
+            <button type="button" className="secondary-action" onClick={openGrandmasterKeep} disabled={!grandmasterKeepUnlocked}>
+              <Play size={18} />
+              Open Grandmaster Keep
             </button>
             <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
               <ListChecks size={18} />
@@ -4465,6 +4599,9 @@ export default function App() {
               )}
               {result.zoneCompleteMessage && (
                 <p className="rank-chase">{result.zoneCompleteMessage}.</p>
+              )}
+              {result.campaignCompleteMessage && (
+                <p className="campaign-complete-banner">{result.campaignCompleteMessage}</p>
               )}
               {result.comingSoon && (
                 <p className="rank-chase">Coming soon: {result.comingSoon}</p>
