@@ -64,13 +64,13 @@ The design should feel like chess plus a mobile progression world: zones, nodes,
 ### Queen's Court
 
 - Zone focus: queen coordination, sacrifices, forcing checks, high-impact attacking moves
-- Suggested mateIn range: 2 to 3
+- Suggested mateIn range: 3 to 5
 - Difficulty range: medium to advanced
-- Puzzle themes/motifs: queen-sacrifice, deflection, decoy, king-hunt, queen battery, overloaded defender
-- Boss name: The Court Queen
-- Boss concept: a boss battle built around queen sacrifices and precise follow-up mates
-- Reward ideas: Queen's Court badge, Royal Queen fragment, premium-looking cosmetic banner
-- Collectible pieces: Classic Queen, Bronze Queen, Royal Queen
+- Puzzle themes/motifs: queen-sacrifice, decoy, deflection, double-check, discovered-check, overloaded defender, pinned defender, clearance, king-hunt, center-board mate
+- Boss name: The Queen's Trial
+- Boss concept: a boss battle built around queen sacrifices, double checks, decoys, and longer forcing lines
+- Reward ideas: Queen's Court Badge, Royal Queen, Royal/Legendary chests, XP
+- Collectible pieces: Classic Queen, Bronze Queen, Shadow Queen, Royal Queen
 
 ### King's Gate
 
@@ -250,6 +250,15 @@ Field notes:
 - Rook Sacrifice: 55 XP and a Royal Chest on first clear.
 - Boss: The Fortress King: 175 XP, the Rook Fortress Badge, and the Royal Rook collection piece on first clear.
 - If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
+
+### Queen's Court v1 Rewards
+
+- Royal Entry: 70 XP and a Royal Chest on first clear.
+- Decoy the Defender: 70 XP and a Royal Chest on first clear.
+- Queen Sacrifice: 70 XP and a Royal Chest on first clear.
+- Double Check Court: 70 XP and a Legendary Chest on first clear.
+- Boss: The Queen's Trial: 225 XP, the Queen's Court Badge, and the Royal Queen collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Legendary Chest fallback instead.
 
 ## MVP Implementation Phases
 
