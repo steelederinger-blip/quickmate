@@ -3420,24 +3420,14 @@ export default function App() {
             </section>
           </section>
 
-          <section className="practice-section" aria-label="Practice and progression">
+          <section className="progress-section" aria-label="Progress">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Practice</p>
-                <h2>Warm up and progress.</h2>
+                <p className="eyebrow">Progress</p>
+                <h2>World and collection.</h2>
               </div>
             </div>
-            <div className="mode-grid secondary-mode-grid">
-              <button type="button" className="mode-card practice-card" onClick={startDaily}>
-                <CalendarDays size={24} />
-                <span>
-                  <strong>Daily Warmup</strong>
-                  <small>One quick puzzle to warm up before Rush.</small>
-                  <small>{dailyDone ? `${stats.currentDailyStreak} warmup streak` : `Today: ${puzzles[dailyPuzzleIndex].title}`}</small>
-                </span>
-                <Play size={20} />
-              </button>
-
+            <div className="mode-grid progress-mode-grid">
               <button type="button" className="mode-card" onClick={openLadderWorld}>
                 <ListChecks size={24} />
                 <span>
@@ -3466,6 +3456,36 @@ export default function App() {
                 <span>
                   <strong>Collection</strong>
                   <small>Piece sets, cosmetics, and status rewards</small>
+                </span>
+                <Play size={20} />
+              </button>
+            </div>
+          </section>
+
+          <section className="practice-section" aria-label="Practice">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Practice</p>
+                <h2>Warm up and train.</h2>
+              </div>
+            </div>
+            <div className="mode-grid practice-mode-grid">
+              <button type="button" className="mode-card practice-card" onClick={startDaily}>
+                <CalendarDays size={24} />
+                <span>
+                  <strong>Daily Warmup</strong>
+                  <small>One quick puzzle to warm up before Rush.</small>
+                  <small>{dailyDone ? `${stats.currentDailyStreak} warmup streak` : `Today: ${puzzles[dailyPuzzleIndex].title}`}</small>
+                </span>
+                <Play size={20} />
+              </button>
+
+              <button type="button" className="mode-card practice-card" onClick={() => startPuzzle(0, 'ladder')}>
+                <ListChecks size={24} />
+                <span>
+                  <strong>Classic Ladder</strong>
+                  <small>Browse candidate and development puzzle groups.</small>
+                  <small>Accordion training list</small>
                 </span>
                 <Play size={20} />
               </button>
