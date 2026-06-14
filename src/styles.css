@@ -1166,9 +1166,9 @@ h2 {
 
 .group-items {
   display: grid;
-  grid-template-columns: repeat(5, minmax(178px, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
-  overflow-x: auto;
+  overflow-x: visible;
   padding-bottom: 4px;
 }
 
@@ -2492,6 +2492,401 @@ button {
   .feedback-copy-button:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow), var(--shadow-soft);
+  }
+}
+
+/* Mobile QA polish v2: tighter phone layouts and safer wrapping. */
+.mode-card > span,
+.rush-mode-card > span,
+.history-item span,
+.panel-title > div,
+.zone-card-header > div,
+.node-header > div,
+.collection-set-header > div,
+.unlock-hero > div {
+  min-width: 0;
+}
+
+.score-breakdown strong,
+.zone-details strong,
+.node-details strong,
+.collection-reward strong,
+.set-progress-card strong,
+.missed-title-row strong {
+  overflow-wrap: anywhere;
+}
+
+.world-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rush-rules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rush-rules div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.collection-set-header,
+.zone-card-header,
+.node-header,
+.missed-title-row,
+.set-progress-card {
+  flex-wrap: wrap;
+}
+
+.collection-progress,
+.zone-status,
+.set-complete-label,
+.set-complete-banner {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.actions > button,
+.primary-action,
+.secondary-action,
+.feedback-copy-button,
+.accordion-trigger,
+.mode-card,
+.rush-mode-card,
+.puzzle-item {
+  min-height: 46px;
+}
+
+@media (max-width: 759px) {
+  .app-shell {
+    padding: 10px;
+  }
+
+  .home-hero {
+    gap: 14px;
+    padding-block: 4px 18px;
+  }
+
+  .brand-row,
+  .topbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .brand-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .brand-row h1,
+  .topbar h1 {
+    font-size: clamp(1.9rem, 10vw, 2.7rem);
+    line-height: 1;
+  }
+
+  .streak-pill,
+  .panel-header span,
+  .badge,
+  .rating {
+    white-space: normal;
+  }
+
+  .rush-hero-card {
+    min-height: 124px;
+  }
+
+  .rush-hero-card strong {
+    font-size: 1.4rem;
+  }
+
+  .mode-card {
+    gap: 11px;
+    min-height: 82px;
+    padding: 13px;
+  }
+
+  .mode-card small,
+  .puzzle-item small,
+  .rush-mode-card small {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .rush-home-metrics,
+  .home-stats,
+  .collection-stats {
+    gap: 8px;
+  }
+
+  .home-stats div,
+  .rush-home-metrics div,
+  .collection-stats div,
+  .world-summary div {
+    min-height: 68px;
+    padding: 11px;
+  }
+
+  .home-stats strong,
+  .rush-home-metrics strong,
+  .collection-stats strong {
+    font-size: 1.28rem;
+  }
+
+  .rush-mode-card {
+    min-height: 106px;
+    padding: 12px;
+  }
+
+  .rush-rules {
+    gap: 8px;
+  }
+
+  .rush-rules div {
+    min-height: 72px;
+    padding: 11px;
+  }
+
+  .topbar {
+    margin-bottom: 10px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .workspace {
+    gap: 10px;
+  }
+
+  .sidebar,
+  .info-panel {
+    padding: 11px;
+  }
+
+  .puzzle-list {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .puzzle-item {
+    min-height: 58px;
+    padding: 10px;
+  }
+
+  .board-frame {
+    width: min(100%, calc(100vw - 20px));
+    padding: 5px;
+    border-radius: 10px;
+  }
+
+  .panel-title {
+    gap: 10px;
+    padding-bottom: 11px;
+  }
+
+  .panel-title h2 {
+    max-width: none;
+    font-size: 1.18rem;
+  }
+
+  .rush-combo-panel {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .rush-combo-panel div {
+    min-height: 92px;
+    padding: 11px;
+  }
+
+  .rush-combo-panel strong {
+    font-size: 1.9rem;
+  }
+
+  .stats-grid {
+    gap: 7px;
+    margin-top: 12px;
+  }
+
+  .stat {
+    min-height: 74px;
+    padding: 9px;
+  }
+
+  .stat span {
+    margin-top: 5px;
+    font-size: 1.02rem;
+  }
+
+  .feedback {
+    min-height: 46px;
+    margin: 12px 0;
+    padding: 11px;
+  }
+
+  .correct-line-panel,
+  .move-log,
+  .saved-stats {
+    margin-top: 12px;
+  }
+
+  .move-log {
+    padding-top: 12px;
+  }
+
+  .world-summary {
+    gap: 8px;
+  }
+
+  .world-map {
+    gap: 10px;
+  }
+
+  .zone-node {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .zone-marker {
+    width: 38px;
+    height: 38px;
+    border-width: 2px;
+  }
+
+  .zone-card,
+  .node-content,
+  .collection-set-card {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .zone-details,
+  .node-details {
+    gap: 7px;
+  }
+
+  .zone-details div,
+  .node-details div {
+    min-height: 48px;
+    padding: 8px;
+  }
+
+  .zone-motifs {
+    gap: 6px;
+  }
+
+  .zone-motifs span {
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 0.74rem;
+  }
+
+  .node-card {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .node-index {
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+  }
+
+  .collection-intro {
+    padding: 12px;
+  }
+
+  .piece-slots {
+    gap: 7px;
+  }
+
+  .piece-slot {
+    min-height: 80px;
+    padding: 9px;
+  }
+
+  .piece-slot span {
+    width: 28px;
+    height: 28px;
+  }
+
+  .result-screen {
+    padding: 10px;
+  }
+
+  .result-panel {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    padding: 16px;
+  }
+
+  .result-panel h2 {
+    font-size: 1.45rem;
+  }
+
+  .rush-result-highlights {
+    gap: 7px;
+  }
+
+  .highlight-card {
+    min-height: 68px;
+    padding: 10px 8px;
+  }
+
+  .highlight-card span {
+    font-size: 0.7rem;
+  }
+
+  .score-breakdown div {
+    align-items: flex-start;
+    min-height: 34px;
+  }
+
+  .score-breakdown div strong {
+    text-align: right;
+  }
+
+  .unlock-details {
+    grid-template-columns: 1fr;
+  }
+
+  .unlock-hero {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .unlock-piece-emblem {
+    width: 52px;
+    height: 52px;
+  }
+
+  .result-panel .actions,
+  .chest-open-result .actions {
+    width: 100%;
+  }
+
+  .result-panel .actions > button,
+  .chest-open-result .actions > button {
+    flex-basis: 100%;
+  }
+
+  .help-sections {
+    margin: 12px 0;
+  }
+
+  .help-section {
+    padding: 9px;
+  }
+
+  .help-list {
+    padding-left: 18px;
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+}
+
+@media (min-width: 520px) and (max-width: 1119px) {
+  .group-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
