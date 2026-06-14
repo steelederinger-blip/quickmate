@@ -33,6 +33,8 @@ const RUSH_MAX_PUZZLE_ATTEMPTS = 2;
 const DAILY_RUSH_PUZZLE_COUNT = 10;
 const DAILY_RUSH_LIVES = 2;
 const DAILY_RUSH_EPOCH = '2026-01-01';
+const BRAND_TAGLINE = 'Fast chess puzzles. Daily Rush. Build your collection.';
+const BRAND_LOGO_SRC = '/brand/quickmate-logo.png';
 const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
 const RUSH_FIRST_MISS_FEEDBACK = 'Not forcing. One more try.';
@@ -1837,6 +1839,7 @@ export default function App() {
   const [openLadderSections, setOpenLadderSections] = useState({ candidate: true, dev: false });
   const [openLadderMateGroups, setOpenLadderMateGroups] = useState({ 'candidate:1': true });
   const [chestOpenResult, setChestOpenResult] = useState(null);
+  const [brandLogoStatus, setBrandLogoStatus] = useState('loading');
 
   const puzzle = puzzles[puzzleIndex];
   const game = useMemo(() => new Chess(fen), [fen]);
@@ -3329,10 +3332,26 @@ export default function App() {
     return (
       <main className="app-shell home-shell">
         <section className="home-hero" aria-label="QuickMate menu">
-          <div className="brand-row">
-            <div>
-              <p className="eyebrow">QuickMate</p>
+          <div className="brand-row home-brand-row">
+            <div className="brand-lockup">
+              {brandLogoStatus !== 'missing' && (
+                <img
+                  className={`brand-logo ${brandLogoStatus === 'loaded' ? 'ready' : ''}`}
+                  src={BRAND_LOGO_SRC}
+                  alt="QuickMate"
+                  onLoad={() => setBrandLogoStatus('loaded')}
+                  onError={() => setBrandLogoStatus('missing')}
+                />
+              )}
+              {brandLogoStatus !== 'loaded' && (
+                <div className="brand-wordmark-fallback" aria-label="QuickMate">
+                  <span className="brand-mark-fallback">Q</span>
+                  <span>QuickMate</span>
+                </div>
+              )}
+              <p className="eyebrow">Premium chess arcade</p>
               <h1>Mate puzzles, fast.</h1>
+              <p className="brand-tagline">{BRAND_TAGLINE}</p>
             </div>
             <div className="streak-pill">
               <Sparkles size={17} />

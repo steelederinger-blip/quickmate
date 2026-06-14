@@ -41,6 +41,17 @@ This validates the puzzle pack and creates a fresh production build in `dist`.
 - App path: `/`
 - Config file: `netlify.toml`
 
+## Brand Assets
+
+See `docs/brand-assets.md` for brand direction, color notes, and future app-store asset needs.
+
+Optional public brand files can be dropped into `public/brand/`:
+
+- `quickmate-logo.png`: home header logo with text fallback if missing
+- `quickmate-app-icon.png`: favicon and Apple touch icon
+- `quickmate-splash.png`: reserved for future launch/splash presentation
+- `quickmate-og-image.png`: social preview image
+
 ## Puzzle Pack
 
 - Puzzle Pack v1 dev set plus v2 trial candidates
