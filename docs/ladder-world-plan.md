@@ -42,13 +42,13 @@ The design should feel like chess plus a mobile progression world: zones, nodes,
 ### Bishop Tower
 
 - Zone focus: diagonal control, long-range coverage, mating nets built around bishops
-- Suggested mateIn range: 1 to 2
+- Suggested mateIn range: 2 to 4
 - Difficulty range: easy to medium
-- Puzzle themes/motifs: bishop-diagonal, discovered-check, diagonal battery, pinned defender, corner bishop mate
-- Boss name: The Tower Bishop
-- Boss concept: a multi-node boss that teaches how diagonals remove escape squares
-- Reward ideas: Bishop Tower badge, Royal Bishop fragment, themed board accent
-- Collectible pieces: Classic Bishop, Bronze Bishop, Royal Bishop
+- Puzzle themes/motifs: bishop-diagonal, pins, pinned defenders, discovered-check, clearance, deflection, decoy, diagonal mate, queen sacrifice
+- Boss name: The Diagonal Keeper
+- Boss concept: a boss sequence that tests diagonal control, pinned defenders, discovered attacks, and bishop-led mating patterns
+- Reward ideas: Bishop Tower Badge, Shadow Bishop, Tactical/Royal chests, XP
+- Collectible pieces: Classic Bishop, Shadow Bishop, Royal Bishop
 
 ### Rook Fortress
 
@@ -231,6 +231,15 @@ Field notes:
 - Forest Trap: 35 XP and a Tactical Chest on first clear.
 - No-Queen Challenge: 35 XP and a Royal Chest on first clear.
 - Boss: The Smothered King: 125 XP, the Knight Woods Badge, and the Bronze Knight collection piece on first clear.
+- If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
+
+### Bishop Tower v1 Rewards
+
+- Diagonal Entry: 45 XP and a Tactical Chest on first clear.
+- Pin the Defender: 45 XP and a Tactical Chest on first clear.
+- Discovered Line: 45 XP and a Royal Chest on first clear.
+- Clearance Path: 45 XP and a Royal Chest on first clear.
+- Boss: The Diagonal Keeper: 150 XP, the Bishop Tower Badge, and the Shadow Bishop collection piece on first clear.
 - If the boss-specific piece is already owned, the boss awards a Royal Chest fallback instead.
 
 ## MVP Implementation Phases

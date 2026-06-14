@@ -81,7 +81,7 @@ const PIECE_SET_CONFIGS = [
     setId: 'shadow-set',
     setName: 'Shadow Set',
     rarity: 'Rare',
-    unlockSource: 'Knight Woods, Rook Fortress, Tactical Chests, and Survival Chests',
+    unlockSource: 'Knight Woods, Bishop Tower, Rook Fortress, Tactical Chests, and Survival Chests',
     cosmeticReward: 'Shadow result frame',
   },
   {

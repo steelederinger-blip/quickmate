@@ -126,11 +126,11 @@ const LADDER_WORLD_ZONES = [
     id: 'bishop-tower',
     name: 'Bishop Tower',
     focus: 'Diagonal control, long-range coverage, and bishop mating nets.',
-    mateInRange: 'Mate in 1-2',
+    mateInRange: 'Mate in 2-4',
     difficultyRange: 'Easy to Medium',
-    motifs: ['bishop-diagonal', 'discovered-check', 'pinned defender'],
-    bossName: 'The Tower Bishop',
-    rewardPreview: 'Royal Bishop fragment, tower badge',
+    motifs: ['bishop-diagonal', 'pinned defender', 'discovered-check'],
+    bossName: 'The Diagonal Keeper',
+    rewardPreview: 'Tactical/Royal Chests, Shadow Bishop, Bishop Tower Badge, Ladder XP',
     unlocked: false,
     color: '#7a5c9f',
   },
@@ -190,6 +190,9 @@ const PAWN_VILLAGE_BOSS_COLLECTION_REWARD_ID = 'bronze-rook';
 const KNIGHT_WOODS_ZONE_ID = 'knight-woods';
 const KNIGHT_WOODS_BOSS_BADGE = 'Knight Woods Badge';
 const KNIGHT_WOODS_BOSS_COLLECTION_REWARD_ID = 'bronze-knight';
+const BISHOP_TOWER_ZONE_ID = 'bishop-tower';
+const BISHOP_TOWER_BOSS_BADGE = 'Bishop Tower Badge';
+const BISHOP_TOWER_BOSS_COLLECTION_REWARD_ID = 'shadow-bishop';
 const PAWN_VILLAGE_NODES = [
   {
     id: 'pawn-welcome-mate',
@@ -344,12 +347,89 @@ const KNIGHT_WOODS_NODES = [
   },
 ];
 
+const BISHOP_TOWER_NODES = [
+  {
+    id: 'bishop-diagonal-entry',
+    zoneId: BISHOP_TOWER_ZONE_ID,
+    type: 'normal',
+    title: 'Diagonal Entry',
+    description: 'Open the tower by finding bishop-led lines and diagonal mating coverage.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 45,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 3,
+    motifs: ['bishop-diagonal', 'diagonal-mate', 'decoy'],
+  },
+  {
+    id: 'bishop-pin-defender',
+    zoneId: BISHOP_TOWER_ZONE_ID,
+    type: 'normal',
+    title: 'Pin the Defender',
+    description: 'Use pinned pieces and diagonal pressure to remove key defensive resources.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 45,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 3,
+    motifs: ['pin', 'pinned-defender', 'bishop-diagonal', 'deflection'],
+  },
+  {
+    id: 'bishop-discovered-line',
+    zoneId: BISHOP_TOWER_ZONE_ID,
+    type: 'normal',
+    title: 'Discovered Line',
+    description: 'Calculate discovered checks and diagonal batteries before the king escapes.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 45,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 3,
+    preferredMateInMax: 4,
+    motifs: ['discovered-check', 'bishop-diagonal', 'queen-sacrifice', 'decoy'],
+  },
+  {
+    id: 'bishop-clearance-path',
+    zoneId: BISHOP_TOWER_ZONE_ID,
+    type: 'normal',
+    title: 'Clearance Path',
+    description: 'Clear lanes, deflect guards, and keep long diagonals open for mate.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 45,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 3,
+    preferredMateInMax: 4,
+    motifs: ['clearance', 'bishop-diagonal', 'deflection', 'pinned-defender'],
+  },
+  {
+    id: 'bishop-diagonal-keeper',
+    zoneId: BISHOP_TOWER_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Diagonal Keeper',
+    description: 'Defeat the keeper by solving three of five diagonal tactics before your lives run out.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 150,
+    rewardBadge: BISHOP_TOWER_BOSS_BADGE,
+    rewardCollectionItemId: BISHOP_TOWER_BOSS_COLLECTION_REWARD_ID,
+    fallbackChestTypeId: 'royal-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 4,
+    motifs: ['bishop-diagonal', 'diagonal-mate', 'discovered-check', 'pinned-defender', 'queen-sacrifice'],
+  },
+];
+
 const LADDER_ZONE_NODES = {
   [PAWN_VILLAGE_ZONE_ID]: PAWN_VILLAGE_NODES,
   [KNIGHT_WOODS_ZONE_ID]: KNIGHT_WOODS_NODES,
+  [BISHOP_TOWER_ZONE_ID]: BISHOP_TOWER_NODES,
 };
 
-const PLAYABLE_LADDER_ZONE_IDS = [PAWN_VILLAGE_ZONE_ID, KNIGHT_WOODS_ZONE_ID];
+const PLAYABLE_LADDER_ZONE_IDS = [PAWN_VILLAGE_ZONE_ID, KNIGHT_WOODS_ZONE_ID, BISHOP_TOWER_ZONE_ID];
 
 const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
 const LADDER_MATE_GROUPS = [
@@ -620,6 +700,10 @@ function getLadderNodeById(nodeId) {
 }
 
 function getLadderZoneScreen(zoneId) {
+  if (zoneId === BISHOP_TOWER_ZONE_ID) {
+    return 'bishopTower';
+  }
+
   if (zoneId === KNIGHT_WOODS_ZONE_ID) {
     return 'knightWoods';
   }
@@ -640,6 +724,10 @@ function getLadderZoneBadge(zoneId) {
 
   if (zoneId === KNIGHT_WOODS_ZONE_ID) {
     return KNIGHT_WOODS_BOSS_BADGE;
+  }
+
+  if (zoneId === BISHOP_TOWER_ZONE_ID) {
+    return BISHOP_TOWER_BOSS_BADGE;
   }
 
   return '';
@@ -730,6 +818,10 @@ function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
 
   if (zoneId === KNIGHT_WOODS_ZONE_ID) {
     return completedSet.has('pawn-back-rank-guard');
+  }
+
+  if (zoneId === BISHOP_TOWER_ZONE_ID) {
+    return completedSet.has('knight-smothered-king');
   }
 
   return false;
@@ -1385,7 +1477,9 @@ export default function App() {
   }, [stats.completedLadderNodes]);
   const pawnVillageProgress = getLadderZoneProgress(PAWN_VILLAGE_ZONE_ID, stats.completedLadderNodes || []);
   const knightWoodsProgress = getLadderZoneProgress(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
+  const bishopTowerProgress = getLadderZoneProgress(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
   const knightWoodsUnlocked = ladderZoneIsUnlocked(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
+  const bishopTowerUnlocked = ladderZoneIsUnlocked(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -1592,6 +1686,10 @@ export default function App() {
 
   function openKnightWoods() {
     openLadderZone(KNIGHT_WOODS_ZONE_ID);
+  }
+
+  function openBishopTower() {
+    openLadderZone(BISHOP_TOWER_ZONE_ID);
   }
 
   function startLadderNode(nodeId) {
@@ -2933,7 +3031,13 @@ export default function App() {
                 <ListChecks size={24} />
                 <span>
                   <strong>Ladder World</strong>
-                  <small>{knightWoodsUnlocked ? 'Knight Woods unlocked' : 'Pawn Village unlocked'} | {ladderSolvedCount}/{puzzles.length} solved</small>
+                  <small>
+                    {bishopTowerUnlocked
+                      ? 'Bishop Tower unlocked'
+                      : knightWoodsUnlocked
+                        ? 'Knight Woods unlocked'
+                        : 'Pawn Village unlocked'} | {ladderSolvedCount}/{puzzles.length} solved
+                  </small>
                 </span>
                 <Play size={20} />
               </button>
@@ -3153,8 +3257,12 @@ export default function App() {
     );
   }
 
-  if (screen === 'pawnVillage' || screen === 'knightWoods') {
-    const ladderZoneId = screen === 'knightWoods' ? KNIGHT_WOODS_ZONE_ID : PAWN_VILLAGE_ZONE_ID;
+  if (screen === 'pawnVillage' || screen === 'knightWoods' || screen === 'bishopTower') {
+    const ladderZoneId = screen === 'bishopTower'
+      ? BISHOP_TOWER_ZONE_ID
+      : screen === 'knightWoods'
+        ? KNIGHT_WOODS_ZONE_ID
+        : PAWN_VILLAGE_ZONE_ID;
     const ladderZone = getLadderZoneById(ladderZoneId);
     const ladderZoneNodes = getLadderZoneNodes(ladderZoneId);
     const ladderZoneProgress = getLadderZoneProgress(ladderZoneId, stats.completedLadderNodes || []);
@@ -3294,6 +3402,10 @@ export default function App() {
               <span>Knight Woods</span>
             </div>
             <div>
+              <strong>{bishopTowerProgress.completedCount}/{bishopTowerProgress.totalCount}</strong>
+              <span>Bishop Tower</span>
+            </div>
+            <div>
               <strong>{stats.ladderXp || 0}</strong>
               <span>Ladder XP</span>
             </div>
@@ -3313,7 +3425,9 @@ export default function App() {
                 ? 'Rewards: Basic and Tactical Chests, Bronze Rook boss reward, XP.'
                 : zone.id === KNIGHT_WOODS_ZONE_ID
                   ? 'Rewards: Tactical and Royal Chests, Bronze Knight boss reward, XP.'
-                  : '';
+                  : zone.id === BISHOP_TOWER_ZONE_ID
+                    ? 'Rewards: Tactical and Royal Chests, Shadow Bishop boss reward, XP.'
+                    : '';
 
               return (
                 <article
@@ -3378,7 +3492,11 @@ export default function App() {
                     )}
                     {!zoneUnlocked && (
                       <small className="zone-lock-copy">
-                        {zone.id === KNIGHT_WOODS_ZONE_ID ? 'Defeat Back Rank Guard to unlock.' : 'Coming soon'}
+                        {zone.id === KNIGHT_WOODS_ZONE_ID
+                          ? 'Defeat Back Rank Guard to unlock.'
+                          : zone.id === BISHOP_TOWER_ZONE_ID
+                            ? 'Defeat The Smothered King to unlock.'
+                            : 'Coming soon'}
                       </small>
                     )}
                   </div>
@@ -3395,6 +3513,10 @@ export default function App() {
             <button type="button" className="secondary-action" onClick={openKnightWoods} disabled={!knightWoodsUnlocked}>
               <Play size={18} />
               Open Knight Woods
+            </button>
+            <button type="button" className="secondary-action" onClick={openBishopTower} disabled={!bishopTowerUnlocked}>
+              <Play size={18} />
+              Open Bishop Tower
             </button>
             <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
               <ListChecks size={18} />
