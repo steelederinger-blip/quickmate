@@ -1911,7 +1911,8 @@ h2 {
   }
 }
 
-.daily-result-strip {
+.daily-result-strip,
+.endless-result-strip {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -1920,7 +1921,8 @@ h2 {
   margin-top: 10px;
 }
 
-.daily-result-strip span {
+.daily-result-strip span,
+.endless-result-strip span {
   min-height: 30px;
   padding: 6px 10px;
   border-radius: 999px;
@@ -1928,6 +1930,12 @@ h2 {
   background: var(--accent-soft);
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.endless-result-strip span {
+  color: #bcfff6;
+  background: color-mix(in srgb, var(--speed-teal), transparent 82%);
+  border: 1px solid color-mix(in srgb, var(--speed-teal), transparent 48%);
 }
 
 .result-score {

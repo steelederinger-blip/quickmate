@@ -47,6 +47,7 @@ const RUSH_MODE_KEYS = {
   blitz: 'blitz',
   classic: 'classic',
   survival: 'survival',
+  endless: 'endless',
   dailyRush: 'dailyRush',
 };
 
@@ -81,6 +82,16 @@ const RUSH_MODES = {
     mateInLabel: 'Progressive depth',
     description: '3 lives, no fixed countdown, deeper lines unlock as you solve.',
   },
+  [RUSH_MODE_KEYS.endless]: {
+    key: RUSH_MODE_KEYS.endless,
+    label: 'Endless Survival',
+    shortLabel: 'Endless',
+    durationSeconds: null,
+    lives: 1,
+    bestScoreKey: 'bestEndlessScore',
+    mateInLabel: 'Endless ramp',
+    description: 'No clock. One wrong move or skip ends the run.',
+  },
   [RUSH_MODE_KEYS.dailyRush]: {
     key: RUSH_MODE_KEYS.dailyRush,
     label: 'Daily Rush',
@@ -97,6 +108,7 @@ const RUSH_MODE_OPTIONS = [
   RUSH_MODES[RUSH_MODE_KEYS.blitz],
   RUSH_MODES[RUSH_MODE_KEYS.classic],
   RUSH_MODES[RUSH_MODE_KEYS.survival],
+  RUSH_MODES[RUSH_MODE_KEYS.endless],
 ];
 
 const LADDER_WORLD_ZONES = [
@@ -819,6 +831,10 @@ const DEFAULT_STATS = {
   bestBlitzRushScore: 0,
   bestClassicRushScore: 0,
   bestSurvivalRushScore: 0,
+  bestEndlessScore: 0,
+  bestEndlessDepth: 0,
+  bestEndlessStreak: 0,
+  totalEndlessRuns: 0,
   bestDailyRushScore: 0,
   bestRushCombo: 0,
   rushGamesPlayed: 0,
@@ -875,6 +891,11 @@ const RUSH_CHEST_SCORE_THRESHOLDS = {
     common: 1800,
     rare: 3400,
     epic: 6200,
+  },
+  [RUSH_MODE_KEYS.endless]: {
+    common: 8,
+    rare: 18,
+    epic: 35,
   },
 };
 
@@ -955,6 +976,26 @@ const RUSH_CHEST_RULES = {
       reason: 'Solid Survival Rush',
     },
   ],
+  [RUSH_MODE_KEYS.endless]: [
+    {
+      chestTypeId: 'royal-chest',
+      minScore: 0,
+      minSolved: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.endless].epic,
+      reason: 'Endless depth 35',
+    },
+    {
+      chestTypeId: 'tactical-chest',
+      minScore: 0,
+      minSolved: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.endless].rare,
+      reason: 'Endless depth 18',
+    },
+    {
+      chestTypeId: 'basic-chest',
+      minScore: 0,
+      minSolved: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.endless].common,
+      reason: 'Endless depth 8',
+    },
+  ],
 };
 
 const RUSH_RANKS = [
@@ -970,7 +1011,7 @@ const ACHIEVEMENTS = [
   {
     id: 'first-rush-completed',
     name: 'First Rush Completed',
-    description: 'Finish any Blitz, Classic, or Survival Rush run.',
+    description: 'Finish any Blitz, Classic, Survival, or Endless Rush run.',
     isUnlocked: (stats) => (stats.rushGamesPlayed || 0) >= 1,
   },
   {
@@ -1063,6 +1104,30 @@ const ACHIEVEMENTS = [
     description: 'Unlock your first collectible chess piece.',
     isUnlocked: (stats) => normalizeOwnedCollectionItems(stats.ownedCollectionItems).length >= 1,
   },
+  {
+    id: 'first-endless-run',
+    name: 'First Endless Run',
+    description: 'Finish one Endless Survival run.',
+    isUnlocked: (stats) => (stats.totalEndlessRuns || 0) >= 1,
+  },
+  {
+    id: 'endless-depth-10',
+    name: 'Reach Endless Depth 10',
+    description: 'Solve 10 puzzles in one Endless Survival run.',
+    isUnlocked: (stats) => (stats.bestEndlessDepth || 0) >= 10,
+  },
+  {
+    id: 'endless-depth-25',
+    name: 'Reach Endless Depth 25',
+    description: 'Solve 25 puzzles in one Endless Survival run.',
+    isUnlocked: (stats) => (stats.bestEndlessDepth || 0) >= 25,
+  },
+  {
+    id: 'endless-depth-50',
+    name: 'Reach Endless Depth 50',
+    description: 'Solve 50 puzzles in one Endless Survival run.',
+    isUnlocked: (stats) => (stats.bestEndlessDepth || 0) >= 50,
+  },
 ];
 
 const RUSH_MULTIPLIER_THRESHOLDS = [
@@ -1070,6 +1135,13 @@ const RUSH_MULTIPLIER_THRESHOLDS = [
   { combo: 3, multiplier: 1.5 },
   { combo: 5, multiplier: 2 },
   { combo: 8, multiplier: 2.5 },
+];
+
+const ENDLESS_MULTIPLIER_THRESHOLDS = [
+  { streak: 5, multiplier: 1.5 },
+  { streak: 10, multiplier: 2 },
+  { streak: 20, multiplier: 2.5 },
+  { streak: 30, multiplier: 3 },
 ];
 
 function formatTime(seconds) {
@@ -1473,7 +1545,82 @@ function getRushMateInLimit(solvedCount, rushModeKey) {
   return Infinity;
 }
 
+function getEndlessDepthBand(solvedCount) {
+  const depth = solvedCount + 1;
+
+  if (depth <= 5) {
+    return {
+      label: 'Opening climb',
+      minMateIn: 1,
+      maxMateIn: 1,
+      maxRating: 1050,
+      difficulties: ['starter', 'easy'],
+    };
+  }
+
+  if (depth <= 15) {
+    return {
+      label: 'Middle climb',
+      minMateIn: 1,
+      maxMateIn: 2,
+      maxRating: 1350,
+      difficulties: ['easy', 'medium'],
+    };
+  }
+
+  if (depth <= 30) {
+    return {
+      label: 'Hard climb',
+      minMateIn: 2,
+      maxMateIn: 4,
+      maxRating: 1750,
+      difficulties: ['medium', 'advanced', 'expert'],
+    };
+  }
+
+  return {
+    label: 'Master climb',
+    minMateIn: 3,
+    maxMateIn: Infinity,
+    maxRating: Infinity,
+    difficulties: ['advanced', 'expert', 'master'],
+  };
+}
+
+function getEndlessEligiblePuzzleIndexes(solvedCount) {
+  const band = getEndlessDepthBand(solvedCount);
+  const productionIndexes = puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => isProductionTrackPuzzle(puzzle))
+    .filter(({ puzzle }) => puzzleFitsAnyMode(puzzle, ['rush', 'endless', 'survival', 'classic', 'blitz']))
+    .map(({ index }) => index);
+  const bandIndexes = productionIndexes.filter((index) => {
+    const item = puzzles[index];
+    const difficulty = String(item.difficulty || '').toLowerCase();
+
+    return item.mateIn >= band.minMateIn
+      && item.mateIn <= band.maxMateIn
+      && (item.rating || 0) <= band.maxRating
+      && (band.difficulties.length === 0 || band.difficulties.includes(difficulty));
+  });
+  const mateFallbackIndexes = productionIndexes.filter((index) => {
+    const item = puzzles[index];
+
+    return item.mateIn >= band.minMateIn && item.mateIn <= band.maxMateIn;
+  });
+
+  return bandIndexes.length > 0
+    ? bandIndexes
+    : mateFallbackIndexes.length > 0
+      ? mateFallbackIndexes
+      : productionIndexes;
+}
+
 function getRushEligiblePuzzleIndexes(solvedCount, rushModeKey = RUSH_MODE_KEYS.classic) {
+  if (rushModeKey === RUSH_MODE_KEYS.endless) {
+    return getEndlessEligiblePuzzleIndexes(solvedCount);
+  }
+
   const rushIndexes = puzzles
     .map((puzzle, index) => ({ puzzle, index }))
     .filter(({ puzzle }) => isProductionTrackPuzzle(puzzle))
@@ -1528,6 +1675,24 @@ function getNextRushMultiplierInfo(combo) {
     label: `Combo ${nextThreshold.combo}`,
     detail: `${Math.max(0, nextThreshold.combo - combo)} more for ${nextThreshold.multiplier.toFixed(2)}x`,
     comboNeeded: nextThreshold.combo - combo,
+  };
+}
+
+function getNextEndlessMultiplierInfo(streak) {
+  const nextThreshold = ENDLESS_MULTIPLIER_THRESHOLDS.find((threshold) => streak < threshold.streak);
+
+  if (!nextThreshold) {
+    return {
+      label: 'Max streak',
+      detail: `${getEndlessStreakMultiplier(streak).toFixed(2)}x active`,
+      comboNeeded: 0,
+    };
+  }
+
+  return {
+    label: `Streak ${nextThreshold.streak}`,
+    detail: `${Math.max(0, nextThreshold.streak - streak)} more for ${nextThreshold.multiplier.toFixed(2)}x`,
+    comboNeeded: nextThreshold.streak - streak,
   };
 }
 
@@ -1693,6 +1858,43 @@ function calculateScore({ mateIn, mistakes, hints, seconds }) {
   };
 }
 
+function getEndlessStreakMultiplier(streak) {
+  if (streak >= 30) {
+    return 3;
+  }
+
+  if (streak >= 20) {
+    return 2.5;
+  }
+
+  if (streak >= 10) {
+    return 2;
+  }
+
+  if (streak >= 5) {
+    return 1.5;
+  }
+
+  return 1;
+}
+
+function calculateEndlessSolveScore({ puzzle, depth, streak }) {
+  const mateIn = puzzle.mateIn || 1;
+  const base = 200 + mateIn * 120;
+  const depthBonus = Math.floor((depth - 1) / 5) * 75;
+  const milestoneBonus = depth % 5 === 0 ? 500 : 0;
+  const streakMultiplier = getEndlessStreakMultiplier(streak);
+  const score = Math.round((base + depthBonus) * streakMultiplier + milestoneBonus);
+
+  return {
+    base,
+    depthBonus,
+    milestoneBonus,
+    streakMultiplier,
+    score,
+  };
+}
+
 function getRushModeLabel(rushModeKey) {
   return getRushModeConfig(rushModeKey).label;
 }
@@ -1708,6 +1910,7 @@ function getBestOverallRushScore(stats) {
     stats.bestBlitzRushScore || 0,
     stats.bestClassicRushScore || 0,
     stats.bestSurvivalRushScore || 0,
+    stats.bestEndlessScore || 0,
   );
 }
 
@@ -1954,6 +2157,10 @@ function getNewRushMilestoneRewards({ previousRunCount, nextRunCount, awardedMil
 }
 
 function getRushNoChestReason(rushModeKey) {
+  if (rushModeKey === RUSH_MODE_KEYS.endless) {
+    return 'No chest earned. Reach depth 8 for a Common chest, depth 18 for Rare, or depth 35 for Epic.';
+  }
+
   const thresholds = RUSH_CHEST_SCORE_THRESHOLDS[rushModeKey] || RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.classic];
 
   return `No chest earned. Reach about ${thresholds.common} points with a solid solve streak, or hit a Rush milestone.`;
@@ -2008,6 +2215,7 @@ function loadStats() {
     const bestBlitzRushScore = parsed.bestBlitzRushScore || 0;
     const bestClassicRushScore = parsed.bestClassicRushScore ?? legacyBestRushScore;
     const bestSurvivalRushScore = parsed.bestSurvivalRushScore || 0;
+    const bestEndlessScore = parsed.bestEndlessScore || 0;
     const bestDailyRushScore = parsed.bestDailyRushScore || parsed.dailyRushOfficialResult?.score || 0;
     const ownedCollectionItems = normalizeOwnedCollectionItems(parsed.ownedCollectionItems);
     const unopenedChests = normalizeUnopenedChests(parsed.unopenedChests);
@@ -2023,10 +2231,15 @@ function loadStats() {
         bestBlitzRushScore,
         bestClassicRushScore,
         bestSurvivalRushScore,
+        bestEndlessScore,
       ),
       bestBlitzRushScore,
       bestClassicRushScore,
       bestSurvivalRushScore,
+      bestEndlessScore,
+      bestEndlessDepth: parsed.bestEndlessDepth || 0,
+      bestEndlessStreak: parsed.bestEndlessStreak || 0,
+      totalEndlessRuns: parsed.totalEndlessRuns || 0,
       bestDailyRushScore,
       bestRushCombo: parsed.bestRushCombo
         || Math.max(0, ...(parsed.rushHistory || []).map((run) => run.bestCombo || 0)),
@@ -2270,6 +2483,7 @@ export default function App() {
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isDailyRush = mode === 'dailyRush';
   const isRush = mode === 'rush' || isDailyRush;
+  const isEndlessRush = mode === 'rush' && activeRushMode === RUSH_MODE_KEYS.endless;
   const isLadderNode = mode === 'ladderNode';
   const isChallengeRun = isRush || isLadderNode;
   const puzzleBehavior = getPuzzleBehavior(mode);
@@ -2298,8 +2512,10 @@ export default function App() {
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
+  const activeRushPuzzleAttemptLimit = isEndlessRush ? 1 : RUSH_MAX_PUZZLE_ATTEMPTS;
   const selectedRushModeBestScore = getBestRushScoreForMode(stats, selectedRushMode);
   const activeRushModeBestScore = getBestRushScoreForMode(stats, activeRushMode);
+  const activeRushBestRecord = isEndlessRush ? stats.bestEndlessDepth || 0 : activeRushModeBestScore;
   const todaysDailyRushSequence = useMemo(() => buildDailyRushSequence(todayKey), [todayKey]);
   const dailyRushOfficialResult = stats.dailyRushDate === todayKey ? stats.dailyRushOfficialResult : null;
   const dailyRushCompletedToday = Boolean(dailyRushOfficialResult);
@@ -2312,8 +2528,12 @@ export default function App() {
     && Boolean(expectedMove)
     && (!isRush || ((!rushIsTimed || rushTimeLeft > 0) && rushLives > 0 && !rushReveal))
     && (!isLadderNode || (!ladderNodeReveal && (!activeLadderNode?.lives || ladderNodeLives > 0)));
-  const rushMultiplier = getRushMultiplier(rushStats.currentCombo);
-  const nextRushMultiplier = getNextRushMultiplierInfo(rushStats.currentCombo);
+  const rushMultiplier = isEndlessRush
+    ? getEndlessStreakMultiplier(rushStats.currentCombo)
+    : getRushMultiplier(rushStats.currentCombo);
+  const nextRushMultiplier = isEndlessRush
+    ? getNextEndlessMultiplierInfo(rushStats.currentCombo)
+    : getNextRushMultiplierInfo(rushStats.currentCombo);
   const bestRushCombo = stats.bestRushCombo || 0;
   const bestOverallRushScore = getBestOverallRushScore(stats);
   const bestRushRank = getRushRank(bestOverallRushScore);
@@ -2681,21 +2901,29 @@ export default function App() {
       ? Math.round(finalRushStats.totalSolveSeconds / finalRushStats.solved)
       : 0;
     const rushMode = activeRushModeConfig;
+    const endingEndlessRush = !endingDailyRush && rushMode.key === RUSH_MODE_KEYS.endless;
     const previousBestModeScore = endingDailyRush
       ? currentStats.bestDailyRushScore || 0
-      : activeRushModeBestScore;
+      : currentStats[rushMode.bestScoreKey] || 0;
     const previousBestRushCombo = currentStats.bestRushCombo || 0;
+    const previousBestEndlessDepth = currentStats.bestEndlessDepth || 0;
+    const previousBestEndlessStreak = currentStats.bestEndlessStreak || 0;
     const rank = getRushRank(finalRushStats.totalScore);
     const rankProgress = getRushRankProgress(finalRushStats.totalScore);
+    const endlessDepth = endingEndlessRush ? finalRushStats.solved : 0;
+    const endlessAccuracy = endingEndlessRush ? getRushRunAccuracy(finalRushStats) : 0;
     const dailyRushIsOfficial = endingDailyRush
       && !dailyRushPracticeRun
       && currentStats.dailyRushDate !== finalDailyRushDate;
     const dailyRushStreak = endingDailyRush
       ? (dailyRushIsOfficial ? getNextDailyRushStreak(currentStats, finalDailyRushDate) : currentStats.dailyRushStreak || 0)
       : 0;
+    const isNewBestEndlessDepth = endingEndlessRush && endlessDepth > previousBestEndlessDepth;
     const isNewBest = endingDailyRush
       ? dailyRushIsOfficial && finalRushStats.totalScore > previousBestModeScore
-      : finalRushStats.totalScore > previousBestModeScore;
+      : endingEndlessRush
+        ? finalRushStats.totalScore > previousBestModeScore || isNewBestEndlessDepth
+        : finalRushStats.totalScore > previousBestModeScore;
     const dailyRushChest = endingDailyRush
       ? (dailyRushIsOfficial
           ? createDailyRushChestReward({
@@ -2746,6 +2974,13 @@ export default function App() {
       totalScore: finalRushStats.totalScore,
       averageSolveTime,
       bestCombo: finalRushStats.bestCombo,
+      endlessDepth,
+      endlessAccuracy,
+      bestEndlessDepth: endingEndlessRush ? Math.max(previousBestEndlessDepth, endlessDepth) : undefined,
+      bestEndlessStreak: endingEndlessRush ? Math.max(previousBestEndlessStreak, finalRushStats.bestCombo) : undefined,
+      isEndlessRush: endingEndlessRush,
+      isNewBestEndlessDepth,
+      maxPuzzleAttempts: endingEndlessRush ? 1 : RUSH_MAX_PUZZLE_ATTEMPTS,
       rank,
       rankProgress,
       isNewBest,
@@ -2785,6 +3020,7 @@ export default function App() {
       misses: finalRushStats.misses,
       skips: finalRushStats.skips,
       bestCombo: finalRushStats.bestCombo,
+      endlessDepth: endingEndlessRush ? endlessDepth : undefined,
     };
     const ownedCollectionItems = normalizeOwnedCollectionItems(currentStats.ownedCollectionItems);
     const currentUnopenedChests = normalizeUnopenedChests(currentStats.unopenedChests);
@@ -2828,6 +3064,12 @@ export default function App() {
       nextStats.bestRushCombo = Math.max(currentStats.bestRushCombo || 0, finalRushStats.bestCombo);
       nextStats.rushGamesPlayed = nextRushRunCount;
       nextStats.perfectRushRuns = (currentStats.perfectRushRuns || 0) + (isPerfectRushRun ? 1 : 0);
+      if (endingEndlessRush) {
+        nextStats.bestEndlessDepth = Math.max(previousBestEndlessDepth, endlessDepth);
+        nextStats.bestEndlessScore = Math.max(currentStats.bestEndlessScore || 0, finalRushStats.totalScore);
+        nextStats.bestEndlessStreak = Math.max(previousBestEndlessStreak, finalRushStats.bestCombo);
+        nextStats.totalEndlessRuns = (currentStats.totalEndlessRuns || 0) + 1;
+      }
       nextStats.rushMilestoneChestsAwarded = [
         ...new Set([
           ...normalizeStringArray(currentStats.rushMilestoneChestsAwarded),
@@ -2857,7 +3099,7 @@ export default function App() {
       return;
     }
 
-    if (rushLives <= 0 || (rushIsTimed && rushTimeLeft <= 0) || rushRunShouldFinishAfterReveal) {
+    if (rushReveal?.endRun || rushLives <= 0 || (rushIsTimed && rushTimeLeft <= 0) || rushRunShouldFinishAfterReveal) {
       endRush();
       return;
     }
@@ -2865,8 +3107,53 @@ export default function App() {
     advanceRushPuzzle(rushStats.solved, rushUsedPuzzleIds);
   }
 
+  function finishEndlessPuzzle({ reason, skipped = false }) {
+    const nextPuzzleMistakes = skipped ? rushPuzzleMistakes : rushPuzzleMistakes + 1;
+    const nextUsedPuzzleIds = [...rushUsedPuzzleIds, puzzle.id];
+    const nextOutcomes = [
+      ...rushPuzzleOutcomes,
+      {
+        id: puzzle.id,
+        status: skipped ? 'skipped' : 'missed',
+        wrongMoveCount: nextPuzzleMistakes,
+      },
+    ];
+    const nextRushStats = {
+      ...rushStats,
+      mistakes: rushStats.mistakes + (skipped ? 0 : 1),
+      misses: rushStats.misses + (skipped ? 0 : 1),
+      skips: rushStats.skips + (skipped ? 1 : 0),
+      currentCombo: 0,
+      totalScore: skipped ? Math.max(0, rushStats.totalScore - SKIP_PENALTY) : rushStats.totalScore,
+    };
+
+    if (!skipped) {
+      setMistakes((value) => value + 1);
+    }
+
+    setRushPuzzleMistakes(nextPuzzleMistakes);
+    setRushStats(nextRushStats);
+    setRushLives(0);
+    setRushUsedPuzzleIds(nextUsedPuzzleIds);
+    setRushPuzzleOutcomes(nextOutcomes);
+    setRushMissedPuzzles((items) => [
+      ...items,
+      getRushReviewItem(puzzle, reason, { wrongMoveCount: nextPuzzleMistakes }),
+    ]);
+    setSelectedSquare(null);
+    setRushReveal({ reason, wrongMoveCount: nextPuzzleMistakes, endRun: true });
+    setFeedback(skipped
+      ? 'Skipped. Endless run over. Correct line shown.'
+      : 'Wrong move. Endless run over. Correct line shown.');
+  }
+
   function skipRushPuzzle() {
     if (!isRush || isComplete || (rushIsTimed && rushTimeLeft <= 0) || rushLives <= 0 || rushReveal) {
+      return;
+    }
+
+    if (isEndlessRush) {
+      finishEndlessPuzzle({ reason: 'Skipped', skipped: true });
       return;
     }
 
@@ -3225,12 +3512,19 @@ export default function App() {
   function completeRushPuzzle() {
     const isPerfectSolve = mistakes === 0;
     const isFastSolve = seconds <= getFastSolveTarget(mateIn);
-    const scoreBreakdown = calculateScore({
-      mateIn,
-      mistakes,
-      hints: 0,
-      seconds,
-    });
+    const nextCombo = isPerfectSolve ? rushStats.currentCombo + 1 : rushStats.currentCombo;
+    const scoreBreakdown = isEndlessRush
+      ? calculateEndlessSolveScore({
+          puzzle,
+          depth: rushStats.solved + 1,
+          streak: nextCombo,
+        })
+      : calculateScore({
+          mateIn,
+          mistakes,
+          hints: 0,
+          seconds,
+        });
     const nextResult = {
       ...scoreBreakdown,
       puzzleId: puzzle.id,
@@ -3241,15 +3535,20 @@ export default function App() {
       seconds,
       mode: 'rush',
     };
-    const nextCombo = isPerfectSolve ? rushStats.currentCombo + 1 : rushStats.currentCombo;
-    const multiplier = getRushMultiplier(nextCombo);
-    const awardedScore = Math.round(scoreBreakdown.score * multiplier);
+    const multiplier = isEndlessRush ? scoreBreakdown.streakMultiplier : getRushMultiplier(nextCombo);
+    const awardedScore = isEndlessRush ? scoreBreakdown.score : Math.round(scoreBreakdown.score * multiplier);
     const timeBonus = rushIsTimed ? (isPerfectSolve ? 5 : 0) + (isFastSolve ? 3 : 0) : 0;
-    const feedbackParts = [
-      `+${awardedScore} points`,
-      `${multiplier.toFixed(2)}x`,
-      `combo ${nextCombo}`,
-    ];
+    const feedbackParts = isEndlessRush
+      ? [
+          `Depth ${rushStats.solved + 1}`,
+          `+${awardedScore} points`,
+          `${multiplier.toFixed(2)}x streak`,
+        ]
+      : [
+          `+${awardedScore} points`,
+          `${multiplier.toFixed(2)}x`,
+          `combo ${nextCombo}`,
+        ];
 
     if (timeBonus > 0) {
       feedbackParts.push(`+${timeBonus} seconds`);
@@ -3375,10 +3674,14 @@ export default function App() {
           result.mode === 'rush'
             ? `QuickMate ${result.rushModeLabel || 'Rush'}`
             : `QuickMate ${result.mode === 'daily' ? `Daily Warmup ${todayKey}` : puzzle.title}`,
-          result.mode === 'rush'
+          result.mode === 'rush' && result.isEndlessRush
+            ? `${result.totalScore} points | depth ${result.endlessDepth} | ${Math.round((result.endlessAccuracy || 0) * 100)}% accuracy`
+            : result.mode === 'rush'
             ? `${result.totalScore} points | ${result.solved} solved | ${result.misses} misses | ${result.skips} skips`
             : `${result.score} points in ${formatTime(result.seconds)}`,
-          result.mode === 'rush'
+          result.mode === 'rush' && result.isEndlessRush
+            ? `${result.rank} | best depth ${result.bestEndlessDepth} | streak ${result.bestCombo}`
+            : result.mode === 'rush'
             ? `${result.rank} | ${result.livesRemaining} lives | combo ${result.bestCombo} | avg ${formatTime(result.averageSolveTime)}`
             : `Mate in ${result.mateIn} | ${result.mistakes} mistakes | ${result.hints} hints`,
           'quickmate.local',
@@ -3574,6 +3877,11 @@ export default function App() {
 
   function handleWrongLegalMove() {
     if (puzzleBehavior === PUZZLE_BEHAVIOR.strictMode && isRush) {
+      if (isEndlessRush) {
+        finishEndlessPuzzle({ reason: 'Missed' });
+        return;
+      }
+
       const nextPuzzleMistakes = rushPuzzleMistakes + 1;
       const isMissed = nextPuzzleMistakes >= RUSH_MAX_PUZZLE_ATTEMPTS;
       const nextLives = isMissed ? Math.max(0, rushLives - 1) : rushLives;
@@ -3881,7 +4189,7 @@ export default function App() {
               <Zap size={30} />
               <span>
                 <strong>Rush Mode</strong>
-                <small>Blitz, Classic, or Survival | best rank {bestRushRank}</small>
+                <small>Blitz, Classic, Survival, or Endless | best rank {bestRushRank}</small>
               </span>
               <Play size={24} />
             </button>
@@ -3919,6 +4227,10 @@ export default function App() {
               <div>
                 <strong>{stats.bestSurvivalRushScore || 0}</strong>
                 <span>Best Survival</span>
+              </div>
+              <div>
+                <strong>{stats.bestEndlessDepth || 0}</strong>
+                <span>Best Endless</span>
               </div>
               <div>
                 <strong>{bestRushCombo}</strong>
@@ -4086,10 +4398,12 @@ export default function App() {
                     <li>Blitz Rush is 90 seconds with 2 lives for quick mate-in-1 to mate-in-3 puzzles.</li>
                     <li>Classic Rush is 120 seconds with 3 lives for mate-in-1 to mate-in-4 puzzles.</li>
                     <li>Survival Rush has 3 lives and no fixed countdown.</li>
+                    <li>Endless Survival has no clock: one wrong legal move or skip ends the run.</li>
                     <li>Rush uses production-track puzzles only.</li>
-                    <li>First wrong legal move breaks combo, costs 3 seconds in timed modes, and gives one more try.</li>
-                    <li>Second wrong legal move loses a life, marks the puzzle missed, reveals the correct line, and waits for Next Puzzle.</li>
-                    <li>Skip loses a life, breaks combo, applies the skip penalty, reveals the correct line, and waits for Next Puzzle.</li>
+                    <li>In Blitz, Classic, and Survival, the first wrong legal move breaks combo, costs 3 seconds in timed modes, and gives one more try.</li>
+                    <li>In Blitz, Classic, and Survival, the second wrong legal move loses a life, marks the puzzle missed, reveals the correct line, and waits for Next Puzzle.</li>
+                    <li>Endless Survival ramps from quick mates into harder, deeper puzzles as your depth climbs.</li>
+                    <li>Skip loses a life in normal Rush modes. In Endless Survival, skip ends the run.</li>
                     <li>Perfect solves have no wrong moves and build combo multipliers.</li>
                     <li>Fast or perfect solves can add time in timed modes.</li>
                     <li>Survival starts easy and allows deeper mate sequences as you solve and as content expands.</li>
@@ -4754,8 +5068,13 @@ export default function App() {
                 </span>
                 <span className="rush-mode-meta">
                   <strong>{rushMode.durationSeconds ? formatTime(rushMode.durationSeconds) : 'No clock'}</strong>
-                  <small>{rushMode.lives} lives | {rushMode.mateInLabel}</small>
+                  <small>
+                    {rushMode.key === RUSH_MODE_KEYS.endless ? 'One wrong ends' : `${rushMode.lives} lives`} | {rushMode.mateInLabel}
+                  </small>
                   <small>Best {getBestRushScoreForMode(stats, rushMode.key)}</small>
+                  {rushMode.key === RUSH_MODE_KEYS.endless && (
+                    <small>Best depth {stats.bestEndlessDepth || 0}</small>
+                  )}
                 </span>
               </button>
             ))}
@@ -4763,7 +5082,10 @@ export default function App() {
 
           <div className="rush-rules">
             <div><strong>{selectedRushModeConfig.durationSeconds ? formatTime(selectedRushModeConfig.durationSeconds) : 'Survive'}</strong><span>{selectedRushModeConfig.durationSeconds ? 'Timed run' : 'No fixed countdown'}</span></div>
-            <div><strong>{selectedRushModeConfig.lives}</strong><span>Lives</span></div>
+            <div>
+              <strong>{selectedRushModeConfig.key === RUSH_MODE_KEYS.endless ? '1' : selectedRushModeConfig.lives}</strong>
+              <span>{selectedRushModeConfig.key === RUSH_MODE_KEYS.endless ? 'Wrong move ends' : 'Lives'}</span>
+            </div>
             <div><strong>Pool</strong><span>Candidate and approved puzzles only</span></div>
             <div><strong>Combo</strong><span>Perfect solves build multipliers</span></div>
             <div><strong>Depth</strong><span>{selectedRushModeConfig.mateInLabel}</span></div>
@@ -4888,12 +5210,12 @@ export default function App() {
             <>
               <div className="rush-combo-panel" aria-label="Rush combo and multiplier">
                 <div>
-                  <p className="eyebrow">Combo</p>
+                  <p className="eyebrow">{isEndlessRush ? 'Streak' : 'Combo'}</p>
                   <strong>{rushStats.currentCombo}</strong>
                   <span>{rushMultiplier.toFixed(2)}x multiplier</span>
                 </div>
                 <div>
-                  <p className="eyebrow">Next Boost</p>
+                  <p className="eyebrow">{isEndlessRush ? 'Next Streak' : 'Next Boost'}</p>
                   <strong>{nextRushMultiplier.label}</strong>
                   <span>{nextRushMultiplier.detail}</span>
                 </div>
@@ -4913,13 +5235,13 @@ export default function App() {
                 )}
                 <div className="stat">
                   <Trophy size={18} />
-                  <span>{isDailyRush ? stats.dailyRushStreak || 0 : activeRushModeBestScore}</span>
-                  <small>{isDailyRush ? 'Daily streak' : 'Mode Best'}</small>
+                  <span>{isDailyRush ? stats.dailyRushStreak || 0 : activeRushBestRecord}</span>
+                  <small>{isDailyRush ? 'Daily streak' : isEndlessRush ? 'Best Depth' : 'Mode Best'}</small>
                 </div>
                 <div className="stat">
                   <BadgeCheck size={18} />
                   <span>{rushLives}/{activeRushModeConfig.lives}</span>
-                  <small>Lives</small>
+                  <small>{isEndlessRush ? 'Run' : 'Lives'}</small>
                 </div>
                 <div className="stat">
                   <Sparkles size={18} />
@@ -4929,7 +5251,7 @@ export default function App() {
                 <div className="stat">
                   <BadgeCheck size={18} />
                   <span>{isDailyRush ? `${rushStats.solved}/${DAILY_RUSH_PUZZLE_COUNT}` : rushStats.solved}</span>
-                  <small>Solved</small>
+                  <small>{isEndlessRush ? 'Depth' : 'Solved'}</small>
                 </div>
                 <div className="stat">
                   <XCircle size={18} />
@@ -4943,7 +5265,7 @@ export default function App() {
                 </div>
                 <div className="stat">
                   <Target size={18} />
-                  <span>{rushPuzzleMistakes}/{RUSH_MAX_PUZZLE_ATTEMPTS}</span>
+                  <span>{rushPuzzleMistakes}/{activeRushPuzzleAttemptLimit}</span>
                   <small>Attempts</small>
                 </div>
                 <div className="stat">
@@ -5058,7 +5380,7 @@ export default function App() {
             {isRush && rushReveal ? (
               <button type="button" className="primary-action" onClick={continueRushAfterReveal}>
                 <ChevronRight size={18} />
-                {rushLives <= 0 || rushRunShouldFinishAfterReveal ? 'Finish Run' : 'Next Puzzle'}
+                {rushReveal?.endRun || rushLives <= 0 || rushRunShouldFinishAfterReveal ? 'Finish Run' : 'Next Puzzle'}
               </button>
             ) : isLadderNode && ladderNodeReveal ? (
               <button type="button" className="primary-action" onClick={continueLadderNodeAfterReveal}>
@@ -5081,7 +5403,7 @@ export default function App() {
                 {isRush ? (
                   <button type="button" className="secondary-action" onClick={skipRushPuzzle}>
                     <SkipForward size={18} />
-                    Skip
+                    {isEndlessRush ? 'End Run' : 'Skip'}
                   </button>
                 ) : isLadderNode ? (
                   <button type="button" className="secondary-action" onClick={skipLadderNodePuzzle}>
@@ -5350,7 +5672,11 @@ export default function App() {
           ) : result.mode === 'rush' || result.mode === 'dailyRush' ? (
             <div className="result-panel">
               <Zap size={42} />
-              <p className="eyebrow">{result.mode === 'dailyRush' ? result.dailyRushLabel : 'Rush complete'}</p>
+              <p className="eyebrow">
+                {result.mode === 'dailyRush'
+                  ? result.dailyRushLabel
+                  : result.isEndlessRush ? 'Endless run complete' : 'Rush complete'}
+              </p>
               <h2>
                 {result.mode === 'dailyRush'
                   ? `Daily Rush #${result.dailyRushNumber}`
@@ -5363,6 +5689,13 @@ export default function App() {
                   <span>{getDailyRushOutcomeRow(result.outcomes, result.totalPuzzles)}</span>
                 </div>
               )}
+              {result.isEndlessRush && (
+                <div className="endless-result-strip" aria-label="Endless Survival summary">
+                  <span>Depth {result.endlessDepth}</span>
+                  <span>Best {result.bestEndlessDepth}</span>
+                  <span>{Math.round((result.endlessAccuracy || 0) * 100)}% accuracy</span>
+                </div>
+              )}
               <div className="result-score">
                 <Sparkles size={20} />
                 <strong>{result.totalScore}</strong>
@@ -5370,20 +5703,28 @@ export default function App() {
               </div>
               <div className="rush-result-highlights" aria-label="Rush highlights">
                 <div className="highlight-card rank">
-                  <span>Rank</span>
-                  <strong>{result.rank}</strong>
+                  <span>{result.isEndlessRush ? 'Depth' : 'Rank'}</span>
+                  <strong>{result.isEndlessRush ? result.endlessDepth : result.rank}</strong>
                 </div>
                 <div className={`highlight-card ${result.isNewBest ? 'new-best' : ''}`}>
                   <span>
                     {result.mode === 'dailyRush'
                       ? result.dailyRushLabel
+                      : result.isEndlessRush
+                        ? result.isNewBestEndlessDepth ? 'New Depth Record' : 'Best Depth'
                       : result.isNewBest ? 'New Best' : 'Mode Best'}
                   </span>
-                  <strong>{result.mode === 'dailyRush' ? `${result.solved}/${result.totalPuzzles}` : result.bestModeScore}</strong>
+                  <strong>
+                    {result.mode === 'dailyRush'
+                      ? `${result.solved}/${result.totalPuzzles}`
+                      : result.isEndlessRush
+                        ? result.bestEndlessDepth
+                        : result.bestModeScore}
+                  </strong>
                 </div>
                 <div className={`highlight-card ${result.isNewBestCombo ? 'new-best' : ''}`}>
-                  <span>{result.isNewBestCombo ? 'New Best Combo' : 'Best Combo'}</span>
-                  <strong>{result.bestCombo}</strong>
+                  <span>{result.isEndlessRush ? 'Best Streak' : result.isNewBestCombo ? 'New Best Combo' : 'Best Combo'}</span>
+                  <strong>{result.isEndlessRush ? result.bestEndlessStreak : result.bestCombo}</strong>
                 </div>
               </div>
               <div className="rank-progress-card" aria-label="Rush rank progress">
@@ -5426,18 +5767,26 @@ export default function App() {
                 <div><span>{result.mode === 'dailyRush' ? 'Rank' : 'Rush rank'}</span><strong>{result.rank}</strong></div>
                 <div><span>Next rank</span><strong>{result.rankProgress.next?.rank || 'Max rank'}</strong></div>
                 <div><span>Needed for next</span><strong>{result.rankProgress.next ? result.rankProgress.pointsNeeded : 0}</strong></div>
+                {result.isEndlessRush && (
+                  <>
+                    <div><span>Best depth</span><strong>{result.bestEndlessDepth}</strong></div>
+                    <div><span>New depth record</span><strong>{result.isNewBestEndlessDepth ? 'Yes' : 'No'}</strong></div>
+                    <div><span>Accuracy</span><strong>{Math.round((result.endlessAccuracy || 0) * 100)}%</strong></div>
+                    <div><span>Best Endless streak</span><strong>{result.bestEndlessStreak}</strong></div>
+                  </>
+                )}
                 <div><span>Lives remaining</span><strong>{result.livesRemaining}</strong></div>
                 <div>
-                  <span>Puzzles solved</span>
+                  <span>{result.isEndlessRush ? 'Depth reached' : 'Puzzles solved'}</span>
                   <strong>{result.mode === 'dailyRush' ? `${result.solved}/${result.totalPuzzles}` : result.solved}</strong>
                 </div>
                 <div><span>Perfect solves</span><strong>{result.perfectSolves}</strong></div>
                 <div><span>Misses</span><strong>{result.misses}</strong></div>
                 <div><span>Mistakes</span><strong>{result.mistakes}</strong></div>
                 <div><span>Skips</span><strong>{result.skips}</strong></div>
-                <div><span>Best combo</span><strong>{result.bestCombo}</strong></div>
+                <div><span>{result.isEndlessRush ? 'Run streak' : 'Best combo'}</span><strong>{result.bestCombo}</strong></div>
                 {result.mode === 'rush' && (
-                  <div><span>Mode best score</span><strong>{result.bestModeScore}</strong></div>
+                  <div><span>{result.isEndlessRush ? 'Best Endless score' : 'Mode best score'}</span><strong>{result.bestModeScore}</strong></div>
                 )}
                 <div><span>Average solve time</span><strong>{formatTime(result.averageSolveTime)}</strong></div>
               </div>
@@ -5585,7 +5934,7 @@ export default function App() {
                             <span className="puzzle-id">ID {item.id}</span>
                           </div>
                           <small>Mate in {item.mateIn} | {formatTheme(item.themes)}</small>
-                          <small>Wrong moves: {item.wrongMoveCount ?? 0}/{RUSH_MAX_PUZZLE_ATTEMPTS}</small>
+                          <small>Wrong moves: {item.wrongMoveCount ?? 0}/{result.maxPuzzleAttempts || RUSH_MAX_PUZZLE_ATTEMPTS}</small>
                           <small>Correct line: {solutionLine.join(' ')}</small>
                           <button
                             type="button"
