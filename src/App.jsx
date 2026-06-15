@@ -790,6 +790,27 @@ const DEFAULT_COLLECTION_STATS = {
   chestsOpened: 0,
 };
 
+const RUSH_MILESTONE_CHESTS = [
+  {
+    id: 'rush-runs-5',
+    runs: 5,
+    chestTypeId: 'basic-chest',
+    label: '5 completed Rush runs',
+  },
+  {
+    id: 'rush-runs-25',
+    runs: 25,
+    chestTypeId: 'tactical-chest',
+    label: '25 completed Rush runs',
+  },
+  {
+    id: 'rush-runs-100',
+    runs: 100,
+    chestTypeId: 'royal-chest',
+    label: '100 completed Rush runs',
+  },
+];
+
 const DEFAULT_STATS = {
   puzzlesSolved: 0,
   perfectSolves: 0,
@@ -801,6 +822,9 @@ const DEFAULT_STATS = {
   bestDailyRushScore: 0,
   bestRushCombo: 0,
   rushGamesPlayed: 0,
+  perfectRushRuns: 0,
+  rushMilestoneChestsAwarded: [],
+  unlockedAchievements: [],
   rushHistory: [],
   bestTimeByPuzzleId: {},
   puzzleCompletions: {},
@@ -838,15 +862,99 @@ const DEFAULT_LADDER_NODE_STATS = {
 
 const RUSH_CHEST_SCORE_THRESHOLDS = {
   [RUSH_MODE_KEYS.blitz]: {
-    tactical: 1200,
+    common: 1800,
+    rare: 3200,
+    epic: 5200,
   },
   [RUSH_MODE_KEYS.classic]: {
-    royal: 2200,
+    common: 1500,
+    rare: 2800,
+    epic: 4800,
   },
   [RUSH_MODE_KEYS.survival]: {
-    royal: 2400,
-    legendary: 5000,
+    common: 1800,
+    rare: 3400,
+    epic: 6200,
   },
+};
+
+const RUSH_CHEST_RULES = {
+  [RUSH_MODE_KEYS.blitz]: [
+    {
+      chestTypeId: 'royal-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.blitz].epic,
+      minSolved: 7,
+      minPerfectSolves: 6,
+      minBestCombo: 5,
+      maxMistakes: 1,
+      maxSkips: 0,
+      reason: 'Elite Blitz Rush',
+    },
+    {
+      chestTypeId: 'tactical-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.blitz].rare,
+      minSolved: 5,
+      minBestCombo: 3,
+      maxSkips: 1,
+      reason: 'Strong Blitz Rush',
+    },
+    {
+      chestTypeId: 'basic-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.blitz].common,
+      minSolved: 3,
+      minBestCombo: 2,
+      reason: 'Solid Blitz Rush',
+    },
+  ],
+  [RUSH_MODE_KEYS.classic]: [
+    {
+      chestTypeId: 'royal-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.classic].epic,
+      minSolved: 7,
+      minPerfectSolves: 5,
+      minBestCombo: 5,
+      maxSkips: 1,
+      reason: 'Elite Classic Rush',
+    },
+    {
+      chestTypeId: 'tactical-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.classic].rare,
+      minSolved: 4,
+      minBestCombo: 3,
+      reason: 'Strong Classic Rush',
+    },
+    {
+      chestTypeId: 'basic-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.classic].common,
+      minSolved: 3,
+      reason: 'Solid Classic Rush',
+    },
+  ],
+  [RUSH_MODE_KEYS.survival]: [
+    {
+      chestTypeId: 'survival-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.survival].epic,
+      minSolved: 9,
+      minPerfectSolves: 6,
+      minBestCombo: 5,
+      minAccuracy: 0.75,
+      reason: 'Deep Survival Rush',
+    },
+    {
+      chestTypeId: 'tactical-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.survival].rare,
+      minSolved: 6,
+      minAccuracy: 0.65,
+      reason: 'Strong Survival Rush',
+    },
+    {
+      chestTypeId: 'basic-chest',
+      minScore: RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.survival].common,
+      minSolved: 4,
+      minAccuracy: 0.5,
+      reason: 'Solid Survival Rush',
+    },
+  ],
 };
 
 const RUSH_RANKS = [
@@ -856,6 +964,105 @@ const RUSH_RANKS = [
   { rank: 'Closer', minScore: 5000 },
   { rank: 'Checkmate Machine', minScore: 7500 },
   { rank: 'QuickMate Master', minScore: 10000 },
+];
+
+const ACHIEVEMENTS = [
+  {
+    id: 'first-rush-completed',
+    name: 'First Rush Completed',
+    description: 'Finish any Blitz, Classic, or Survival Rush run.',
+    isUnlocked: (stats) => (stats.rushGamesPlayed || 0) >= 1,
+  },
+  {
+    id: 'rush-runs-10',
+    name: '10 Rush Runs',
+    description: 'Complete 10 Rush runs.',
+    isUnlocked: (stats) => (stats.rushGamesPlayed || 0) >= 10,
+  },
+  {
+    id: 'rush-runs-25',
+    name: '25 Rush Runs',
+    description: 'Complete 25 Rush runs.',
+    isUnlocked: (stats) => (stats.rushGamesPlayed || 0) >= 25,
+  },
+  {
+    id: 'first-perfect-rush',
+    name: 'First Perfect Rush',
+    description: 'Finish a Rush run with no misses, skips, or wrong legal moves.',
+    isUnlocked: (stats) => (stats.perfectRushRuns || 0) >= 1,
+  },
+  {
+    id: 'first-daily-rush',
+    name: 'First Daily Rush',
+    description: 'Complete an official Daily Rush.',
+    isUnlocked: (stats) => Boolean(stats.dailyRushDate),
+  },
+  {
+    id: 'daily-rush-streak-3',
+    name: '3-Day Daily Rush Streak',
+    description: 'Complete official Daily Rush on three consecutive days.',
+    isUnlocked: (stats) => (stats.dailyRushStreak || 0) >= 3,
+  },
+  {
+    id: 'first-ladder-world-completed',
+    name: 'First Ladder World Completed',
+    description: 'Clear the first QuickMate campaign.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('grandmaster-trial'),
+  },
+  {
+    id: 'complete-pawn-village',
+    name: 'Complete Pawn Village',
+    description: 'Defeat the Back Rank Guard.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('pawn-back-rank-guard'),
+  },
+  {
+    id: 'complete-knight-woods',
+    name: 'Complete Knight Woods',
+    description: 'Defeat The Smothered King.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('knight-smothered-king'),
+  },
+  {
+    id: 'complete-bishop-tower',
+    name: 'Complete Bishop Tower',
+    description: 'Defeat The Diagonal Keeper.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('bishop-diagonal-keeper'),
+  },
+  {
+    id: 'complete-rook-fortress',
+    name: 'Complete Rook Fortress',
+    description: 'Defeat The Fortress King.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('rook-fortress-king'),
+  },
+  {
+    id: 'complete-queens-court',
+    name: "Complete Queen's Court",
+    description: "Defeat The Queen's Trial.",
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('queens-trial'),
+  },
+  {
+    id: 'complete-kings-gate',
+    name: "Complete King's Gate",
+    description: 'Defeat The Running King.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('running-king'),
+  },
+  {
+    id: 'complete-grandmaster-keep',
+    name: 'Complete Grandmaster Keep',
+    description: 'Defeat The Grandmaster Trial.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('grandmaster-trial'),
+  },
+  {
+    id: 'first-chest-opened',
+    name: 'First Chest Opened',
+    description: 'Open any reward chest.',
+    isUnlocked: (stats) => (stats.collectionStats?.chestsOpened || 0) >= 1,
+  },
+  {
+    id: 'first-collection-piece',
+    name: 'First Collection Piece Unlocked',
+    description: 'Unlock your first collectible chess piece.',
+    isUnlocked: (stats) => normalizeOwnedCollectionItems(stats.ownedCollectionItems).length >= 1,
+  },
 ];
 
 const RUSH_MULTIPLIER_THRESHOLDS = [
@@ -1370,6 +1577,14 @@ function getRushBadges(result) {
   ].filter(Boolean);
 }
 
+function getResultEarnedChests(result) {
+  if (Array.isArray(result?.earnedChests)) {
+    return result.earnedChests;
+  }
+
+  return result?.earnedChest ? [result.earnedChest] : [];
+}
+
 function getDailyRushOutcomeEmoji(outcome) {
   return {
     perfect: '🟩',
@@ -1514,6 +1729,55 @@ function normalizeStringArray(value) {
     : [];
 }
 
+function getAchievementById(achievementId) {
+  return ACHIEVEMENTS.find((achievement) => achievement.id === achievementId) || null;
+}
+
+function getQualifiedAchievementIds(stats) {
+  return ACHIEVEMENTS
+    .filter((achievement) => achievement.isUnlocked(stats))
+    .map((achievement) => achievement.id);
+}
+
+function getVisibleAchievementIds(stats) {
+  return [
+    ...new Set([
+      ...normalizeStringArray(stats.unlockedAchievements),
+      ...getQualifiedAchievementIds(stats),
+    ]),
+  ];
+}
+
+function getUnlockedAchievementItems(stats) {
+  const visibleIds = new Set(getVisibleAchievementIds(stats));
+
+  return ACHIEVEMENTS.filter((achievement) => visibleIds.has(achievement.id));
+}
+
+function applyAchievementUnlocks(nextStats, currentStats) {
+  const previousIds = new Set(getVisibleAchievementIds(currentStats));
+  const storedIds = new Set(normalizeStringArray(nextStats.unlockedAchievements));
+  const qualifiedIds = getQualifiedAchievementIds(nextStats);
+  const nextUnlockedIds = [
+    ...new Set([
+      ...storedIds,
+      ...qualifiedIds,
+    ]),
+  ];
+  const newAchievements = qualifiedIds
+    .filter((achievementId) => !previousIds.has(achievementId))
+    .map(getAchievementById)
+    .filter(Boolean);
+
+  return {
+    nextStats: {
+      ...nextStats,
+      unlockedAchievements: nextUnlockedIds,
+    },
+    newAchievements,
+  };
+}
+
 function getCollectionStatsSummary(ownedCollectionItems, unopenedChests, previousStats = {}) {
   const ownedIds = new Set(ownedCollectionItems);
   const setsCompleted = PIECE_SETS.filter((pieceSet) => {
@@ -1611,32 +1875,36 @@ function getLadderNodeRewardLabel(node) {
   return rewards.join(', ');
 }
 
-function getRushChestType(rushModeKey, score, isNewBest) {
-  if (rushModeKey === RUSH_MODE_KEYS.blitz) {
-    return score >= RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.blitz].tactical || isNewBest
-      ? getChestTypeById('tactical-chest')
-      : getChestTypeById('basic-chest');
-  }
+function getRushRunAccuracy(rushStatsValue) {
+  const attempts = rushStatsValue.solved + rushStatsValue.misses + rushStatsValue.skips;
 
-  if (rushModeKey === RUSH_MODE_KEYS.classic) {
-    return score >= RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.classic].royal || isNewBest
-      ? getChestTypeById('royal-chest')
-      : getChestTypeById('tactical-chest');
-  }
-
-  if (score >= RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.survival].legendary || isNewBest) {
-    return getChestTypeById('legendary-chest');
-  }
-
-  if (score >= RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.survival].royal) {
-    return getChestTypeById('royal-chest');
-  }
-
-  return getChestTypeById('survival-chest');
+  return attempts > 0 ? rushStatsValue.solved / attempts : 0;
 }
 
-function createRushChestReward({ rushMode, score, rank, isNewBest }) {
-  const chestType = getRushChestType(rushMode.key, score, isNewBest);
+function rushRunMatchesChestRule(rushStatsValue, rule) {
+  return rushStatsValue.totalScore >= rule.minScore
+    && rushStatsValue.solved >= rule.minSolved
+    && rushStatsValue.perfectSolves >= (rule.minPerfectSolves || 0)
+    && rushStatsValue.bestCombo >= (rule.minBestCombo || 0)
+    && rushStatsValue.mistakes <= (rule.maxMistakes ?? Infinity)
+    && rushStatsValue.skips <= (rule.maxSkips ?? Infinity)
+    && getRushRunAccuracy(rushStatsValue) >= (rule.minAccuracy || 0);
+}
+
+function getRushChestRule(rushModeKey, rushStatsValue) {
+  const rules = RUSH_CHEST_RULES[rushModeKey] || RUSH_CHEST_RULES[RUSH_MODE_KEYS.classic];
+
+  return rules.find((rule) => rushRunMatchesChestRule(rushStatsValue, rule)) || null;
+}
+
+function createRushChestReward({ rushMode, rushStatsValue, rank, isNewBest }) {
+  const rule = getRushChestRule(rushMode.key, rushStatsValue);
+
+  if (!rule) {
+    return null;
+  }
+
+  const chestType = getChestTypeById(rule.chestTypeId);
   const earnedAt = new Date().toISOString();
 
   return {
@@ -1646,11 +1914,49 @@ function createRushChestReward({ rushMode, score, rank, isNewBest }) {
     tier: chestType.tier,
     earnedFrom: rushMode.label,
     earnedAt,
-    sourceScore: score,
+    sourceScore: rushStatsValue.totalScore,
     sourceRank: rank,
-    bonusReason: isNewBest ? 'New best score' : '',
+    bonusReason: isNewBest ? `${rule.reason} + new best score` : rule.reason,
     opened: false,
   };
+}
+
+function createRushMilestoneChestReward(milestone) {
+  const chestType = getChestTypeById(milestone.chestTypeId);
+  const earnedAt = new Date().toISOString();
+
+  return {
+    chestId: `rush-milestone-${milestone.runs}-${chestType.id}-${earnedAt}`,
+    chestTypeId: chestType.id,
+    name: chestType.name,
+    tier: chestType.tier,
+    earnedFrom: 'Rush Milestone',
+    earnedAt,
+    sourceScore: 0,
+    sourceRank: `${milestone.runs} Rush runs`,
+    bonusReason: milestone.label,
+    milestoneId: milestone.id,
+    opened: false,
+  };
+}
+
+function getNewRushMilestoneRewards({ previousRunCount, nextRunCount, awardedMilestoneIds }) {
+  const awardedIds = new Set(normalizeStringArray(awardedMilestoneIds));
+
+  return RUSH_MILESTONE_CHESTS
+    .filter((milestone) => previousRunCount < milestone.runs
+      && nextRunCount >= milestone.runs
+      && !awardedIds.has(milestone.id))
+    .map((milestone) => ({
+      milestone,
+      chest: createRushMilestoneChestReward(milestone),
+    }));
+}
+
+function getRushNoChestReason(rushModeKey) {
+  const thresholds = RUSH_CHEST_SCORE_THRESHOLDS[rushModeKey] || RUSH_CHEST_SCORE_THRESHOLDS[RUSH_MODE_KEYS.classic];
+
+  return `No chest earned. Reach about ${thresholds.common} points with a solid solve streak, or hit a Rush milestone.`;
 }
 
 function getDailyRushChestType(score, rank) {
@@ -1707,6 +2013,8 @@ function loadStats() {
     const unopenedChests = normalizeUnopenedChests(parsed.unopenedChests);
     const completedLadderNodes = normalizeStringArray(parsed.completedLadderNodes);
     const ladderBadges = normalizeStringArray(parsed.ladderBadges);
+    const rushMilestoneChestsAwarded = normalizeStringArray(parsed.rushMilestoneChestsAwarded);
+    const unlockedAchievements = normalizeStringArray(parsed.unlockedAchievements);
     return {
       ...DEFAULT_STATS,
       ...parsed,
@@ -1723,6 +2031,9 @@ function loadStats() {
       bestRushCombo: parsed.bestRushCombo
         || Math.max(0, ...(parsed.rushHistory || []).map((run) => run.bestCombo || 0)),
       rushGamesPlayed: parsed.rushGamesPlayed || 0,
+      perfectRushRuns: parsed.perfectRushRuns || 0,
+      rushMilestoneChestsAwarded,
+      unlockedAchievements,
       rushHistory: parsed.rushHistory || [],
       bestTimeByPuzzleId: parsed.bestTimeByPuzzleId || {},
       puzzleCompletions: parsed.puzzleCompletions || {},
@@ -2016,6 +2327,12 @@ export default function App() {
     stats.unopenedChests || [],
     stats.collectionStats,
   );
+  const unopenedChestList = normalizeUnopenedChests(stats.unopenedChests);
+  const visibleAchievementIds = new Set(getVisibleAchievementIds(stats));
+  const unlockedAchievements = getUnlockedAchievementItems(stats);
+  const collectionCompletionPercent = COLLECTION_ITEMS.length > 0
+    ? Math.round((collectionStats.totalPiecesOwned / COLLECTION_ITEMS.length) * 100)
+    : 0;
   const selectedSquareStyles = selectedSquare
     ? {
         [selectedSquare]: {
@@ -2359,26 +2676,27 @@ export default function App() {
     const endingDailyRush = mode === 'dailyRush' || activeRushMode === RUSH_MODE_KEYS.dailyRush;
     const finalDailyRushDate = dailyRushRunDate || todayKey;
     const completedAt = new Date().toISOString();
+    const currentStats = loadStats();
     const averageSolveTime = finalRushStats.solved > 0
       ? Math.round(finalRushStats.totalSolveSeconds / finalRushStats.solved)
       : 0;
     const rushMode = activeRushModeConfig;
     const previousBestModeScore = endingDailyRush
-      ? stats.bestDailyRushScore || 0
+      ? currentStats.bestDailyRushScore || 0
       : activeRushModeBestScore;
-    const previousBestRushCombo = stats.bestRushCombo || 0;
+    const previousBestRushCombo = currentStats.bestRushCombo || 0;
     const rank = getRushRank(finalRushStats.totalScore);
     const rankProgress = getRushRankProgress(finalRushStats.totalScore);
     const dailyRushIsOfficial = endingDailyRush
       && !dailyRushPracticeRun
-      && stats.dailyRushDate !== finalDailyRushDate;
+      && currentStats.dailyRushDate !== finalDailyRushDate;
     const dailyRushStreak = endingDailyRush
-      ? (dailyRushIsOfficial ? getNextDailyRushStreak(stats, finalDailyRushDate) : stats.dailyRushStreak || 0)
+      ? (dailyRushIsOfficial ? getNextDailyRushStreak(currentStats, finalDailyRushDate) : currentStats.dailyRushStreak || 0)
       : 0;
     const isNewBest = endingDailyRush
       ? dailyRushIsOfficial && finalRushStats.totalScore > previousBestModeScore
       : finalRushStats.totalScore > previousBestModeScore;
-    const earnedChest = endingDailyRush
+    const dailyRushChest = endingDailyRush
       ? (dailyRushIsOfficial
           ? createDailyRushChestReward({
               score: finalRushStats.totalScore,
@@ -2386,13 +2704,36 @@ export default function App() {
               dateKey: finalDailyRushDate,
             })
           : null)
+      : null;
+    const performanceChest = endingDailyRush
+      ? dailyRushChest
       : createRushChestReward({
           rushMode,
-          score: finalRushStats.totalScore,
+          rushStatsValue: finalRushStats,
           rank,
           isNewBest,
         });
-    const nextResult = {
+    const previousRushRunCount = currentStats.rushGamesPlayed || 0;
+    const nextRushRunCount = endingDailyRush ? previousRushRunCount : previousRushRunCount + 1;
+    const milestoneRewards = endingDailyRush
+      ? []
+      : getNewRushMilestoneRewards({
+          previousRunCount: previousRushRunCount,
+          nextRunCount: nextRushRunCount,
+          awardedMilestoneIds: currentStats.rushMilestoneChestsAwarded,
+        });
+    const milestoneChests = milestoneRewards.map((reward) => reward.chest);
+    const earnedChests = [
+      performanceChest,
+      ...milestoneChests,
+    ].filter(Boolean);
+    const earnedChest = earnedChests[0] || null;
+    const isPerfectRushRun = !endingDailyRush
+      && finalRushStats.solved > 0
+      && finalRushStats.misses === 0
+      && finalRushStats.skips === 0
+      && finalRushStats.mistakes === 0;
+    const baseResult = {
       mode: endingDailyRush ? 'dailyRush' : 'rush',
       rushMode: rushMode.key,
       rushModeLabel: rushMode.label,
@@ -2409,13 +2750,15 @@ export default function App() {
       rankProgress,
       isNewBest,
       isNewBestCombo: !endingDailyRush && finalRushStats.bestCombo > previousBestRushCombo,
-      bestRushScore: Math.max(getBestOverallRushScore(stats), finalRushStats.totalScore),
+      bestRushScore: Math.max(getBestOverallRushScore(currentStats), finalRushStats.totalScore),
       bestModeScore: endingDailyRush && !dailyRushIsOfficial
         ? previousBestModeScore
         : Math.max(previousBestModeScore, finalRushStats.totalScore),
       bestRushCombo: Math.max(previousBestRushCombo, finalRushStats.bestCombo),
       missedPuzzles: finalMissedPuzzles,
       earnedChest,
+      earnedChests,
+      noChestReason: !endingDailyRush && earnedChests.length === 0 ? getRushNoChestReason(rushMode.key) : '',
       dailyRushDate: endingDailyRush ? finalDailyRushDate : '',
       dailyRushNumber: endingDailyRush ? getDailyRushNumber(finalDailyRushDate) : 0,
       dailyRushLabel: endingDailyRush
@@ -2443,60 +2786,70 @@ export default function App() {
       skips: finalRushStats.skips,
       bestCombo: finalRushStats.bestCombo,
     };
+    const ownedCollectionItems = normalizeOwnedCollectionItems(currentStats.ownedCollectionItems);
+    const currentUnopenedChests = normalizeUnopenedChests(currentStats.unopenedChests);
+    const chestsToStore = endingDailyRush
+      ? (dailyRushIsOfficial ? earnedChests : [])
+      : earnedChests;
+    const unopenedChests = chestsToStore.length > 0
+      ? [...currentUnopenedChests, ...chestsToStore]
+      : currentUnopenedChests;
+    const nextDailyRushStreak = dailyRushIsOfficial
+      ? getNextDailyRushStreak(currentStats, finalDailyRushDate)
+      : currentStats.dailyRushStreak || 0;
+    let nextStats = {
+      ...currentStats,
+      ownedCollectionItems,
+      unopenedChests,
+      collectionStats: getCollectionStatsSummary(ownedCollectionItems, unopenedChests, currentStats.collectionStats),
+    };
+
+    if (endingDailyRush) {
+      nextStats.bestDailyRushScore = dailyRushIsOfficial
+        ? Math.max(currentStats.bestDailyRushScore || 0, finalRushStats.totalScore)
+        : currentStats.bestDailyRushScore || 0;
+
+      if (dailyRushIsOfficial) {
+        const officialResult = {
+          ...baseResult,
+          dailyRushStreak: nextDailyRushStreak,
+        };
+
+        nextStats.dailyRushDate = finalDailyRushDate;
+        nextStats.dailyRushStreak = nextDailyRushStreak;
+        nextStats.dailyRushOfficialResult = getDailyRushStoredResult(officialResult);
+      }
+    } else {
+      nextStats[rushMode.bestScoreKey] = Math.max(
+        currentStats[rushMode.bestScoreKey] || 0,
+        finalRushStats.totalScore,
+      );
+      nextStats.bestRushScore = Math.max(getBestOverallRushScore(currentStats), finalRushStats.totalScore);
+      nextStats.bestRushCombo = Math.max(currentStats.bestRushCombo || 0, finalRushStats.bestCombo);
+      nextStats.rushGamesPlayed = nextRushRunCount;
+      nextStats.perfectRushRuns = (currentStats.perfectRushRuns || 0) + (isPerfectRushRun ? 1 : 0);
+      nextStats.rushMilestoneChestsAwarded = [
+        ...new Set([
+          ...normalizeStringArray(currentStats.rushMilestoneChestsAwarded),
+          ...milestoneRewards.map((reward) => reward.milestone.id),
+        ]),
+      ];
+      nextStats.rushHistory = [historyEntry, ...(currentStats.rushHistory || [])].slice(0, 5);
+    }
+
+    const achievementUpdate = applyAchievementUnlocks(nextStats, currentStats);
+    nextStats = achievementUpdate.nextStats;
+    const nextResult = {
+      ...baseResult,
+      dailyRushStreak: endingDailyRush ? nextDailyRushStreak : baseResult.dailyRushStreak,
+      newAchievements: achievementUpdate.newAchievements,
+    };
 
     setIsComplete(true);
     setResult(nextResult);
     setFeedback(endingDailyRush ? 'Daily Rush complete.' : 'Rush complete.');
-    setStats((currentStats) => {
-      const ownedCollectionItems = normalizeOwnedCollectionItems(currentStats.ownedCollectionItems);
-      const currentUnopenedChests = normalizeUnopenedChests(currentStats.unopenedChests);
-      const dailyRushIsOfficialForStats = endingDailyRush
-        && !dailyRushPracticeRun
-        && currentStats.dailyRushDate !== finalDailyRushDate;
-      const dailyRushChest = endingDailyRush && dailyRushIsOfficialForStats ? earnedChest : null;
-      const chestToStore = endingDailyRush ? dailyRushChest : earnedChest;
-      const unopenedChests = chestToStore
-        ? [...currentUnopenedChests, chestToStore]
-        : currentUnopenedChests;
-      const nextDailyRushStreak = dailyRushIsOfficialForStats
-        ? getNextDailyRushStreak(currentStats, finalDailyRushDate)
-        : currentStats.dailyRushStreak || 0;
-      const nextStats = {
-        ...currentStats,
-        ownedCollectionItems,
-        unopenedChests,
-        collectionStats: getCollectionStatsSummary(ownedCollectionItems, unopenedChests, currentStats.collectionStats),
-      };
-
-      if (endingDailyRush) {
-        nextStats.bestDailyRushScore = dailyRushIsOfficialForStats
-          ? Math.max(currentStats.bestDailyRushScore || 0, finalRushStats.totalScore)
-          : currentStats.bestDailyRushScore || 0;
-
-        if (dailyRushIsOfficialForStats) {
-          const officialResult = {
-            ...nextResult,
-            dailyRushStreak: nextDailyRushStreak,
-          };
-
-          nextStats.dailyRushDate = finalDailyRushDate;
-          nextStats.dailyRushStreak = nextDailyRushStreak;
-          nextStats.dailyRushOfficialResult = getDailyRushStoredResult(officialResult);
-        }
-      } else {
-        nextStats[rushMode.bestScoreKey] = Math.max(
-          currentStats[rushMode.bestScoreKey] || 0,
-          finalRushStats.totalScore,
-        );
-        nextStats.bestRushScore = Math.max(getBestOverallRushScore(currentStats), finalRushStats.totalScore);
-        nextStats.bestRushCombo = Math.max(currentStats.bestRushCombo || 0, finalRushStats.bestCombo);
-        nextStats.rushGamesPlayed = (currentStats.rushGamesPlayed || 0) + 1;
-        nextStats.rushHistory = [historyEntry, ...(currentStats.rushHistory || [])].slice(0, 5);
-      }
-
-      saveStats(nextStats);
-      return nextStats;
-    });
+    saveStats(nextStats);
+    setStats(nextStats);
   }
 
   function continueRushAfterReveal() {
@@ -2748,9 +3101,10 @@ export default function App() {
           currentStats.collectionStats,
         ),
       };
+      const achievementUpdate = applyAchievementUnlocks(nextStatsValue, currentStats);
 
-      saveStats(nextStatsValue);
-      return nextStatsValue;
+      saveStats(achievementUpdate.nextStats);
+      return achievementUpdate.nextStats;
     });
   }
 
@@ -3070,12 +3424,36 @@ export default function App() {
       });
   }
 
-  function openEarnedChest() {
-    if (!result?.earnedChest || chestOpenResult) {
+  function openEarnedChest(chestId = '') {
+    const requestedChestId = typeof chestId === 'string' ? chestId : '';
+    const earnedChests = Array.isArray(result?.earnedChests)
+      ? result.earnedChests
+      : result?.earnedChest
+        ? [result.earnedChest]
+        : [];
+    const chest = requestedChestId
+      ? earnedChests.find((earnedChestItem) => earnedChestItem.chestId === requestedChestId)
+      : result?.earnedChest || earnedChests[0];
+
+    if (!chest || chest.opened || chestOpenResult) {
       return;
     }
 
-    const chest = result.earnedChest;
+    openChestReward(chest);
+  }
+
+  function openStoredChest(chestId) {
+    const chest = normalizeUnopenedChests(stats.unopenedChests)
+      .find((savedChest) => savedChest.chestId === chestId);
+
+    if (!chest || chestOpenResult) {
+      return;
+    }
+
+    openChestReward(chest);
+  }
+
+  function openChestReward(chest) {
     const ownedCollectionItems = normalizeOwnedCollectionItems(stats.ownedCollectionItems);
     const unopenedChests = normalizeUnopenedChests(stats.unopenedChests)
       .filter((savedChest) => savedChest.chestId !== chest.chestId);
@@ -3104,22 +3482,36 @@ export default function App() {
           : previousCollectionStats.piecesUnlocked || 0,
       },
     );
-    const nextStats = {
+    const baseNextStats = {
       ...stats,
       ownedCollectionItems: nextOwnedCollectionItems,
       unopenedChests,
       collectionStats: nextCollectionStats,
     };
+    const achievementUpdate = applyAchievementUnlocks(baseNextStats, stats);
+    const nextStats = achievementUpdate.nextStats;
 
     saveStats(nextStats);
     setStats(nextStats);
     setResult((currentResult) => currentResult
       ? {
           ...currentResult,
-          earnedChest: {
-            ...currentResult.earnedChest,
-            opened: true,
-          },
+          earnedChest: currentResult.earnedChest?.chestId === chest.chestId
+            ? {
+                ...currentResult.earnedChest,
+                opened: true,
+              }
+            : currentResult.earnedChest,
+          earnedChests: Array.isArray(currentResult.earnedChests)
+            ? currentResult.earnedChests.map((earnedChestItem) => (
+                earnedChestItem.chestId === chest.chestId
+                  ? {
+                      ...earnedChestItem,
+                      opened: true,
+                    }
+                  : earnedChestItem
+              ))
+            : currentResult.earnedChests,
         }
       : currentResult);
     setChestOpenResult({
@@ -3129,6 +3521,7 @@ export default function App() {
       setProgress: nextSetProgress,
       setJustCompleted: Boolean(unlockedItem && !previousSetProgress?.isComplete && nextSetProgress?.isComplete),
       completeMessage: unlockedItem ? '' : 'Collection complete for current set pool',
+      newAchievements: achievementUpdate.newAchievements,
     });
   }
 
@@ -3765,6 +4158,15 @@ export default function App() {
               Collect pieces by playing Rush, clearing Ladder nodes, and defeating bosses.
               Collection rewards are cosmetic/status-based only.
             </p>
+            <div className="collection-progress-summary">
+              <div className="progress-copy">
+                <span>Collection progress</span>
+                <strong>{collectionCompletionPercent}%</strong>
+              </div>
+              <div className="progress-track">
+                <span style={{ width: `${collectionCompletionPercent}%` }} />
+              </div>
+            </div>
           </section>
 
           <section className="collection-stats" aria-label="Collection stats">
@@ -3783,6 +4185,144 @@ export default function App() {
             <div>
               <strong>{collectionStats.unopenedChests}</strong>
               <span>Unopened chests</span>
+            </div>
+            <div>
+              <strong>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</strong>
+              <span>Achievements</span>
+            </div>
+            <div>
+              <strong>{stats.rushGamesPlayed || 0}</strong>
+              <span>Rush runs</span>
+            </div>
+          </section>
+
+          {chestOpenResult && (
+            <section
+              className={`chest-open-result collection-chest-result ${chestOpenResult.setJustCompleted ? 'set-complete' : ''}`}
+              aria-label="Chest opened"
+            >
+              {chestOpenResult.unlockedItem ? (
+                <>
+                  <div className="unlock-hero">
+                    <div
+                      className={`unlock-piece-emblem ${getRarityClassName(chestOpenResult.unlockedItem.rarity)}`}
+                      aria-hidden="true"
+                    >
+                      {chestOpenResult.unlockedItem.pieceType.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="eyebrow">New Piece Unlocked</p>
+                      <h3>{chestOpenResult.unlockedItem.displayName}</h3>
+                      <div className="unlock-meta-row">
+                        <span className={`rarity-pill ${getRarityClassName(chestOpenResult.unlockedItem.rarity)}`}>
+                          {chestOpenResult.unlockedItem.rarity}
+                        </span>
+                        <span className="piece-type-pill">{chestOpenResult.unlockedItem.pieceType}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`set-progress-card ${chestOpenResult.setJustCompleted ? 'complete' : ''}`}>
+                    <div>
+                      <span>Set progress</span>
+                      <strong>
+                        {chestOpenResult.setProgress?.setName || chestOpenResult.unlockedItem.setName}:{' '}
+                        {chestOpenResult.setProgress?.ownedCount ?? 0}/
+                        {chestOpenResult.setProgress?.totalCount ?? 6}
+                      </strong>
+                    </div>
+                    {chestOpenResult.setJustCompleted && (
+                      <span className="set-complete-banner">Set Complete!</span>
+                    )}
+                  </div>
+                  <div className="score-breakdown compact unlock-details" aria-label="Collection unlock details">
+                    <div><span>Chest</span><strong>{chestOpenResult.chest.name}</strong></div>
+                    <div><span>Chest rarity</span><strong>{chestOpenResult.chest.tier}</strong></div>
+                    <div><span>Reward preview</span><strong>{chestOpenResult.unlockedItem.cosmeticReward}</strong></div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="eyebrow">Chest Opened</p>
+                  <h3>{chestOpenResult.completeMessage}</h3>
+                  <p className="rank-chase">No duplicate pieces are awarded in Collection Rewards v1.</p>
+                </>
+              )}
+              {(chestOpenResult.newAchievements || []).length > 0 && (
+                <div className="achievement-mini-list" aria-label="Achievements unlocked from chest">
+                  {(chestOpenResult.newAchievements || []).map((achievement) => (
+                    <span key={achievement.id}>
+                      <BadgeCheck size={15} />
+                      {achievement.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {unopenedChestList.length > 0 && (
+            <section className="unopened-chests-section" aria-label="Unopened chests">
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Rewards</p>
+                  <h2>Unopened chests</h2>
+                </div>
+                <span>{unopenedChestList.length}</span>
+              </div>
+              <div className="unopened-chest-list">
+                {unopenedChestList.map((chest) => (
+                  <article className="unopened-chest-card" key={chest.chestId}>
+                    <div>
+                      <strong>{chest.name}</strong>
+                      <span>{chest.earnedFrom}</span>
+                      {chest.bonusReason && <small>{chest.bonusReason}</small>}
+                    </div>
+                    <span className={`rarity-pill compact ${getRarityClassName(chest.tier)}`}>
+                      {chest.tier}
+                    </span>
+                    <button
+                      type="button"
+                      className="primary-action"
+                      onClick={() => openStoredChest(chest.chestId)}
+                      disabled={Boolean(chestOpenResult)}
+                    >
+                      <Sparkles size={18} />
+                      Open
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="achievements-section" aria-label="Achievements">
+            <div className="panel-header">
+              <div>
+                <p className="eyebrow">Achievements</p>
+                <h2>Retention goals</h2>
+              </div>
+              <span>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</span>
+            </div>
+            <div className="achievement-list">
+              {ACHIEVEMENTS.map((achievement) => {
+                const unlocked = visibleAchievementIds.has(achievement.id);
+
+                return (
+                  <article
+                    className={`achievement-card ${unlocked ? 'unlocked' : 'locked'}`}
+                    key={achievement.id}
+                  >
+                    <div className="achievement-icon" aria-hidden="true">
+                      {unlocked ? <BadgeCheck size={18} /> : <Trophy size={18} />}
+                    </div>
+                    <div>
+                      <strong>{achievement.name}</strong>
+                      <span>{achievement.description}</span>
+                    </div>
+                    <small>{unlocked ? 'Unlocked' : 'Locked'}</small>
+                  </article>
+                );
+              })}
             </div>
           </section>
 
@@ -4908,22 +5448,47 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {result.earnedChest && !chestOpenResult && (
-                <section className="earned-chest-card" aria-label="Chest earned">
-                  <p className="eyebrow">Chest Earned</p>
-                  <h3>{result.earnedChest.name}</h3>
-                  <span>{result.earnedChest.tier} tier</span>
-                  {result.earnedChest.bonusReason && <small>{result.earnedChest.bonusReason}</small>}
-                  <button
-                    type="button"
-                    className="primary-action"
-                    onClick={openEarnedChest}
-                    disabled={result.earnedChest.opened}
-                  >
-                    <Sparkles size={18} />
-                    {result.earnedChest.opened ? 'Chest Opened' : 'Open Chest'}
-                  </button>
+              {(result.newAchievements || []).length > 0 && (
+                <section className="achievement-unlock-card" aria-label="Achievements unlocked">
+                  <p className="eyebrow">Achievement Unlocked</p>
+                  {(result.newAchievements || []).map((achievement) => (
+                    <div className="achievement-unlock-row" key={achievement.id}>
+                      <BadgeCheck size={18} />
+                      <div>
+                        <strong>{achievement.name}</strong>
+                        <span>{achievement.description}</span>
+                      </div>
+                    </div>
+                  ))}
                 </section>
+              )}
+              {getResultEarnedChests(result).length > 0 && !chestOpenResult && (
+                <section className="earned-chest-card reward-stack" aria-label="Chests earned">
+                  <p className="eyebrow">Chest Earned</p>
+                  {getResultEarnedChests(result).map((earnedChest) => (
+                    <div className="earned-chest-row" key={earnedChest.chestId}>
+                      <div>
+                        <h3>{earnedChest.name}</h3>
+                        <span className={`rarity-pill compact ${getRarityClassName(earnedChest.tier)}`}>
+                          {earnedChest.tier}
+                        </span>
+                        {earnedChest.bonusReason && <small>{earnedChest.bonusReason}</small>}
+                      </div>
+                      <button
+                        type="button"
+                        className="primary-action"
+                        onClick={() => openEarnedChest(earnedChest.chestId)}
+                        disabled={earnedChest.opened}
+                      >
+                        <Sparkles size={18} />
+                        {earnedChest.opened ? 'Opened' : 'Open'}
+                      </button>
+                    </div>
+                  ))}
+                </section>
+              )}
+              {result.noChestReason && getResultEarnedChests(result).length === 0 && (
+                <p className="rank-chase">{result.noChestReason}</p>
               )}
               {chestOpenResult && (
                 <section
@@ -4965,8 +5530,19 @@ export default function App() {
                       </div>
                       <div className="score-breakdown compact unlock-details" aria-label="Collection unlock details">
                         <div><span>Chest</span><strong>{chestOpenResult.chest.name}</strong></div>
+                        <div><span>Chest rarity</span><strong>{chestOpenResult.chest.tier}</strong></div>
                         <div><span>Reward preview</span><strong>{chestOpenResult.unlockedItem.cosmeticReward}</strong></div>
                       </div>
+                      {(chestOpenResult.newAchievements || []).length > 0 && (
+                        <div className="achievement-mini-list" aria-label="Achievements unlocked from chest">
+                          {(chestOpenResult.newAchievements || []).map((achievement) => (
+                            <span key={achievement.id}>
+                              <BadgeCheck size={15} />
+                              {achievement.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>

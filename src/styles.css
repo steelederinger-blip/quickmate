@@ -777,6 +777,12 @@ h2 {
   line-height: 1.45;
 }
 
+.collection-progress-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .collection-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -807,6 +813,180 @@ h2 {
 .collection-grid {
   display: grid;
   gap: 12px;
+}
+
+.achievements-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.achievements-section .panel-header {
+  align-items: flex-start;
+}
+
+.achievements-section .panel-header h2 {
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+}
+
+.achievements-section .panel-header > span {
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.achievement-list {
+  display: grid;
+  gap: 8px;
+}
+
+.achievement-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.achievement-card.unlocked {
+  border-color: rgba(242, 189, 75, 0.42);
+  background:
+    linear-gradient(135deg, rgba(242, 189, 75, 0.14), rgba(87, 214, 141, 0.08)),
+    var(--surface-soft);
+}
+
+.achievement-card.locked {
+  opacity: 0.72;
+}
+
+.achievement-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.achievement-card strong,
+.achievement-card span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.achievement-card strong {
+  color: var(--text);
+}
+
+.achievement-card span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.achievement-card small {
+  min-height: 26px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.achievement-card.unlocked small {
+  color: var(--success-text);
+  background: var(--success-soft);
+}
+
+.unopened-chests-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 35%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, var(--accent-soft), rgba(255, 255, 255, 0.035)),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.unopened-chests-section .panel-header {
+  align-items: flex-start;
+}
+
+.unopened-chests-section .panel-header h2 {
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+}
+
+.unopened-chests-section .panel-header > span {
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--surface-strong);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.unopened-chest-list {
+  display: grid;
+  gap: 8px;
+}
+
+.unopened-chest-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.unopened-chest-card strong,
+.unopened-chest-card span,
+.unopened-chest-card small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.unopened-chest-card span,
+.unopened-chest-card small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.unopened-chest-card .rarity-pill {
+  justify-self: end;
+}
+
+.unopened-chest-card .primary-action {
+  grid-column: 1 / -1;
+  justify-content: center;
 }
 
 .collection-set-card {
@@ -1927,6 +2107,91 @@ h2 {
   font-weight: 850;
 }
 
+.reward-stack {
+  gap: 12px;
+}
+
+.earned-chest-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.earned-chest-row h3 {
+  margin-bottom: 6px;
+}
+
+.earned-chest-row small {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.achievement-unlock-card {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid rgba(87, 214, 141, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(87, 214, 141, 0.14), rgba(242, 189, 75, 0.1)),
+    var(--surface);
+  text-align: left;
+}
+
+.achievement-unlock-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.achievement-unlock-row svg {
+  margin-top: 2px;
+  color: var(--success);
+}
+
+.achievement-unlock-row strong,
+.achievement-unlock-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.achievement-unlock-row span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.achievement-mini-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.achievement-mini-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--success-text);
+  background: var(--success-soft);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
 .chest-open-result .actions {
   width: 100%;
 }
@@ -2599,6 +2864,16 @@ button {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.piece-slot.locked {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.piece-slot.locked strong,
+.piece-slot.locked small {
+  color: var(--muted);
+}
+
 .piece-slot.owned {
   border-color: rgba(242, 189, 75, 0.38);
   background:
@@ -2920,6 +3195,23 @@ button {
   .rush-home-metrics strong,
   .collection-stats strong {
     font-size: 1.28rem;
+  }
+
+  .achievement-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .achievement-card small {
+    grid-column: 2;
+    width: fit-content;
+  }
+
+  .earned-chest-row {
+    grid-template-columns: 1fr;
+  }
+
+  .earned-chest-row .primary-action {
+    width: 100%;
   }
 
   .rush-mode-card {
