@@ -115,6 +115,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'pawn-village',
     name: 'Pawn Village',
+    campaignLabel: 'Starter Tactics',
     focus: 'First tactics, direct mates, and simple forcing moves.',
     mateInRange: 'Mate in 1',
     difficultyRange: 'Starter to Easy',
@@ -127,6 +128,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'knight-woods',
     name: 'Knight Woods',
+    campaignLabel: 'Forks and First Threats',
     focus: 'Knight patterns, forks, smothered shapes, and unusual geometry.',
     mateInRange: 'Mate in 1-2',
     difficultyRange: 'Easy to Medium',
@@ -139,6 +141,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'bishop-tower',
     name: 'Bishop Tower',
+    campaignLabel: 'Diagonals and Pins',
     focus: 'Diagonal control, long-range coverage, and bishop mating nets.',
     mateInRange: 'Mate in 2-4',
     difficultyRange: 'Easy to Medium',
@@ -151,6 +154,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'rook-fortress',
     name: 'Rook Fortress',
+    campaignLabel: 'Files, Ranks, and Pressure',
     focus: 'Files, ranks, back-rank pressure, clearance, and rook lifts.',
     mateInRange: 'Mate in 2-4',
     difficultyRange: 'Medium to Advanced',
@@ -163,6 +167,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'queens-court',
     name: "Queen's Court",
+    campaignLabel: 'Attacks and Coordination',
     focus: 'Queen coordination, sacrifices, forcing checks, and attack conversion.',
     mateInRange: 'Mate in 3-5',
     difficultyRange: 'Medium to Advanced',
@@ -175,6 +180,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'kings-gate',
     name: "King's Gate",
+    campaignLabel: 'Defensive Precision',
     focus: 'Defensive resources, exact forcing lines, and boss-gate pressure.',
     mateInRange: 'Mate in 4-6',
     difficultyRange: 'Advanced to Expert',
@@ -187,6 +193,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'grandmaster-keep',
     name: 'Grandmaster Keep',
+    campaignLabel: 'Final Campaign Trial',
     focus: 'Deep mates, advanced tactics, long forcing lines, and survival-style pressure.',
     mateInRange: 'Mate in 4-8+',
     difficultyRange: 'Expert to Master',
@@ -195,6 +202,29 @@ const LADDER_WORLD_ZONES = [
     rewardPreview: 'Legendary Chests, Grandmaster King, Grandmaster Keep Badge, Ladder XP',
     unlocked: false,
     color: '#2e4968',
+  },
+];
+
+const COMING_NEXT_WORLDS = [
+  {
+    name: 'Master Realm',
+    label: 'Advanced Campaign Boards',
+    preview: 'Future board with deeper tactical routes and premium cosmetic rewards.',
+  },
+  {
+    name: 'International Master Citadel',
+    label: 'Precision and Endurance',
+    preview: 'Future world for longer forcing lines and boss-level defensive tests.',
+  },
+  {
+    name: 'Grandmaster Summit',
+    label: 'Elite Calculation',
+    preview: 'Future climb for hard mates, rare badges, and collection milestones.',
+  },
+  {
+    name: 'Legendary Hall',
+    label: 'Legacy Challenges',
+    preview: 'Future endgame destination for legendary boards and status rewards.',
   },
 ];
 
@@ -219,6 +249,15 @@ const KINGS_GATE_BOSS_COLLECTION_REWARD_ID = 'royal-king';
 const GRANDMASTER_KEEP_ZONE_ID = 'grandmaster-keep';
 const GRANDMASTER_KEEP_BOSS_BADGE = 'Grandmaster Keep Badge';
 const GRANDMASTER_KEEP_BOSS_COLLECTION_REWARD_ID = 'grandmaster-king';
+const LADDER_ZONE_ACHIEVEMENT_IDS = {
+  [PAWN_VILLAGE_ZONE_ID]: 'complete-pawn-village',
+  [KNIGHT_WOODS_ZONE_ID]: 'complete-knight-woods',
+  [BISHOP_TOWER_ZONE_ID]: 'complete-bishop-tower',
+  [ROOK_FORTRESS_ZONE_ID]: 'complete-rook-fortress',
+  [QUEENS_COURT_ZONE_ID]: 'complete-queens-court',
+  [KINGS_GATE_ZONE_ID]: 'complete-kings-gate',
+  [GRANDMASTER_KEEP_ZONE_ID]: 'complete-grandmaster-keep',
+};
 const PAWN_VILLAGE_NODES = [
   {
     id: 'pawn-welcome-mate',
@@ -1078,13 +1117,13 @@ const ACHIEVEMENTS = [
     id: 'complete-queens-court',
     name: "Complete Queen's Court",
     description: "Defeat The Queen's Trial.",
-    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('queens-trial'),
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('queen-trial'),
   },
   {
     id: 'complete-kings-gate',
     name: "Complete King's Gate",
     description: 'Defeat The Running King.',
-    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('running-king'),
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('king-running-king'),
   },
   {
     id: 'complete-grandmaster-keep',
@@ -1456,6 +1495,37 @@ function getLadderZoneProgress(zoneId, completedNodeIds = []) {
     totalCount: zoneNodes.length,
     isComplete: zoneNodes.length > 0 && completedCount >= zoneNodes.length,
   };
+}
+
+function getLadderCampaignProgress(completedNodeIds = []) {
+  const zoneProgress = LADDER_WORLD_ZONES.map((zone) => ({
+    zone,
+    progress: getLadderZoneProgress(zone.id, completedNodeIds),
+  }));
+  const completedNodes = zoneProgress.reduce((total, item) => total + item.progress.completedCount, 0);
+  const totalNodes = zoneProgress.reduce((total, item) => total + item.progress.totalCount, 0);
+  const worldsCompleted = zoneProgress.filter((item) => item.progress.isComplete).length;
+
+  return {
+    completedNodes,
+    totalNodes,
+    worldsCompleted,
+    totalWorlds: LADDER_WORLD_ZONES.length,
+    percent: totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0,
+  };
+}
+
+function getCurrentLadderCampaignZone(completedNodeIds = []) {
+  const currentZone = LADDER_WORLD_ZONES.find((zone) => {
+    const progress = getLadderZoneProgress(zone.id, completedNodeIds);
+    return ladderZoneIsUnlocked(zone.id, completedNodeIds) && !progress.isComplete;
+  });
+
+  return currentZone || LADDER_WORLD_ZONES[LADDER_WORLD_ZONES.length - 1];
+}
+
+function getLadderZoneAchievementId(zoneId) {
+  return LADDER_ZONE_ACHIEVEMENT_IDS[zoneId] || '';
 }
 
 function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
@@ -2496,19 +2566,14 @@ export default function App() {
   const completedLadderNodeIds = useMemo(() => {
     return new Set(stats.completedLadderNodes || []);
   }, [stats.completedLadderNodes]);
-  const pawnVillageProgress = getLadderZoneProgress(PAWN_VILLAGE_ZONE_ID, stats.completedLadderNodes || []);
-  const knightWoodsProgress = getLadderZoneProgress(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
-  const bishopTowerProgress = getLadderZoneProgress(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
-  const rookFortressProgress = getLadderZoneProgress(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
-  const queensCourtProgress = getLadderZoneProgress(QUEENS_COURT_ZONE_ID, stats.completedLadderNodes || []);
-  const kingsGateProgress = getLadderZoneProgress(KINGS_GATE_ZONE_ID, stats.completedLadderNodes || []);
   const grandmasterKeepProgress = getLadderZoneProgress(GRANDMASTER_KEEP_ZONE_ID, stats.completedLadderNodes || []);
-  const knightWoodsUnlocked = ladderZoneIsUnlocked(KNIGHT_WOODS_ZONE_ID, stats.completedLadderNodes || []);
-  const bishopTowerUnlocked = ladderZoneIsUnlocked(BISHOP_TOWER_ZONE_ID, stats.completedLadderNodes || []);
-  const rookFortressUnlocked = ladderZoneIsUnlocked(ROOK_FORTRESS_ZONE_ID, stats.completedLadderNodes || []);
-  const queensCourtUnlocked = ladderZoneIsUnlocked(QUEENS_COURT_ZONE_ID, stats.completedLadderNodes || []);
-  const kingsGateUnlocked = ladderZoneIsUnlocked(KINGS_GATE_ZONE_ID, stats.completedLadderNodes || []);
   const grandmasterKeepUnlocked = ladderZoneIsUnlocked(GRANDMASTER_KEEP_ZONE_ID, stats.completedLadderNodes || []);
+  const ladderCampaignProgress = getLadderCampaignProgress(stats.completedLadderNodes || []);
+  const ladderCampaignComplete = ladderCampaignProgress.worldsCompleted >= ladderCampaignProgress.totalWorlds;
+  const currentCampaignZone = getCurrentLadderCampaignZone(stats.completedLadderNodes || []);
+  const nextCampaignZone = currentCampaignZone ? getNextLadderZone(currentCampaignZone.id) : null;
+  const ladderCampaignPath = LADDER_WORLD_ZONES.map((zone) => zone.name).join(' → ');
+  const ladderBadgesEarned = normalizeStringArray(stats.ladderBadges).length;
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -2538,7 +2603,6 @@ export default function App() {
   const bestOverallRushScore = getBestOverallRushScore(stats);
   const bestRushRank = getRushRank(bestOverallRushScore);
   const recentRushRuns = (stats.rushHistory || []).slice(0, 3);
-  const ladderSolvedCount = Object.values(stats.puzzleCompletions).filter((completion) => completion?.solved).length;
   const ownedCollectionItemIds = useMemo(() => {
     return new Set(stats.ownedCollectionItems || []);
   }, [stats.ownedCollectionItems]);
@@ -2720,34 +2784,6 @@ export default function App() {
 
     setMode('ladder');
     setScreen(getLadderZoneScreen(zoneId));
-  }
-
-  function openPawnVillage() {
-    openLadderZone(PAWN_VILLAGE_ZONE_ID);
-  }
-
-  function openKnightWoods() {
-    openLadderZone(KNIGHT_WOODS_ZONE_ID);
-  }
-
-  function openBishopTower() {
-    openLadderZone(BISHOP_TOWER_ZONE_ID);
-  }
-
-  function openRookFortress() {
-    openLadderZone(ROOK_FORTRESS_ZONE_ID);
-  }
-
-  function openQueensCourt() {
-    openLadderZone(QUEENS_COURT_ZONE_ID);
-  }
-
-  function openKingsGate() {
-    openLadderZone(KINGS_GATE_ZONE_ID);
-  }
-
-  function openGrandmasterKeep() {
-    openLadderZone(GRANDMASTER_KEEP_ZONE_ID);
   }
 
   function startLadderNode(nodeId) {
@@ -4184,38 +4220,71 @@ export default function App() {
             </div>
           </div>
 
-          <section className="rush-home" aria-label="Rush Mode">
-            <button type="button" className="mode-card rush-hero-card featured" onClick={openRushIntro}>
-              <Zap size={30} />
-              <span>
-                <strong>Rush Mode</strong>
-                <small>Blitz, Classic, Survival, or Endless | best rank {bestRushRank}</small>
-              </span>
-              <Play size={24} />
-            </button>
+          <section className="primary-feature-section" aria-label="Primary QuickMate features">
+            <div className="primary-feature-grid">
+              <button type="button" className="mode-card rush-hero-card featured" onClick={openRushIntro}>
+                <Zap size={30} />
+                <span>
+                  <strong>Rush Mode</strong>
+                  <small>Blitz, Classic, Survival, or Endless | best rank {bestRushRank}</small>
+                  <small>Primary arcade loop</small>
+                </span>
+                <Play size={24} />
+              </button>
 
-            <button
-              type="button"
-              className={`mode-card daily-rush-card ${dailyRushCompletedToday ? 'completed' : ''}`}
-              onClick={startDailyRush}
-              disabled={!hasDailyRushPuzzles}
-            >
-              <CalendarDays size={26} />
-              <span>
-                <strong>Today's Daily Rush</strong>
-                <small>
-                  {dailyRushStatusLabel} | streak {stats.dailyRushStreak || 0}
-                </small>
-                <small>
-                  {dailyRushCompletedToday
-                    ? `Official score ${dailyRushOfficialResult.score}`
-                    : `${DAILY_RUSH_PUZZLE_COUNT} fixed puzzles | starts ${puzzles[todaysDailyRushSequence[0]]?.title || 'when ready'}`}
-                </small>
-              </span>
-              <Play size={22} />
-            </button>
+              <button
+                type="button"
+                className={`mode-card daily-rush-card ${dailyRushCompletedToday ? 'completed' : ''}`}
+                onClick={startDailyRush}
+                disabled={!hasDailyRushPuzzles}
+              >
+                <CalendarDays size={26} />
+                <span>
+                  <strong>Today's Daily Rush</strong>
+                  <small>
+                    {dailyRushStatusLabel} | streak {stats.dailyRushStreak || 0}
+                  </small>
+                  <small>
+                    {dailyRushCompletedToday
+                      ? `Official score ${dailyRushOfficialResult.score}`
+                      : `${DAILY_RUSH_PUZZLE_COUNT} fixed puzzles | starts ${puzzles[todaysDailyRushSequence[0]]?.title || 'when ready'}`}
+                  </small>
+                </span>
+                <Play size={22} />
+              </button>
 
-            <div className="rush-home-metrics" aria-label="Rush performance">
+              <button type="button" className="mode-card ladder-campaign-card featured" onClick={openLadderWorld}>
+                <ListChecks size={26} />
+                <span>
+                  <strong>Ladder World</strong>
+                  <small>{ladderCampaignProgress.percent}% campaign | {ladderCampaignProgress.worldsCompleted}/{ladderCampaignProgress.totalWorlds} worlds complete</small>
+                  <small>
+                    {ladderCampaignComplete ? 'Campaign complete' : currentCampaignZone?.name || 'Campaign ready'}
+                    {ladderCampaignComplete
+                      ? ' | first campaign complete'
+                      : nextCampaignZone
+                        ? ` -> ${nextCampaignZone.name}`
+                        : ' | final world'}
+                  </small>
+                  <small className="card-cta">Continue Campaign</small>
+                </span>
+                <Play size={22} />
+              </button>
+
+              <button type="button" className="mode-card collection-feature-card" onClick={openCollection}>
+                <Trophy size={26} />
+                <span>
+                  <strong>Collection</strong>
+                  <small>{collectionStats.totalPiecesOwned}/{COLLECTION_ITEMS.length} pieces | {collectionStats.setsCompleted} sets complete</small>
+                  <small>Cosmetic/status rewards from Rush and Ladder</small>
+                </span>
+                <Play size={22} />
+              </button>
+            </div>
+          </section>
+
+          <section className="rush-overview-section" aria-label="Rush performance">
+            <div className="rush-home-metrics">
               <div>
                 <strong>{stats.bestBlitzRushScore || 0}</strong>
                 <span>Best Blitz</span>
@@ -4268,48 +4337,6 @@ export default function App() {
             </section>
           </section>
 
-          <section className="progress-section" aria-label="Progress">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Progress</p>
-                <h2>World and collection.</h2>
-              </div>
-            </div>
-            <div className="mode-grid progress-mode-grid">
-              <button type="button" className="mode-card" onClick={openLadderWorld}>
-                <ListChecks size={24} />
-                <span>
-                  <strong>Ladder World</strong>
-                  <small>
-                    {grandmasterKeepUnlocked
-                      ? 'Grandmaster Keep unlocked'
-                      : kingsGateUnlocked
-                      ? "King's Gate unlocked"
-                      : queensCourtUnlocked
-                      ? "Queen's Court unlocked"
-                      : rookFortressUnlocked
-                        ? 'Rook Fortress unlocked'
-                      : bishopTowerUnlocked
-                        ? 'Bishop Tower unlocked'
-                      : knightWoodsUnlocked
-                        ? 'Knight Woods unlocked'
-                        : 'Pawn Village unlocked'} | {ladderSolvedCount}/{puzzles.length} solved
-                  </small>
-                </span>
-                <Play size={20} />
-              </button>
-
-              <button type="button" className="mode-card" onClick={openCollection}>
-                <Trophy size={24} />
-                <span>
-                  <strong>Collection</strong>
-                  <small>Piece sets, cosmetics, and status rewards</small>
-                </span>
-                <Play size={20} />
-              </button>
-            </div>
-          </section>
-
           <section className="practice-section" aria-label="Practice">
             <div className="section-heading">
               <div>
@@ -4346,8 +4373,8 @@ export default function App() {
               <span>Daily Rush streak</span>
             </div>
             <div>
-              <strong>{ladderSolvedCount}/{puzzles.length}</strong>
-              <span>Ladder progress</span>
+              <strong>{ladderCampaignProgress.completedNodes}/{ladderCampaignProgress.totalNodes}</strong>
+              <span>Campaign nodes</span>
             </div>
             <div>
               <strong>{stats.puzzlesSolved}</strong>
@@ -4836,50 +4863,58 @@ export default function App() {
           <div className="brand-row">
             <div>
               <p className="eyebrow">Ladder World</p>
-              <h1>Clear the chess road.</h1>
+              <h1>Ladder World</h1>
+              <p className="brand-tagline">Clear worlds, beat tactical boards, and unlock rewards.</p>
             </div>
             <div className="streak-pill">
               <ListChecks size={17} />
-              <span>{ladderSolvedCount}/{puzzles.length} solved</span>
+              <span>{ladderCampaignProgress.percent}% campaign</span>
             </div>
           </div>
 
+          <section className="campaign-path-card" aria-label="Current campaign path">
+            <div>
+              <p className="eyebrow">Current Campaign Path</p>
+              <strong>{ladderCampaignPath}</strong>
+            </div>
+            <span>
+              Complete worlds to earn chests, badges, XP, and collection pieces.
+              Perfect clears and future boss battles will unlock premium rewards.
+            </span>
+          </section>
+
           <section className="world-summary" aria-label="Ladder World summary">
             <div>
-              <strong>{pawnVillageProgress.completedCount}/{pawnVillageProgress.totalCount}</strong>
-              <span>Pawn Village</span>
+              <strong>{ladderCampaignProgress.completedNodes}/{ladderCampaignProgress.totalNodes}</strong>
+              <span>Nodes completed</span>
             </div>
             <div>
-              <strong>{knightWoodsProgress.completedCount}/{knightWoodsProgress.totalCount}</strong>
-              <span>Knight Woods</span>
+              <strong>{ladderCampaignProgress.worldsCompleted}/{ladderCampaignProgress.totalWorlds}</strong>
+              <span>Worlds completed</span>
             </div>
             <div>
-              <strong>{bishopTowerProgress.completedCount}/{bishopTowerProgress.totalCount}</strong>
-              <span>Bishop Tower</span>
+              <strong>{ladderCampaignComplete ? 'Complete' : currentCampaignZone?.name || 'Ready'}</strong>
+              <span>Current world</span>
             </div>
             <div>
-              <strong>{rookFortressProgress.completedCount}/{rookFortressProgress.totalCount}</strong>
-              <span>Rook Fortress</span>
-            </div>
-            <div>
-              <strong>{queensCourtProgress.completedCount}/{queensCourtProgress.totalCount}</strong>
-              <span>Queen's Court</span>
-            </div>
-            <div>
-              <strong>{kingsGateProgress.completedCount}/{kingsGateProgress.totalCount}</strong>
-              <span>King's Gate</span>
-            </div>
-            <div>
-              <strong>{grandmasterKeepProgress.completedCount}/{grandmasterKeepProgress.totalCount}</strong>
-              <span>Grandmaster Keep</span>
-            </div>
-            <div>
-              <strong>{grandmasterKeepProgress.isComplete ? 'Complete' : grandmasterKeepUnlocked ? 'Open' : 'Locked'}</strong>
-              <span>Campaign</span>
+              <strong>{ladderCampaignComplete ? 'Campaign complete' : nextCampaignZone?.name || 'Final world'}</strong>
+              <span>Next world</span>
             </div>
             <div>
               <strong>{stats.ladderXp || 0}</strong>
               <span>Ladder XP</span>
+            </div>
+            <div>
+              <strong>{ladderBadgesEarned}</strong>
+              <span>Boss badges</span>
+            </div>
+            <div>
+              <strong>{collectionStats.unopenedChests}</strong>
+              <span>Unopened chests</span>
+            </div>
+            <div>
+              <strong>{grandmasterKeepProgress.isComplete ? 'Complete' : grandmasterKeepUnlocked ? 'Open' : 'Locked'}</strong>
+              <span>Campaign</span>
             </div>
           </section>
           {grandmasterKeepProgress.isComplete && (
@@ -4896,6 +4931,15 @@ export default function App() {
               const zoneBadge = getLadderZoneBadge(zone.id);
               const hasZoneBadge = zoneBadge ? (stats.ladderBadges || []).includes(zoneBadge) : false;
               const zoneCanOpen = PLAYABLE_LADDER_ZONE_IDS.includes(zone.id);
+              const zoneStatusLabel = zoneProgress.isComplete ? 'Completed' : zoneUnlocked ? 'Unlocked' : 'Locked';
+              const zoneAchievementId = getLadderZoneAchievementId(zone.id);
+              const zoneAchievement = zoneAchievementId ? getAchievementById(zoneAchievementId) : null;
+              const zoneAchievementUnlocked = zoneAchievementId ? visibleAchievementIds.has(zoneAchievementId) : false;
+              const zoneCtaLabel = zoneProgress.isComplete
+                ? 'Review World'
+                : currentCampaignZone?.id === zone.id
+                  ? 'Continue Campaign'
+                  : 'Open Zone';
               const zoneRewardCopy = zone.id === PAWN_VILLAGE_ZONE_ID
                 ? 'Rewards: Basic and Tactical Chests, Bronze Rook boss reward, XP.'
                 : zone.id === KNIGHT_WOODS_ZONE_ID
@@ -4914,7 +4958,7 @@ export default function App() {
 
               return (
                 <article
-                  className={`zone-node ${zoneUnlocked ? 'unlocked' : 'locked'}`}
+                  className={`zone-node ${zoneUnlocked ? 'unlocked' : 'locked'} ${zoneProgress.isComplete ? 'completed' : ''}`}
                   key={zone.id}
                   style={{ '--zone-color': zone.color }}
                 >
@@ -4924,24 +4968,29 @@ export default function App() {
                   <div className="zone-card">
                     <div className="zone-card-header">
                       <div>
-                        <p className="eyebrow">{zone.mateInRange}</p>
+                        <p className="eyebrow">{zone.campaignLabel}</p>
                         <h2>{zone.name}</h2>
+                        <small>{zone.mateInRange} | {zone.difficultyRange}</small>
                       </div>
-                      <span className="zone-status">{zoneUnlocked ? 'Unlocked' : 'Locked'}</span>
+                      <span className="zone-status">{zoneStatusLabel}</span>
                     </div>
                     <p>{zone.focus}</p>
                     <div className="zone-details">
                       <div>
-                        <span>Difficulty</span>
-                        <strong>{zone.difficultyRange}</strong>
+                        <span>Completion</span>
+                        <strong>{Math.round(zoneProgressPercent)}%</strong>
+                      </div>
+                      <div>
+                        <span>Nodes</span>
+                        <strong>{zoneProgress.completedCount}/{zoneProgress.totalCount}</strong>
+                      </div>
+                      <div className="zone-rewards-detail">
+                        <span>Rewards</span>
+                        <strong>{zone.rewardPreview}</strong>
                       </div>
                       <div>
                         <span>Boss</span>
                         <strong>{zone.bossName}</strong>
-                      </div>
-                      <div>
-                        <span>Rewards</span>
-                        <strong>{zone.rewardPreview}</strong>
                       </div>
                     </div>
                     <div className="zone-motifs" aria-label={`${zone.name} puzzle motifs`}>
@@ -4959,6 +5008,11 @@ export default function App() {
                           <span style={{ width: `${zoneProgressPercent}%` }} />
                         </div>
                         {hasZoneBadge && <small className="zone-badge-earned">{zoneBadge} earned</small>}
+                        {zoneAchievement && (
+                          <small className={`zone-achievement-status ${zoneAchievementUnlocked ? 'earned' : ''}`}>
+                            {zoneAchievementUnlocked ? 'Achievement earned' : 'Achievement locked'}: {zoneAchievement.name}
+                          </small>
+                        )}
                         {zoneRewardCopy && <small className="zone-reward-preview">{zoneRewardCopy}</small>}
                       </div>
                     )}
@@ -4970,7 +5024,7 @@ export default function App() {
                         disabled={!zoneUnlocked}
                       >
                         <Play size={18} />
-                        Open Zone
+                        {zoneCtaLabel}
                       </button>
                     )}
                     {!zoneUnlocked && (
@@ -4996,34 +5050,31 @@ export default function App() {
             })}
           </section>
 
+          <section className="coming-next-section" aria-label="Coming Next campaign worlds">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Coming Next</p>
+                <h2>Future worlds.</h2>
+              </div>
+            </div>
+            <div className="coming-next-grid">
+              {COMING_NEXT_WORLDS.map((world) => (
+                <article className="coming-next-card" key={world.name} aria-disabled="true">
+                  <span className="zone-status">Teaser</span>
+                  <div>
+                    <h3>{world.name}</h3>
+                    <strong>{world.label}</strong>
+                    <p>{world.preview}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <div className="actions world-actions">
-            <button type="button" className="primary-action" onClick={openPawnVillage}>
+            <button type="button" className="primary-action" onClick={() => openLadderZone(currentCampaignZone?.id || PAWN_VILLAGE_ZONE_ID)}>
               <Play size={18} />
-              Open Pawn Village
-            </button>
-            <button type="button" className="secondary-action" onClick={openKnightWoods} disabled={!knightWoodsUnlocked}>
-              <Play size={18} />
-              Open Knight Woods
-            </button>
-            <button type="button" className="secondary-action" onClick={openBishopTower} disabled={!bishopTowerUnlocked}>
-              <Play size={18} />
-              Open Bishop Tower
-            </button>
-            <button type="button" className="secondary-action" onClick={openRookFortress} disabled={!rookFortressUnlocked}>
-              <Play size={18} />
-              Open Rook Fortress
-            </button>
-            <button type="button" className="secondary-action" onClick={openQueensCourt} disabled={!queensCourtUnlocked}>
-              <Play size={18} />
-              Open Queen's Court
-            </button>
-            <button type="button" className="secondary-action" onClick={openKingsGate} disabled={!kingsGateUnlocked}>
-              <Play size={18} />
-              Open King's Gate
-            </button>
-            <button type="button" className="secondary-action" onClick={openGrandmasterKeep} disabled={!grandmasterKeepUnlocked}>
-              <Play size={18} />
-              Open Grandmaster Keep
+              Continue Campaign
             </button>
             <button type="button" className="secondary-action" onClick={() => startPuzzle(0, 'ladder')}>
               <ListChecks size={18} />
