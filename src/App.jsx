@@ -22,7 +22,13 @@ import {
   Zap,
   XCircle,
 } from 'lucide-react';
-import { CHEST_TYPES, COLLECTION_ITEMS, PIECE_SETS } from './collections.js';
+import {
+  BOARD_THEMES,
+  CHEST_TYPES,
+  COLLECTION_ITEMS,
+  PIECE_SETS,
+  PIECE_THEMES,
+} from './collections.js';
 import { puzzles } from './puzzles.js';
 
 const STORAGE_KEY = 'quickmate.stats.v1';
@@ -1148,6 +1154,24 @@ const DEFAULT_COLLECTION_STATS = {
   chestsOpened: 0,
 };
 
+const DEFAULT_PIECE_THEME_ID = 'classic';
+const DEFAULT_BOARD_THEME_ID = 'classic-green';
+
+const PIECE_GLYPHS = {
+  wK: '♔',
+  wQ: '♕',
+  wR: '♖',
+  wB: '♗',
+  wN: '♘',
+  wP: '♙',
+  bK: '♚',
+  bQ: '♛',
+  bR: '♜',
+  bB: '♝',
+  bN: '♞',
+  bP: '♟',
+};
+
 const RUSH_MILESTONE_CHESTS = [
   {
     id: 'rush-runs-5',
@@ -1202,6 +1226,8 @@ const DEFAULT_STATS = {
   ownedCollectionItems: [],
   unopenedChests: [],
   collectionStats: DEFAULT_COLLECTION_STATS,
+  selectedPieceTheme: DEFAULT_PIECE_THEME_ID,
+  selectedBoardTheme: DEFAULT_BOARD_THEME_ID,
 };
 
 const DEFAULT_RUSH_STATS = {
@@ -1497,6 +1523,24 @@ const ACHIEVEMENTS = [
     name: 'First Collection Piece Unlocked',
     description: 'Unlock your first collectible chess piece.',
     isUnlocked: (stats) => normalizeOwnedCollectionItems(stats.ownedCollectionItems).length >= 1,
+  },
+  {
+    id: 'first-piece-theme-selected',
+    name: 'First Piece Theme Selected',
+    description: 'Select any unlocked premium piece theme.',
+    isUnlocked: (stats) => getSelectedPieceThemeId(stats) !== DEFAULT_PIECE_THEME_ID,
+  },
+  {
+    id: 'first-board-theme-selected',
+    name: 'First Board Theme Selected',
+    description: 'Select any unlocked premium board theme.',
+    isUnlocked: (stats) => getSelectedBoardThemeId(stats) !== DEFAULT_BOARD_THEME_ID,
+  },
+  {
+    id: 'premium-theme-unlocked',
+    name: 'Unlock a Premium Theme',
+    description: 'Unlock a Rare or better board or piece theme.',
+    isUnlocked: (stats) => premiumThemeIsUnlocked(stats),
   },
   {
     id: 'first-endless-run',
@@ -2527,6 +2571,76 @@ function getRarityClassName(rarity) {
   return `rarity-${String(rarity || 'common').toLowerCase()}`;
 }
 
+function getThemeClassName(themeId) {
+  return String(themeId || 'classic').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+}
+
+function getPieceThemeById(themeId) {
+  return PIECE_THEMES.find((theme) => theme.id === themeId) || PIECE_THEMES[0];
+}
+
+function getBoardThemeById(themeId) {
+  return BOARD_THEMES.find((theme) => theme.id === themeId) || BOARD_THEMES[0];
+}
+
+function themeIsUnlocked(theme, stats) {
+  if (theme.defaultUnlocked) {
+    return true;
+  }
+
+  const ownedCollectionItemIds = new Set(normalizeOwnedCollectionItems(stats.ownedCollectionItems));
+  const completedNodeIds = new Set(normalizeStringArray(stats.completedLadderNodes));
+  const hasRequiredItem = (theme.requiredCollectionItems || []).some((itemId) => ownedCollectionItemIds.has(itemId));
+  const hasRequiredNode = (theme.requiredCompletedNodes || []).some((nodeId) => completedNodeIds.has(nodeId));
+
+  return hasRequiredItem || hasRequiredNode;
+}
+
+function getUnlockedPieceThemes(stats) {
+  return PIECE_THEMES.filter((theme) => themeIsUnlocked(theme, stats));
+}
+
+function getUnlockedBoardThemes(stats) {
+  return BOARD_THEMES.filter((theme) => themeIsUnlocked(theme, stats));
+}
+
+function getSelectedPieceThemeId(stats) {
+  const selectedThemeId = typeof stats.selectedPieceTheme === 'string' ? stats.selectedPieceTheme : DEFAULT_PIECE_THEME_ID;
+
+  return getUnlockedPieceThemes(stats).some((theme) => theme.id === selectedThemeId)
+    ? selectedThemeId
+    : DEFAULT_PIECE_THEME_ID;
+}
+
+function getSelectedBoardThemeId(stats) {
+  const selectedThemeId = typeof stats.selectedBoardTheme === 'string' ? stats.selectedBoardTheme : DEFAULT_BOARD_THEME_ID;
+
+  return getUnlockedBoardThemes(stats).some((theme) => theme.id === selectedThemeId)
+    ? selectedThemeId
+    : DEFAULT_BOARD_THEME_ID;
+}
+
+function premiumThemeIsUnlocked(stats) {
+  return [...getUnlockedPieceThemes(stats), ...getUnlockedBoardThemes(stats)]
+    .some((theme) => !theme.defaultUnlocked && theme.rarity !== 'Common');
+}
+
+function createPieceThemeRenderers(theme) {
+  const themeClassName = getThemeClassName(theme.id);
+
+  return Object.fromEntries(Object.entries(PIECE_GLYPHS).map(([pieceType, glyph]) => [
+    pieceType,
+    ({ square }) => (
+      <span
+        className={`qm-piece qm-piece-${themeClassName} ${pieceType.startsWith('w') ? 'white' : 'black'}`}
+        aria-hidden="true"
+      >
+        {glyph}
+      </span>
+    ),
+  ]));
+}
+
 function getCollectionSetProgress(setId, ownedCollectionItems) {
   const pieceSet = PIECE_SETS.find((item) => item.setId === setId);
   const ownedIds = new Set(ownedCollectionItems);
@@ -2748,7 +2862,7 @@ function loadStats() {
     const ladderBadges = normalizeStringArray(parsed.ladderBadges);
     const rushMilestoneChestsAwarded = normalizeStringArray(parsed.rushMilestoneChestsAwarded);
     const unlockedAchievements = normalizeStringArray(parsed.unlockedAchievements);
-    return {
+    const loadedStats = {
       ...DEFAULT_STATS,
       ...parsed,
       bestRushScore: Math.max(
@@ -2785,6 +2899,18 @@ function loadStats() {
       ownedCollectionItems,
       unopenedChests,
       collectionStats: getCollectionStatsSummary(ownedCollectionItems, unopenedChests, parsed.collectionStats),
+      selectedPieceTheme: typeof parsed.selectedPieceTheme === 'string'
+        ? parsed.selectedPieceTheme
+        : DEFAULT_PIECE_THEME_ID,
+      selectedBoardTheme: typeof parsed.selectedBoardTheme === 'string'
+        ? parsed.selectedBoardTheme
+        : DEFAULT_BOARD_THEME_ID,
+    };
+
+    return {
+      ...loadedStats,
+      selectedPieceTheme: getSelectedPieceThemeId(loadedStats),
+      selectedBoardTheme: getSelectedBoardThemeId(loadedStats),
     };
   } catch {
     return DEFAULT_STATS;
@@ -3093,6 +3219,16 @@ export default function App() {
   const unopenedChestList = normalizeUnopenedChests(stats.unopenedChests);
   const visibleAchievementIds = new Set(getVisibleAchievementIds(stats));
   const unlockedAchievements = getUnlockedAchievementItems(stats);
+  const unlockedPieceThemes = getUnlockedPieceThemes(stats);
+  const unlockedBoardThemes = getUnlockedBoardThemes(stats);
+  const unlockedPieceThemeIds = new Set(unlockedPieceThemes.map((theme) => theme.id));
+  const unlockedBoardThemeIds = new Set(unlockedBoardThemes.map((theme) => theme.id));
+  const selectedPieceTheme = getPieceThemeById(getSelectedPieceThemeId(stats));
+  const selectedBoardTheme = getBoardThemeById(getSelectedBoardThemeId(stats));
+  const pieceThemeRenderers = useMemo(
+    () => createPieceThemeRenderers(selectedPieceTheme),
+    [selectedPieceTheme.id],
+  );
   const collectionCompletionPercent = COLLECTION_ITEMS.length > 0
     ? Math.round((collectionStats.totalPiecesOwned / COLLECTION_ITEMS.length) * 100)
     : 0;
@@ -3311,6 +3447,44 @@ export default function App() {
   function openCollection() {
     setBossIntroNodeId('');
     setScreen('collection');
+  }
+
+  function selectPieceTheme(themeId) {
+    const theme = getPieceThemeById(themeId);
+
+    if (!themeIsUnlocked(theme, stats)) {
+      return;
+    }
+
+    setStats((currentStats) => {
+      const nextStatsValue = {
+        ...currentStats,
+        selectedPieceTheme: theme.id,
+      };
+      const achievementUpdate = applyAchievementUnlocks(nextStatsValue, currentStats);
+
+      saveStats(achievementUpdate.nextStats);
+      return achievementUpdate.nextStats;
+    });
+  }
+
+  function selectBoardTheme(themeId) {
+    const theme = getBoardThemeById(themeId);
+
+    if (!themeIsUnlocked(theme, stats)) {
+      return;
+    }
+
+    setStats((currentStats) => {
+      const nextStatsValue = {
+        ...currentStats,
+        selectedBoardTheme: theme.id,
+      };
+      const achievementUpdate = applyAchievementUnlocks(nextStatsValue, currentStats);
+
+      saveStats(achievementUpdate.nextStats);
+      return achievementUpdate.nextStats;
+    });
   }
 
   function viewCollectionFromChest() {
@@ -5028,6 +5202,7 @@ export default function App() {
           <section className="collection-intro" aria-label="Collection overview">
             <p>
               Collect pieces by playing Rush, clearing Ladder nodes, and defeating bosses.
+              Unlock piece and board themes from campaign rewards and collection progress.
               Collection rewards are cosmetic/status-based only.
             </p>
             <div className="collection-progress-summary">
@@ -5063,10 +5238,25 @@ export default function App() {
               <span>Achievements</span>
             </div>
             <div>
+              <strong>{unlockedPieceThemes.length}/{PIECE_THEMES.length}</strong>
+              <span>Piece themes</span>
+            </div>
+            <div>
+              <strong>{unlockedBoardThemes.length}/{BOARD_THEMES.length}</strong>
+              <span>Board themes</span>
+            </div>
+            <div>
               <strong>{stats.rushGamesPlayed || 0}</strong>
               <span>Rush runs</span>
             </div>
           </section>
+
+          <nav className="collection-section-nav" aria-label="Collection sections">
+            <a href="#collection-pieces">Pieces</a>
+            <a href="#collection-piece-themes">Piece Themes</a>
+            <a href="#collection-board-themes">Board Themes</a>
+            <a href="#collection-achievements">Achievements</a>
+          </nav>
 
           {chestOpenResult && (
             <section
@@ -5167,38 +5357,14 @@ export default function App() {
             </section>
           )}
 
-          <section className="achievements-section" aria-label="Achievements">
-            <div className="panel-header">
+          <section className="collection-grid" id="collection-pieces" aria-label="Collectible piece sets">
+            <div className="panel-header collection-section-header">
               <div>
-                <p className="eyebrow">Achievements</p>
-                <h2>Retention goals</h2>
+                <p className="eyebrow">Pieces</p>
+                <h2>Collectible sets</h2>
               </div>
-              <span>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</span>
+              <span>{collectionStats.totalPiecesOwned}/{COLLECTION_ITEMS.length}</span>
             </div>
-            <div className="achievement-list">
-              {ACHIEVEMENTS.map((achievement) => {
-                const unlocked = visibleAchievementIds.has(achievement.id);
-
-                return (
-                  <article
-                    className={`achievement-card ${unlocked ? 'unlocked' : 'locked'}`}
-                    key={achievement.id}
-                  >
-                    <div className="achievement-icon" aria-hidden="true">
-                      {unlocked ? <BadgeCheck size={18} /> : <Trophy size={18} />}
-                    </div>
-                    <div>
-                      <strong>{achievement.name}</strong>
-                      <span>{achievement.description}</span>
-                    </div>
-                    <small>{unlocked ? 'Unlocked' : 'Locked'}</small>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="collection-grid" aria-label="Collectible piece sets">
             {PIECE_SETS.map((pieceSet) => {
               const ownedCount = pieceSet.pieces.filter((piece) => ownedCollectionItemIds.has(piece.collectionItemId)).length;
               const isComplete = ownedCount === pieceSet.pieces.length;
@@ -5238,6 +5404,127 @@ export default function App() {
                 </article>
               );
             })}
+          </section>
+
+          <section className="theme-section" id="collection-piece-themes" aria-label="Piece themes">
+            <div className="panel-header collection-section-header">
+              <div>
+                <p className="eyebrow">Piece Themes</p>
+                <h2>Choose your pieces</h2>
+              </div>
+              <span>{unlockedPieceThemes.length}/{PIECE_THEMES.length}</span>
+            </div>
+            <div className="theme-card-grid">
+              {PIECE_THEMES.map((theme) => {
+                const unlocked = unlockedPieceThemeIds.has(theme.id);
+                const selected = selectedPieceTheme.id === theme.id;
+
+                return (
+                  <article
+                    className={`theme-card ${unlocked ? 'unlocked' : 'locked'} ${selected ? 'selected' : ''}`}
+                    key={theme.id}
+                  >
+                    <div className={`theme-preview piece-theme-preview piece-theme-${getThemeClassName(theme.id)}`} aria-hidden="true">
+                      <span>♘</span>
+                      <span>♛</span>
+                      <span>♔</span>
+                    </div>
+                    <div className="theme-card-copy">
+                      <span className={`rarity-pill compact ${getRarityClassName(theme.rarity)}`}>{theme.rarity}</span>
+                      <h3>{theme.name}</h3>
+                      <p>{theme.description}</p>
+                      <small>{unlocked ? theme.preview : `Locked: ${theme.unlockSource}`}</small>
+                    </div>
+                    <button
+                      type="button"
+                      className={selected ? 'secondary-action' : 'primary-action'}
+                      onClick={() => selectPieceTheme(theme.id)}
+                      disabled={!unlocked || selected}
+                    >
+                      {selected ? 'Selected' : unlocked ? 'Select' : 'Locked'}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="theme-section" id="collection-board-themes" aria-label="Board themes">
+            <div className="panel-header collection-section-header">
+              <div>
+                <p className="eyebrow">Board Themes</p>
+                <h2>Choose your board</h2>
+              </div>
+              <span>{unlockedBoardThemes.length}/{BOARD_THEMES.length}</span>
+            </div>
+            <div className="theme-card-grid">
+              {BOARD_THEMES.map((theme) => {
+                const unlocked = unlockedBoardThemeIds.has(theme.id);
+                const selected = selectedBoardTheme.id === theme.id;
+
+                return (
+                  <article
+                    className={`theme-card ${unlocked ? 'unlocked' : 'locked'} ${selected ? 'selected' : ''}`}
+                    key={theme.id}
+                  >
+                    <div
+                      className={`theme-preview board-theme-preview board-theme-preview-${theme.frameClassName}`}
+                      aria-hidden="true"
+                    >
+                      <span style={{ backgroundColor: theme.lightSquare }} />
+                      <span style={{ backgroundColor: theme.darkSquare }} />
+                      <span style={{ backgroundColor: theme.darkSquare }} />
+                      <span style={{ backgroundColor: theme.lightSquare }} />
+                    </div>
+                    <div className="theme-card-copy">
+                      <span className={`rarity-pill compact ${getRarityClassName(theme.rarity)}`}>{theme.rarity}</span>
+                      <h3>{theme.name}</h3>
+                      <p>{theme.description}</p>
+                      <small>{unlocked ? theme.preview : `Locked: ${theme.unlockSource}`}</small>
+                    </div>
+                    <button
+                      type="button"
+                      className={selected ? 'secondary-action' : 'primary-action'}
+                      onClick={() => selectBoardTheme(theme.id)}
+                      disabled={!unlocked || selected}
+                    >
+                      {selected ? 'Selected' : unlocked ? 'Select' : 'Locked'}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="achievements-section" id="collection-achievements" aria-label="Achievements">
+            <div className="panel-header">
+              <div>
+                <p className="eyebrow">Achievements</p>
+                <h2>Retention goals</h2>
+              </div>
+              <span>{unlockedAchievements.length}/{ACHIEVEMENTS.length}</span>
+            </div>
+            <div className="achievement-list">
+              {ACHIEVEMENTS.map((achievement) => {
+                const unlocked = visibleAchievementIds.has(achievement.id);
+
+                return (
+                  <article
+                    className={`achievement-card ${unlocked ? 'unlocked' : 'locked'}`}
+                    key={achievement.id}
+                  >
+                    <div className="achievement-icon" aria-hidden="true">
+                      {unlocked ? <BadgeCheck size={18} /> : <Trophy size={18} />}
+                    </div>
+                    <div>
+                      <strong>{achievement.name}</strong>
+                      <span>{achievement.description}</span>
+                    </div>
+                    <small>{unlocked ? 'Unlocked' : 'Locked'}</small>
+                  </article>
+                );
+              })}
+            </div>
           </section>
 
           <div className="actions">
@@ -5867,11 +6154,12 @@ export default function App() {
         </aside>
 
         <section className="board-zone" aria-label="Chess board">
-          <div className="board-frame">
+          <div className={`board-frame board-theme-${selectedBoardTheme.frameClassName}`}>
             <Chessboard
               options={{
                 id: 'quickmate-board',
                 position: fen,
+                pieces: pieceThemeRenderers,
                 boardOrientation,
                 allowDragging: boardIsInteractive,
                 allowDragOffBoard: false,
@@ -5883,8 +6171,8 @@ export default function App() {
                   boxShadow: '0 20px 44px rgba(11, 18, 32, 0.2)',
                 },
                 squareStyles: selectedSquareStyles,
-                darkSquareStyle: { backgroundColor: '#58745f' },
-                lightSquareStyle: { backgroundColor: '#e7d8bd' },
+                darkSquareStyle: { backgroundColor: selectedBoardTheme.darkSquare },
+                lightSquareStyle: { backgroundColor: selectedBoardTheme.lightSquare },
               }}
             />
           </div>
