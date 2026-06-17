@@ -3412,7 +3412,7 @@ export default function App() {
     resetPuzzle(
       nextPuzzleIndex,
       MATE_CHALLENGE_MODE,
-      `Mate Challenge: checkmate within ${nextMateIn} player ${nextMateIn === 1 ? 'move' : 'moves'}.`,
+      `Mate Challenge: checkmate within ${nextMateIn} attacking ${nextMateIn === 1 ? 'move' : 'moves'}. Illegal moves do not count.`,
     );
     setScreen('game');
   }
@@ -4835,7 +4835,7 @@ export default function App() {
         nextLog,
         movesUsed: nextMovesUsed,
         nextSolutionIndex,
-        reason: 'Move limit expired before checkmate.',
+        reason: 'You used all attacking moves before checkmate.',
       });
       return true;
     }
@@ -4847,7 +4847,8 @@ export default function App() {
         nextLog,
         movesUsed: nextMovesUsed,
         nextSolutionIndex,
-        reason: 'Legal move played, but this prototype has no scripted opponent reply for that line.',
+        reason:
+          'Legal move played. This prototype can only continue stored forcing lines, so the challenge ends here. Try the forcing line shown below.',
       });
       return true;
     }
@@ -4876,7 +4877,7 @@ export default function App() {
         setMoveLog(nextLog);
         setMateChallengeMovesUsed(nextMovesUsed);
         setFeedback(
-          `Legal. Opponent replied ${replyMove.san}. ${mateChallengeMoveLimit - nextMovesUsed} player ${mateChallengeMoveLimit - nextMovesUsed === 1 ? 'move' : 'moves'} left.`,
+          `Legal. Opponent replied ${replyMove.san}. ${mateChallengeMoveLimit - nextMovesUsed} attacking ${mateChallengeMoveLimit - nextMovesUsed === 1 ? 'move' : 'moves'} left.`,
         );
         return true;
       }
@@ -4888,7 +4889,7 @@ export default function App() {
       nextLog,
       movesUsed: nextMovesUsed,
       nextSolutionIndex,
-      reason: 'No scripted opponent reply is available for the current line.',
+      reason: 'This prototype cannot continue the current line without an engine reply. Try the forcing line shown below.',
     });
     return true;
   }
@@ -5299,7 +5300,7 @@ export default function App() {
                 <Target size={24} />
                 <span>
                   <strong>Mate Challenge</strong>
-                  <small>Prototype: mate within the move limit.</small>
+                  <small>Prototype: checkmate before your move limit expires.</small>
                   <small>
                     {hasMateChallengePuzzles
                       ? `${mateChallengeTotal} production puzzles | best streak ${stats.bestMateChallengeStreak || 0}`
@@ -5366,7 +5367,7 @@ export default function App() {
                 <section className="help-section">
                   <h3>Mate Challenge</h3>
                   <ul className="help-list">
-                    <li>Experimental practice mode: make any legal move and checkmate within the move limit.</li>
+                    <li>Experimental practice mode: make any legal move and checkmate before your move limit expires.</li>
                     <li>Opponent replies use the stored solution line when the prototype can safely continue.</li>
                   </ul>
                 </section>
@@ -6559,9 +6560,9 @@ export default function App() {
                   <span>Any legal checkmate clears the challenge.</span>
                 </div>
                 <div>
-                  <p className="eyebrow">Moves left</p>
+                  <p className="eyebrow">Attacking moves left</p>
                   <strong>{mateChallengeMovesLeft}</strong>
-                  <span>{mateChallengeMovesUsed}/{mateChallengeMoveLimit} player moves used</span>
+                  <span>{mateChallengeMovesUsed}/{mateChallengeMoveLimit} attacking moves used</span>
                 </div>
               </div>
               <div className="stats-grid mate-challenge-grid">
@@ -6609,7 +6610,7 @@ export default function App() {
 
           <div className="progress-block" aria-label="Solution progress">
             <div className="progress-copy">
-              <span>{isMateChallenge ? 'Move limit' : 'Line progress'}</span>
+              <span>{isMateChallenge ? 'Attacking moves' : 'Line progress'}</span>
               <strong>{isMateChallenge ? `${mateChallengeMovesUsed}/${mateChallengeMoveLimit}` : `${progress}%`}</strong>
             </div>
             <div className="progress-track">
@@ -6745,7 +6746,7 @@ export default function App() {
               <div className="result-score">
                 <Sparkles size={20} />
                 <strong>{result.movesUsed}/{result.mateTarget}</strong>
-                <span>player moves</span>
+                <span>attacking moves</span>
               </div>
               <p className="rank-chase">{result.reason}</p>
               <div className="rush-result-highlights" aria-label="Mate Challenge highlights">
@@ -6766,14 +6767,14 @@ export default function App() {
                 <div><span>Challenge</span><strong>{result.challengeIndex}/{result.totalChallenges}</strong></div>
                 <div><span>Puzzle ID</span><strong>{result.puzzleId}</strong></div>
                 <div><span>Mate target</span><strong>Mate in {result.mateTarget}</strong></div>
-                <div><span>Moves used</span><strong>{result.movesUsed}</strong></div>
+                <div><span>Attacking moves used</span><strong>{result.movesUsed}</strong></div>
                 <div><span>Checkmate reached</span><strong>{result.finalCheckmate ? 'Yes' : 'No'}</strong></div>
                 <div><span>Current streak</span><strong>{result.currentStreak}</strong></div>
                 <div><span>Total clears</span><strong>{result.clears}/{result.attempts}</strong></div>
               </div>
-              <section className="correct-line-panel" aria-label="Stored solution line">
+              <section className="correct-line-panel" aria-label="Forcing line to try">
                 <div className="panel-header">
-                  <h3>Stored solution line</h3>
+                  <h3>Forcing line to try</h3>
                   <span>ID {result.puzzleId}</span>
                 </div>
                 <ol className="solution-line">
