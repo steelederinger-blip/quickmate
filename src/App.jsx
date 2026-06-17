@@ -44,6 +44,19 @@ const BRAND_LOGO_SRC = '/brand/quickmate-logo.png';
 const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
 const RUSH_FIRST_MISS_FEEDBACK = 'Not forcing. One more try.';
+const MATE_CHALLENGE_MODE = 'mateChallenge';
+const MATE_CHALLENGE_PUZZLE_IDS = [
+  'v2-001',
+  'v2-002',
+  'v2-003',
+  'v2-004',
+  'v2-005',
+  'v2-006',
+  'v2-007',
+  'v2-008',
+  'v2-009',
+  'v2-010',
+];
 const PUZZLE_BEHAVIOR = {
   trainingMode: 'trainingMode',
   strictMode: 'strictMode',
@@ -1205,6 +1218,10 @@ const DEFAULT_STATS = {
   bestEndlessDepth: 0,
   bestEndlessStreak: 0,
   totalEndlessRuns: 0,
+  mateChallengeAttempts: 0,
+  mateChallengeClears: 0,
+  mateChallengeCurrentStreak: 0,
+  bestMateChallengeStreak: 0,
   bestDailyRushScore: 0,
   bestRushCombo: 0,
   rushGamesPlayed: 0,
@@ -1608,6 +1625,15 @@ function puzzleFitsMode(puzzle, targetMode) {
 
 function isProductionTrackPuzzle(puzzle) {
   return puzzle.contentStatus === 'candidate' || puzzle.contentStatus === 'approved';
+}
+
+function getMateChallengePuzzleIndexes() {
+  return MATE_CHALLENGE_PUZZLE_IDS
+    .map((puzzleId) => puzzles.findIndex((puzzle) => puzzle.id === puzzleId))
+    .filter((index) => index >= 0)
+    .filter((index) => isProductionTrackPuzzle(puzzles[index]))
+    .filter((index) => puzzles[index].contentStatus !== 'rejected')
+    .filter((index) => getMateIn(puzzles[index]) <= 3);
 }
 
 function getPuzzleIndexesForMode(targetMode, { productionTrackOnly = false, devOnly = false } = {}) {
@@ -2879,6 +2905,10 @@ function loadStats() {
       bestEndlessDepth: parsed.bestEndlessDepth || 0,
       bestEndlessStreak: parsed.bestEndlessStreak || 0,
       totalEndlessRuns: parsed.totalEndlessRuns || 0,
+      mateChallengeAttempts: parsed.mateChallengeAttempts || 0,
+      mateChallengeClears: parsed.mateChallengeClears || 0,
+      mateChallengeCurrentStreak: parsed.mateChallengeCurrentStreak || 0,
+      bestMateChallengeStreak: parsed.bestMateChallengeStreak || 0,
       bestDailyRushScore,
       bestRushCombo: parsed.bestRushCombo
         || Math.max(0, ...(parsed.rushHistory || []).map((run) => run.bestCombo || 0)),
@@ -3132,6 +3162,8 @@ export default function App() {
   const [ladderNodeLives, setLadderNodeLives] = useState(0);
   const [ladderNodePuzzleMistakes, setLadderNodePuzzleMistakes] = useState(0);
   const [ladderNodeReveal, setLadderNodeReveal] = useState(null);
+  const [mateChallengeCursor, setMateChallengeCursor] = useState(0);
+  const [mateChallengeMovesUsed, setMateChallengeMovesUsed] = useState(0);
   const [dailyRushRunDate, setDailyRushRunDate] = useState(todayKey);
   const [dailyRushPracticeRun, setDailyRushPracticeRun] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -3153,8 +3185,17 @@ export default function App() {
   const isRush = mode === 'rush' || isDailyRush;
   const isEndlessRush = mode === 'rush' && activeRushMode === RUSH_MODE_KEYS.endless;
   const isLadderNode = mode === 'ladderNode';
-  const isChallengeRun = isRush || isLadderNode;
+  const isMateChallenge = mode === MATE_CHALLENGE_MODE;
+  const isChallengeRun = isRush || isLadderNode || isMateChallenge;
   const puzzleBehavior = getPuzzleBehavior(mode);
+  const mateChallengePuzzleIndexes = useMemo(() => getMateChallengePuzzleIndexes(), []);
+  const hasMateChallengePuzzles = mateChallengePuzzleIndexes.length > 0;
+  const mateChallengeTotal = mateChallengePuzzleIndexes.length;
+  const mateChallengeMoveLimit = mateIn;
+  const mateChallengeMovesLeft = Math.max(0, mateChallengeMoveLimit - mateChallengeMovesUsed);
+  const mateChallengeProgress = mateChallengeMoveLimit > 0
+    ? Math.min(100, Math.round((mateChallengeMovesUsed / mateChallengeMoveLimit) * 100))
+    : 0;
   const activeLadderNode = activeLadderNodeId ? getLadderNodeById(activeLadderNodeId) : null;
   const activeLadderZone = activeLadderNode ? getLadderZoneById(activeLadderNode.zoneId) : null;
   const bossIntroNode = bossIntroNodeId
@@ -3197,7 +3238,8 @@ export default function App() {
     && !isComplete
     && Boolean(expectedMove)
     && (!isRush || ((!rushIsTimed || rushTimeLeft > 0) && rushLives > 0 && !rushReveal))
-    && (!isLadderNode || (!ladderNodeReveal && (!activeLadderNode?.lives || ladderNodeLives > 0)));
+    && (!isLadderNode || (!ladderNodeReveal && (!activeLadderNode?.lives || ladderNodeLives > 0)))
+    && (!isMateChallenge || mateChallengeMovesUsed < mateChallengeMoveLimit);
   const rushMultiplier = isEndlessRush
     ? getEndlessStreakMultiplier(rushStats.currentCombo)
     : getRushMultiplier(rushStats.currentCombo);
@@ -3335,6 +3377,7 @@ export default function App() {
     setRushReveal(null);
     setLadderNodePuzzleMistakes(0);
     setLadderNodeReveal(null);
+    setMateChallengeMovesUsed(0);
   }
 
   function startPuzzle(index, nextMode = 'ladder') {
@@ -3348,6 +3391,30 @@ export default function App() {
 
   function startDaily() {
     startPuzzle(dailyPuzzleIndex, 'daily');
+  }
+
+  function startMateChallenge(cursor = 0) {
+    if (mateChallengePuzzleIndexes.length === 0) {
+      setFeedback('No production-track Mate Challenge puzzles are available.');
+      return;
+    }
+
+    const nextCursor = ((cursor % mateChallengePuzzleIndexes.length) + mateChallengePuzzleIndexes.length)
+      % mateChallengePuzzleIndexes.length;
+    const nextPuzzleIndex = mateChallengePuzzleIndexes[nextCursor];
+    const nextPuzzle = puzzles[nextPuzzleIndex];
+    const nextMateIn = getMateIn(nextPuzzle);
+
+    setActiveLadderNodeId('');
+    setBossIntroNodeId('');
+    setMateChallengeCursor(nextCursor);
+    setMateChallengeMovesUsed(0);
+    resetPuzzle(
+      nextPuzzleIndex,
+      MATE_CHALLENGE_MODE,
+      `Mate Challenge: checkmate within ${nextMateIn} player ${nextMateIn === 1 ? 'move' : 'moves'}.`,
+    );
+    setScreen('game');
   }
 
   function startDailyRush() {
@@ -4677,6 +4744,155 @@ export default function App() {
     setFeedback(WRONG_LEGAL_MOVE_FEEDBACK);
   }
 
+  function finishMateChallengeRun({
+    cleared,
+    finalGame,
+    nextLog,
+    movesUsed,
+    nextSolutionIndex = solutionIndex,
+    reason,
+  }) {
+    const finalCheckmate = finalGame.isCheckmate();
+    const completedAt = new Date().toISOString();
+    const currentStats = loadStats();
+    const nextCurrentStreak = cleared
+      ? (currentStats.mateChallengeCurrentStreak || 0) + 1
+      : 0;
+    const nextStats = {
+      ...currentStats,
+      mateChallengeAttempts: (currentStats.mateChallengeAttempts || 0) + 1,
+      mateChallengeClears: (currentStats.mateChallengeClears || 0) + (cleared ? 1 : 0),
+      mateChallengeCurrentStreak: nextCurrentStreak,
+      bestMateChallengeStreak: Math.max(
+        currentStats.bestMateChallengeStreak || 0,
+        nextCurrentStreak,
+      ),
+    };
+    const nextCursor = mateChallengeTotal > 0
+      ? (mateChallengeCursor + 1) % mateChallengeTotal
+      : 0;
+    const nextResult = {
+      mode: MATE_CHALLENGE_MODE,
+      cleared,
+      puzzleId: puzzle.id,
+      puzzleTitle: puzzle.title,
+      mateIn,
+      mateTarget: mateChallengeMoveLimit,
+      movesUsed,
+      finalCheckmate,
+      reason,
+      challengeIndex: mateChallengeCursor + 1,
+      totalChallenges: mateChallengeTotal,
+      nextChallengeCursor: nextCursor,
+      currentStreak: nextCurrentStreak,
+      bestStreak: nextStats.bestMateChallengeStreak,
+      attempts: nextStats.mateChallengeAttempts,
+      clears: nextStats.mateChallengeClears,
+      completedAt,
+      solutionLine: puzzle.solution,
+    };
+
+    setFen(finalGame.fen());
+    setMoveLog(nextLog);
+    setSolutionIndex(nextSolutionIndex);
+    setMateChallengeMovesUsed(movesUsed);
+    setIsComplete(true);
+    setResult(nextResult);
+    setFeedback(cleared ? 'Challenge cleared.' : 'Challenge failed.');
+    saveStats(nextStats);
+    setStats(nextStats);
+  }
+
+  function handleMateChallengeLegalMove(attemptedMove, afterPlayerMoveGame) {
+    const nextMovesUsed = mateChallengeMovesUsed + 1;
+    const matchesScript = moveMatches(attemptedMove, expectedMove);
+    let nextGame = afterPlayerMoveGame;
+    let nextSolutionIndex = matchesScript ? solutionIndex + 1 : solutionIndex;
+    const nextLog = [
+      ...moveLog,
+      {
+        san: attemptedMove.san,
+        side: attemptedMove.color === 'w' ? 'White' : 'Black',
+      },
+    ];
+
+    if (nextGame.isCheckmate()) {
+      finishMateChallengeRun({
+        cleared: true,
+        finalGame: nextGame,
+        nextLog,
+        movesUsed: nextMovesUsed,
+        nextSolutionIndex,
+        reason: 'Checkmate within the move limit.',
+      });
+      return true;
+    }
+
+    if (nextMovesUsed >= mateChallengeMoveLimit) {
+      finishMateChallengeRun({
+        cleared: false,
+        finalGame: nextGame,
+        nextLog,
+        movesUsed: nextMovesUsed,
+        nextSolutionIndex,
+        reason: 'Move limit expired before checkmate.',
+      });
+      return true;
+    }
+
+    if (!matchesScript) {
+      finishMateChallengeRun({
+        cleared: false,
+        finalGame: nextGame,
+        nextLog,
+        movesUsed: nextMovesUsed,
+        nextSolutionIndex,
+        reason: 'Legal move played, but this prototype has no scripted opponent reply for that line.',
+      });
+      return true;
+    }
+
+    if (nextSolutionIndex < puzzle.solution.length) {
+      const replyGame = new Chess(nextGame.fen());
+      const replySan = puzzle.solution[nextSolutionIndex];
+      let replyMove = null;
+
+      try {
+        replyMove = playExpectedMove(replyGame, replySan);
+      } catch {
+        replyMove = null;
+      }
+
+      if (replyMove) {
+        nextGame = replyGame;
+        nextSolutionIndex += 1;
+        nextLog.push({
+          san: replyMove.san,
+          side: replyMove.color === 'w' ? 'White' : 'Black',
+        });
+
+        setFen(nextGame.fen());
+        setSolutionIndex(nextSolutionIndex);
+        setMoveLog(nextLog);
+        setMateChallengeMovesUsed(nextMovesUsed);
+        setFeedback(
+          `Legal. Opponent replied ${replyMove.san}. ${mateChallengeMoveLimit - nextMovesUsed} player ${mateChallengeMoveLimit - nextMovesUsed === 1 ? 'move' : 'moves'} left.`,
+        );
+        return true;
+      }
+    }
+
+    finishMateChallengeRun({
+      cleared: false,
+      finalGame: nextGame,
+      nextLog,
+      movesUsed: nextMovesUsed,
+      nextSolutionIndex,
+      reason: 'No scripted opponent reply is available for the current line.',
+    });
+    return true;
+  }
+
   function attemptMove(sourceSquare, targetSquare) {
     setSelectedSquare(null);
 
@@ -4700,6 +4916,10 @@ export default function App() {
     if (!attemptedMove) {
       setFeedback(ILLEGAL_MOVE_FEEDBACK);
       return false;
+    }
+
+    if (isMateChallenge) {
+      return handleMateChallengeLegalMove(attemptedMove, currentGame);
     }
 
     if (!moveMatches(attemptedMove, expectedMove)) {
@@ -5069,6 +5289,25 @@ export default function App() {
                 </span>
                 <Play size={20} />
               </button>
+
+              <button
+                type="button"
+                className="mode-card practice-card prototype-card"
+                onClick={() => startMateChallenge(0)}
+                disabled={!hasMateChallengePuzzles}
+              >
+                <Target size={24} />
+                <span>
+                  <strong>Mate Challenge</strong>
+                  <small>Prototype: mate within the move limit.</small>
+                  <small>
+                    {hasMateChallengePuzzles
+                      ? `${mateChallengeTotal} production puzzles | best streak ${stats.bestMateChallengeStreak || 0}`
+                      : 'No production-track prototype puzzles available'}
+                  </small>
+                </span>
+                <Play size={20} />
+              </button>
             </div>
           </section>
 
@@ -5122,6 +5361,13 @@ export default function App() {
                   <ul className="help-list">
                     <li>Illegal moves are rejected and do not count as mistakes.</li>
                     <li>Legal moves that do not force mate count as mistakes.</li>
+                  </ul>
+                </section>
+                <section className="help-section">
+                  <h3>Mate Challenge</h3>
+                  <ul className="help-list">
+                    <li>Experimental practice mode: make any legal move and checkmate within the move limit.</li>
+                    <li>Opponent replies use the stored solution line when the prototype can safely continue.</li>
                   </ul>
                 </section>
                 <section className="help-section">
@@ -6103,6 +6349,7 @@ export default function App() {
             {mode === 'rush' ? activeRushModeConfig.label : ''}
             {mode === 'dailyRush' ? 'Daily Rush' : ''}
             {mode === 'ladderNode' ? activeLadderZone?.name || 'Ladder World' : ''}
+            {isMateChallenge ? 'Mate Challenge' : ''}
           </h1>
         </div>
         <div className="topbar-actions">
@@ -6132,6 +6379,7 @@ export default function App() {
               {isDailyRush ? 'Daily Rush' : ''}
               {mode === 'rush' ? 'Rush Queue' : ''}
               {isLadderNode ? activeLadderNode?.title || activeLadderZone?.name || 'Ladder World' : ''}
+              {isMateChallenge ? 'Mate Challenge' : ''}
               {!isChallengeRun && mode !== 'daily' ? 'Puzzles' : ''}
             </h2>
             <span>
@@ -6139,6 +6387,7 @@ export default function App() {
               {isDailyRush ? `${Math.min(rushQueueCursor + 1, DAILY_RUSH_PUZZLE_COUNT)}/${DAILY_RUSH_PUZZLE_COUNT}` : ''}
               {mode === 'rush' ? `${rushQueueCursor + 1}/${rushQueue.length}` : ''}
               {isLadderNode ? `${Math.min(ladderNodeCursor + 1, activeLadderNodeTotal)}/${activeLadderNodeTotal}` : ''}
+              {isMateChallenge ? `${mateChallengeCursor + 1}/${mateChallengeTotal}` : ''}
               {!isChallengeRun && mode !== 'daily' ? puzzles.length : ''}
             </span>
           </div>
@@ -6301,6 +6550,43 @@ export default function App() {
                 </div>
               </div>
             </>
+          ) : isMateChallenge ? (
+            <>
+              <div className="mate-challenge-panel" aria-label="Mate Challenge rules">
+                <div>
+                  <p className="eyebrow">Prototype Mode</p>
+                  <strong>Mate in {mateChallengeMoveLimit}</strong>
+                  <span>Any legal checkmate clears the challenge.</span>
+                </div>
+                <div>
+                  <p className="eyebrow">Moves left</p>
+                  <strong>{mateChallengeMovesLeft}</strong>
+                  <span>{mateChallengeMovesUsed}/{mateChallengeMoveLimit} player moves used</span>
+                </div>
+              </div>
+              <div className="stats-grid mate-challenge-grid">
+                <div className="stat">
+                  <Target size={18} />
+                  <span>{mateChallengeCursor + 1}/{mateChallengeTotal}</span>
+                  <small>Challenge</small>
+                </div>
+                <div className="stat">
+                  <BadgeCheck size={18} />
+                  <span>{stats.mateChallengeClears || 0}/{stats.mateChallengeAttempts || 0}</span>
+                  <small>Clears</small>
+                </div>
+                <div className="stat">
+                  <Sparkles size={18} />
+                  <span>{stats.mateChallengeCurrentStreak || 0}</span>
+                  <small>Streak</small>
+                </div>
+                <div className="stat">
+                  <Trophy size={18} />
+                  <span>{stats.bestMateChallengeStreak || 0}</span>
+                  <small>Best streak</small>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="stats-grid">
               <div className="stat">
@@ -6323,11 +6609,11 @@ export default function App() {
 
           <div className="progress-block" aria-label="Solution progress">
             <div className="progress-copy">
-              <span>Line progress</span>
-              <strong>{progress}%</strong>
+              <span>{isMateChallenge ? 'Move limit' : 'Line progress'}</span>
+              <strong>{isMateChallenge ? `${mateChallengeMovesUsed}/${mateChallengeMoveLimit}` : `${progress}%`}</strong>
             </div>
             <div className="progress-track">
-              <span style={{ width: `${progress}%` }} />
+              <span style={{ width: `${isMateChallenge ? mateChallengeProgress : progress}%` }} />
             </div>
           </div>
 
@@ -6413,7 +6699,7 @@ export default function App() {
 
           <div className="move-log">
             <div className="panel-header">
-              <h3>Line</h3>
+              <h3>{isMateChallenge ? 'Moves' : 'Line'}</h3>
               <Target size={18} />
             </div>
             {moveLog.length === 0 ? (
@@ -6437,6 +6723,8 @@ export default function App() {
                 ? `${dailyRushPracticeRun ? 'Practice Replay' : 'Official attempt'} | ${dailyRushRunDate}`
                 : isLadderNode
                   ? `${activeLadderZone?.name || 'Ladder World'} ${activeLadderZoneProgress?.completedCount || 0}/${activeLadderZoneProgress?.totalCount || 0} | ${stats.ladderXp || 0} XP`
+                : isMateChallenge
+                  ? `Prototype ${mateChallengeCursor + 1}/${mateChallengeTotal} | best streak ${stats.bestMateChallengeStreak || 0}`
                 : isRush
                   ? `${activeRushModeConfig.label} best ${activeRushModeBestScore}`
                   : `Best score ${stats.bestScore}`}
@@ -6449,6 +6737,77 @@ export default function App() {
         <section className="result-screen" role="dialog" aria-modal="true" aria-label="Puzzle result">
           {cinematicMoment ? (
             <CinematicMoment moment={cinematicMoment} onDismiss={dismissCinematicMoment} />
+          ) : result.mode === MATE_CHALLENGE_MODE ? (
+            <div className={`result-panel mate-challenge-result ${result.cleared ? 'cleared' : 'failed'}`}>
+              <Target size={42} />
+              <p className="eyebrow">{result.cleared ? 'Challenge Cleared' : 'Challenge Failed'}</p>
+              <h2>{result.puzzleTitle}</h2>
+              <div className="result-score">
+                <Sparkles size={20} />
+                <strong>{result.movesUsed}/{result.mateTarget}</strong>
+                <span>player moves</span>
+              </div>
+              <p className="rank-chase">{result.reason}</p>
+              <div className="rush-result-highlights" aria-label="Mate Challenge highlights">
+                <div className={`highlight-card ${result.cleared ? 'rank' : ''}`}>
+                  <span>Status</span>
+                  <strong>{result.cleared ? 'Cleared' : 'Failed'}</strong>
+                </div>
+                <div className="highlight-card">
+                  <span>Final position</span>
+                  <strong>{result.finalCheckmate ? 'Checkmate' : 'Not mate'}</strong>
+                </div>
+                <div className="highlight-card">
+                  <span>Best streak</span>
+                  <strong>{result.bestStreak}</strong>
+                </div>
+              </div>
+              <div className="score-breakdown" aria-label="Mate Challenge result">
+                <div><span>Challenge</span><strong>{result.challengeIndex}/{result.totalChallenges}</strong></div>
+                <div><span>Puzzle ID</span><strong>{result.puzzleId}</strong></div>
+                <div><span>Mate target</span><strong>Mate in {result.mateTarget}</strong></div>
+                <div><span>Moves used</span><strong>{result.movesUsed}</strong></div>
+                <div><span>Checkmate reached</span><strong>{result.finalCheckmate ? 'Yes' : 'No'}</strong></div>
+                <div><span>Current streak</span><strong>{result.currentStreak}</strong></div>
+                <div><span>Total clears</span><strong>{result.clears}/{result.attempts}</strong></div>
+              </div>
+              <section className="correct-line-panel" aria-label="Stored solution line">
+                <div className="panel-header">
+                  <h3>Stored solution line</h3>
+                  <span>ID {result.puzzleId}</span>
+                </div>
+                <ol className="solution-line">
+                  {(result.solutionLine || []).map((move, index) => (
+                    <li className={index === 0 ? 'first-move' : ''} key={`${move}-${index}`}>
+                      <span>{index === 0 ? 'First move' : `Move ${index + 1}`}</span>
+                      <strong>{move}</strong>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="secondary-action"
+                  onClick={() => startMateChallenge((result.challengeIndex || 1) - 1)}
+                >
+                  <RotateCcw size={18} />
+                  Retry
+                </button>
+                <button
+                  type="button"
+                  className="primary-action"
+                  onClick={() => startMateChallenge(result.nextChallengeCursor || 0)}
+                >
+                  <ChevronRight size={18} />
+                  Next Challenge
+                </button>
+                <button type="button" className="secondary-action" onClick={goHome}>
+                  <Home size={18} />
+                  Back Home
+                </button>
+              </div>
+            </div>
           ) : result.mode === 'ladderNode' ? (
             <div className={`result-panel ${result.nodeType === 'boss' ? 'boss-result-panel' : ''}`}>
               <Trophy size={42} />
