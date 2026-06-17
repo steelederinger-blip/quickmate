@@ -1860,13 +1860,17 @@ h2 {
 }
 
 .qm-piece.white {
-  color: #f6ead6;
+  color: #fff8e8;
   text-shadow:
-    1px 0 0 rgba(18, 14, 9, 0.82),
-    -1px 0 0 rgba(18, 14, 9, 0.82),
-    0 1px 0 rgba(18, 14, 9, 0.82),
-    0 -1px 0 rgba(18, 14, 9, 0.82),
-    0 5px 9px rgba(0, 0, 0, 0.42);
+    1px 0 0 rgba(10, 12, 16, 0.94),
+    -1px 0 0 rgba(10, 12, 16, 0.94),
+    0 1px 0 rgba(10, 12, 16, 0.94),
+    0 -1px 0 rgba(10, 12, 16, 0.94),
+    1px 1px 0 rgba(10, 12, 16, 0.86),
+    -1px 1px 0 rgba(10, 12, 16, 0.86),
+    1px -1px 0 rgba(10, 12, 16, 0.86),
+    -1px -1px 0 rgba(10, 12, 16, 0.86),
+    0 2px 0 rgba(0, 0, 0, 0.42);
 }
 
 .qm-piece.black {

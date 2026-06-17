@@ -3146,7 +3146,7 @@ export default function App() {
   const game = useMemo(() => new Chess(fen), [fen]);
   const expectedMove = puzzle.solution[solutionIndex];
   const progress = Math.round((solutionIndex / puzzle.solution.length) * 100);
-  const boardOrientation = puzzle.sideToMove === 'black' ? 'black' : 'white';
+  const boardOrientation = 'white';
   const mateIn = getMateIn(puzzle);
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isDailyRush = mode === 'dailyRush';
