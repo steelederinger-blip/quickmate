@@ -115,6 +115,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'pawn-village',
     name: 'Pawn Village',
+    screenId: 'pawnVillage',
     campaignLabel: 'Starter Tactics',
     focus: 'First tactics, direct mates, and simple forcing moves.',
     mateInRange: 'Mate in 1',
@@ -128,6 +129,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'knight-woods',
     name: 'Knight Woods',
+    screenId: 'knightWoods',
     campaignLabel: 'Forks and First Threats',
     focus: 'Knight patterns, forks, smothered shapes, and unusual geometry.',
     mateInRange: 'Mate in 1-2',
@@ -141,6 +143,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'bishop-tower',
     name: 'Bishop Tower',
+    screenId: 'bishopTower',
     campaignLabel: 'Diagonals and Pins',
     focus: 'Diagonal control, long-range coverage, and bishop mating nets.',
     mateInRange: 'Mate in 2-4',
@@ -154,6 +157,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'rook-fortress',
     name: 'Rook Fortress',
+    screenId: 'rookFortress',
     campaignLabel: 'Files, Ranks, and Pressure',
     focus: 'Files, ranks, back-rank pressure, clearance, and rook lifts.',
     mateInRange: 'Mate in 2-4',
@@ -167,6 +171,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'queens-court',
     name: "Queen's Court",
+    screenId: 'queensCourt',
     campaignLabel: 'Attacks and Coordination',
     focus: 'Queen coordination, sacrifices, forcing checks, and attack conversion.',
     mateInRange: 'Mate in 3-5',
@@ -180,6 +185,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'kings-gate',
     name: "King's Gate",
+    screenId: 'kingsGate',
     campaignLabel: 'Defensive Precision',
     focus: 'Defensive resources, exact forcing lines, and boss-gate pressure.',
     mateInRange: 'Mate in 4-6',
@@ -193,6 +199,7 @@ const LADDER_WORLD_ZONES = [
   {
     id: 'grandmaster-keep',
     name: 'Grandmaster Keep',
+    screenId: 'grandmasterKeep',
     campaignLabel: 'Final Campaign Trial',
     focus: 'Deep mates, advanced tactics, long forcing lines, and survival-style pressure.',
     mateInRange: 'Mate in 4-8+',
@@ -203,28 +210,84 @@ const LADDER_WORLD_ZONES = [
     unlocked: false,
     color: '#2e4968',
   },
+  {
+    id: 'master-realm',
+    name: 'Master Realm',
+    screenId: 'masterRealm',
+    campaignLabel: 'Advanced Tactics',
+    focus: 'Advanced mate-in-2 calculation, deflections, overloaded defenders, and clean conversions.',
+    mateInRange: 'Mate in 2',
+    difficultyRange: 'Medium to Advanced',
+    motifs: ['deflection', 'overloaded-defender', 'pinned-defender'],
+    bossName: 'The Master Gatekeeper',
+    rewardPreview: 'Tactical Chests, Master Realm Badge, Ladder XP',
+    unlocked: false,
+    color: '#1f7f78',
+  },
+  {
+    id: 'international-master-citadel',
+    name: 'International Master Citadel',
+    screenId: 'internationalMasterCitadel',
+    campaignLabel: 'Calculation and Sacrifice',
+    focus: 'Sacrifices, quiet moves, decoys, and longer mate-in-2 to mate-in-3 forcing lines.',
+    mateInRange: 'Mate in 2-3',
+    difficultyRange: 'Advanced',
+    motifs: ['queen-sacrifice', 'sacrifice', 'calculation'],
+    bossName: 'The Citadel Master',
+    rewardPreview: 'Tactical Chests, International Master Badge, Ladder XP',
+    unlocked: false,
+    color: '#6d5bd0',
+  },
+  {
+    id: 'grandmaster-summit',
+    name: 'Grandmaster Summit',
+    screenId: 'grandmasterSummit',
+    campaignLabel: 'Deep Forcing Lines',
+    focus: 'Expert forcing lines, king hunts, promotion ideas, and exact calculation.',
+    mateInRange: 'Mate in 3-4',
+    difficultyRange: 'Advanced to Expert',
+    motifs: ['calculation', 'king-hunt', 'promotion'],
+    bossName: 'The Summit Guardian',
+    rewardPreview: 'Royal Chests, Grandmaster Summit Badge, Ladder XP',
+    unlocked: false,
+    color: '#b27a32',
+  },
+  {
+    id: 'legendary-hall',
+    name: 'Legendary Hall',
+    screenId: 'legendaryHall',
+    campaignLabel: 'Elite Checkmate Trials',
+    focus: 'The hardest available production-track boards: expert mate-in-4 trials and precise finishes.',
+    mateInRange: 'Mate in 4',
+    difficultyRange: 'Expert',
+    motifs: ['calculation', 'queen-sacrifice', 'promotion'],
+    bossName: 'The Legendary Board',
+    rewardPreview: 'Royal Chests, Legendary Hall Badge, Ladder XP',
+    unlocked: false,
+    color: '#b64f68',
+  },
 ];
 
 const COMING_NEXT_WORLDS = [
   {
-    name: 'Master Realm',
-    label: 'Advanced Campaign Boards',
-    preview: 'Future board with deeper tactical routes and premium cosmetic rewards.',
+    name: 'Endgame Abyss',
+    label: 'Future Endgame Trials',
+    preview: 'Future board focused on sparse-piece mates, promotion races, and endgame nets.',
   },
   {
-    name: 'International Master Citadel',
-    label: 'Precision and Endurance',
-    preview: 'Future world for longer forcing lines and boss-level defensive tests.',
+    name: 'Checkmate Temple',
+    label: 'Pattern Mastery',
+    preview: 'Future world for theme-based boards, ritual boss battles, and rare badges.',
   },
   {
-    name: 'Grandmaster Summit',
-    label: 'Elite Calculation',
-    preview: 'Future climb for hard mates, rare badges, and collection milestones.',
+    name: "Champion's Vault",
+    label: 'Reward Gauntlet',
+    preview: 'Future vault with challenge boards, cosmetic milestones, and premium status rewards.',
   },
   {
-    name: 'Legendary Hall',
-    label: 'Legacy Challenges',
-    preview: 'Future endgame destination for legendary boards and status rewards.',
+    name: 'Mythic Board',
+    label: 'Mythic Campaign',
+    preview: 'Future top-end board for the rarest trials once the puzzle pool expands.',
   },
 ];
 
@@ -249,6 +312,14 @@ const KINGS_GATE_BOSS_COLLECTION_REWARD_ID = 'royal-king';
 const GRANDMASTER_KEEP_ZONE_ID = 'grandmaster-keep';
 const GRANDMASTER_KEEP_BOSS_BADGE = 'Grandmaster Keep Badge';
 const GRANDMASTER_KEEP_BOSS_COLLECTION_REWARD_ID = 'grandmaster-king';
+const MASTER_REALM_ZONE_ID = 'master-realm';
+const MASTER_REALM_BOSS_BADGE = 'Master Realm Badge';
+const INTERNATIONAL_MASTER_CITADEL_ZONE_ID = 'international-master-citadel';
+const INTERNATIONAL_MASTER_CITADEL_BOSS_BADGE = 'International Master Badge';
+const GRANDMASTER_SUMMIT_ZONE_ID = 'grandmaster-summit';
+const GRANDMASTER_SUMMIT_BOSS_BADGE = 'Grandmaster Summit Badge';
+const LEGENDARY_HALL_ZONE_ID = 'legendary-hall';
+const LEGENDARY_HALL_BOSS_BADGE = 'Legendary Hall Badge';
 const LADDER_ZONE_ACHIEVEMENT_IDS = {
   [PAWN_VILLAGE_ZONE_ID]: 'complete-pawn-village',
   [KNIGHT_WOODS_ZONE_ID]: 'complete-knight-woods',
@@ -257,6 +328,10 @@ const LADDER_ZONE_ACHIEVEMENT_IDS = {
   [QUEENS_COURT_ZONE_ID]: 'complete-queens-court',
   [KINGS_GATE_ZONE_ID]: 'complete-kings-gate',
   [GRANDMASTER_KEEP_ZONE_ID]: 'complete-grandmaster-keep',
+  [MASTER_REALM_ZONE_ID]: 'complete-master-realm',
+  [INTERNATIONAL_MASTER_CITADEL_ZONE_ID]: 'complete-international-master-citadel',
+  [GRANDMASTER_SUMMIT_ZONE_ID]: 'complete-grandmaster-summit',
+  [LEGENDARY_HALL_ZONE_ID]: 'complete-legendary-hall',
 };
 const PAWN_VILLAGE_NODES = [
   {
@@ -800,6 +875,230 @@ const GRANDMASTER_KEEP_NODES = [
   },
 ];
 
+const MASTER_REALM_NODES = [
+  {
+    id: 'master-advanced-entry',
+    zoneId: MASTER_REALM_ZONE_ID,
+    type: 'normal',
+    title: 'Advanced Entry',
+    description: 'Step beyond the first campaign with harder mate-in-2 forcing moves.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 150,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 2,
+    preferredDifficulties: ['medium'],
+    minRating: 1280,
+    strictPuzzleSelection: true,
+    motifs: ['deflection', 'overloaded-defender', 'pinned-defender', 'rook-file'],
+  },
+  {
+    id: 'master-pressure-lines',
+    zoneId: MASTER_REALM_ZONE_ID,
+    type: 'normal',
+    title: 'Pressure Lines',
+    description: 'Solve overloaded defenders, pins, and forcing mate-in-2 pressure.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 150,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 2,
+    preferredDifficulties: ['medium'],
+    minRating: 1320,
+    strictPuzzleSelection: true,
+    motifs: ['overloaded-defender', 'pinned-defender', 'deflection', 'decoy'],
+  },
+  {
+    id: 'master-gatekeeper',
+    zoneId: MASTER_REALM_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Master Gatekeeper',
+    description: 'Clear three of five advanced tactical boards to enter the master road.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 250,
+    rewardChestTypeId: 'tactical-chest',
+    rewardBadge: MASTER_REALM_BOSS_BADGE,
+    preferredMateInMin: 2,
+    preferredMateInMax: 3,
+    preferredDifficulties: ['medium', 'advanced'],
+    minRating: 1340,
+    strictPuzzleSelection: true,
+    motifs: ['deflection', 'queen-sacrifice', 'overloaded-defender', 'calculation', 'king-hunt'],
+  },
+];
+
+const INTERNATIONAL_MASTER_CITADEL_NODES = [
+  {
+    id: 'im-sacrifice-hall',
+    zoneId: INTERNATIONAL_MASTER_CITADEL_ZONE_ID,
+    type: 'normal',
+    title: 'Sacrifice Hall',
+    description: 'Find the forcing sacrifice before the defender escapes.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 175,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 2,
+    preferredMateInMax: 3,
+    preferredDifficulties: ['medium', 'advanced'],
+    minRating: 1400,
+    strictPuzzleSelection: true,
+    motifs: ['queen-sacrifice', 'sacrifice', 'deflection', 'decoy'],
+  },
+  {
+    id: 'im-citadel-calculation',
+    zoneId: INTERNATIONAL_MASTER_CITADEL_ZONE_ID,
+    type: 'normal',
+    title: 'Citadel Calculation',
+    description: 'Work through quiet moves, decoys, and longer calculation branches.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 175,
+    rewardChestTypeId: 'tactical-chest',
+    preferredMateInMin: 3,
+    preferredMateInMax: 3,
+    preferredDifficulties: ['advanced'],
+    minRating: 1500,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'quiet-move', 'decoy', 'overloaded-defender'],
+  },
+  {
+    id: 'im-citadel-master',
+    zoneId: INTERNATIONAL_MASTER_CITADEL_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Citadel Master',
+    description: 'Clear three of five sacrifice and calculation trials.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 300,
+    rewardChestTypeId: 'tactical-chest',
+    rewardBadge: INTERNATIONAL_MASTER_CITADEL_BOSS_BADGE,
+    preferredMateInMin: 3,
+    preferredMateInMax: 4,
+    preferredDifficulties: ['advanced', 'expert'],
+    minRating: 1500,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'queen-sacrifice', 'quiet-move', 'king-hunt', 'promotion'],
+  },
+];
+
+const GRANDMASTER_SUMMIT_NODES = [
+  {
+    id: 'summit-approach',
+    zoneId: GRANDMASTER_SUMMIT_ZONE_ID,
+    type: 'normal',
+    title: 'Summit Approach',
+    description: 'Climb through advanced mate-in-3 forcing lines.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 225,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 3,
+    preferredMateInMax: 3,
+    preferredDifficulties: ['advanced'],
+    minRating: 1600,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'quiet-move', 'rook-file', 'pinned-defender'],
+  },
+  {
+    id: 'summit-expert-line',
+    zoneId: GRANDMASTER_SUMMIT_ZONE_ID,
+    type: 'normal',
+    title: 'Expert Line',
+    description: 'Solve the expert edge of the current production puzzle pool.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 225,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 4,
+    preferredDifficulties: ['expert'],
+    minRating: 1820,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'promotion', 'queen-sacrifice', 'king-hunt'],
+  },
+  {
+    id: 'summit-guardian',
+    zoneId: GRANDMASTER_SUMMIT_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Summit Guardian',
+    description: 'Clear three of five expert forcing boards at the summit.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 375,
+    rewardChestTypeId: 'royal-chest',
+    rewardBadge: GRANDMASTER_SUMMIT_BOSS_BADGE,
+    preferredMateInMin: 3,
+    preferredMateInMax: 4,
+    preferredDifficulties: ['advanced', 'expert'],
+    minRating: 1680,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'king-hunt', 'promotion', 'queen-sacrifice', 'deflection'],
+  },
+];
+
+const LEGENDARY_HALL_NODES = [
+  {
+    id: 'legendary-hall-patterns',
+    zoneId: LEGENDARY_HALL_ZONE_ID,
+    type: 'normal',
+    title: 'Hall of Patterns',
+    description: 'Face only the hardest current production-track mate-in-4 boards.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 275,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 4,
+    preferredDifficulties: ['expert'],
+    minRating: 1860,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'promotion', 'queen-sacrifice', 'pinned-defender'],
+  },
+  {
+    id: 'legendary-elite-trial',
+    zoneId: LEGENDARY_HALL_ZONE_ID,
+    type: 'normal',
+    title: 'Elite Trial',
+    description: 'Calculate through the top-rated expert boards without easier fallback.',
+    puzzleCount: 3,
+    clearRequirement: 2,
+    rewardXp: 275,
+    rewardChestTypeId: 'royal-chest',
+    preferredMateInMin: 4,
+    preferredMateInMax: 4,
+    preferredDifficulties: ['expert'],
+    minRating: 1900,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'king-hunt', 'promotion', 'overloaded-defender'],
+  },
+  {
+    id: 'legendary-board',
+    zoneId: LEGENDARY_HALL_ZONE_ID,
+    type: 'boss',
+    title: 'Boss: The Legendary Board',
+    description: 'Clear three of five elite checkmate trials to finish the expanded campaign.',
+    puzzleCount: 5,
+    clearRequirement: 3,
+    lives: 3,
+    rewardXp: 500,
+    rewardChestTypeId: 'royal-chest',
+    rewardBadge: LEGENDARY_HALL_BOSS_BADGE,
+    preferredMateInMin: 4,
+    preferredMateInMax: 4,
+    preferredDifficulties: ['expert'],
+    minRating: 1820,
+    strictPuzzleSelection: true,
+    motifs: ['calculation', 'queen-sacrifice', 'promotion', 'king-hunt', 'deflection'],
+  },
+];
+
 const LADDER_ZONE_NODES = {
   [PAWN_VILLAGE_ZONE_ID]: PAWN_VILLAGE_NODES,
   [KNIGHT_WOODS_ZONE_ID]: KNIGHT_WOODS_NODES,
@@ -808,6 +1107,10 @@ const LADDER_ZONE_NODES = {
   [QUEENS_COURT_ZONE_ID]: QUEENS_COURT_NODES,
   [KINGS_GATE_ZONE_ID]: KINGS_GATE_NODES,
   [GRANDMASTER_KEEP_ZONE_ID]: GRANDMASTER_KEEP_NODES,
+  [MASTER_REALM_ZONE_ID]: MASTER_REALM_NODES,
+  [INTERNATIONAL_MASTER_CITADEL_ZONE_ID]: INTERNATIONAL_MASTER_CITADEL_NODES,
+  [GRANDMASTER_SUMMIT_ZONE_ID]: GRANDMASTER_SUMMIT_NODES,
+  [LEGENDARY_HALL_ZONE_ID]: LEGENDARY_HALL_NODES,
 };
 
 const PLAYABLE_LADDER_ZONE_IDS = [
@@ -818,6 +1121,10 @@ const PLAYABLE_LADDER_ZONE_IDS = [
   QUEENS_COURT_ZONE_ID,
   KINGS_GATE_ZONE_ID,
   GRANDMASTER_KEEP_ZONE_ID,
+  MASTER_REALM_ZONE_ID,
+  INTERNATIONAL_MASTER_CITADEL_ZONE_ID,
+  GRANDMASTER_SUMMIT_ZONE_ID,
+  LEGENDARY_HALL_ZONE_ID,
 ];
 
 const LADDER_CONTENT_SECTION_ORDER = ['candidate', 'dev'];
@@ -1132,6 +1439,30 @@ const ACHIEVEMENTS = [
     isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('grandmaster-trial'),
   },
   {
+    id: 'complete-master-realm',
+    name: 'Complete Master Realm',
+    description: 'Defeat The Master Gatekeeper.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('master-gatekeeper'),
+  },
+  {
+    id: 'complete-international-master-citadel',
+    name: 'Complete International Master Citadel',
+    description: 'Defeat The Citadel Master.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('im-citadel-master'),
+  },
+  {
+    id: 'complete-grandmaster-summit',
+    name: 'Complete Grandmaster Summit',
+    description: 'Defeat The Summit Guardian.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('summit-guardian'),
+  },
+  {
+    id: 'complete-legendary-hall',
+    name: 'Complete Legendary Hall',
+    description: 'Defeat The Legendary Board.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('legendary-board'),
+  },
+  {
     id: 'first-chest-opened',
     name: 'First Chest Opened',
     description: 'Open any reward chest.',
@@ -1356,31 +1687,11 @@ function getLadderNodeById(nodeId) {
 }
 
 function getLadderZoneScreen(zoneId) {
-  if (zoneId === GRANDMASTER_KEEP_ZONE_ID) {
-    return 'grandmasterKeep';
-  }
+  return getLadderZoneById(zoneId).screenId || 'pawnVillage';
+}
 
-  if (zoneId === KINGS_GATE_ZONE_ID) {
-    return 'kingsGate';
-  }
-
-  if (zoneId === QUEENS_COURT_ZONE_ID) {
-    return 'queensCourt';
-  }
-
-  if (zoneId === ROOK_FORTRESS_ZONE_ID) {
-    return 'rookFortress';
-  }
-
-  if (zoneId === BISHOP_TOWER_ZONE_ID) {
-    return 'bishopTower';
-  }
-
-  if (zoneId === KNIGHT_WOODS_ZONE_ID) {
-    return 'knightWoods';
-  }
-
-  return 'pawnVillage';
+function getLadderZoneByScreen(screenId) {
+  return LADDER_WORLD_ZONES.find((zone) => zone.screenId === screenId) || null;
 }
 
 function getNextLadderZone(zoneId) {
@@ -1418,6 +1729,22 @@ function getLadderZoneBadge(zoneId) {
     return GRANDMASTER_KEEP_BOSS_BADGE;
   }
 
+  if (zoneId === MASTER_REALM_ZONE_ID) {
+    return MASTER_REALM_BOSS_BADGE;
+  }
+
+  if (zoneId === INTERNATIONAL_MASTER_CITADEL_ZONE_ID) {
+    return INTERNATIONAL_MASTER_CITADEL_BOSS_BADGE;
+  }
+
+  if (zoneId === GRANDMASTER_SUMMIT_ZONE_ID) {
+    return GRANDMASTER_SUMMIT_BOSS_BADGE;
+  }
+
+  if (zoneId === LEGENDARY_HALL_ZONE_ID) {
+    return LEGENDARY_HALL_BOSS_BADGE;
+  }
+
   return '';
 }
 
@@ -1451,11 +1778,38 @@ function puzzleAvoidsExcludedNodeThemes(puzzle, node) {
   return excludedThemes.every((theme) => !puzzleThemes.includes(theme));
 }
 
+function puzzleMatchesNodeDifficulty(puzzle, node) {
+  const preferredDifficulties = Array.isArray(node.preferredDifficulties) ? node.preferredDifficulties : [];
+
+  if (preferredDifficulties.length === 0) {
+    return true;
+  }
+
+  return preferredDifficulties.includes(puzzle.difficulty);
+}
+
+function puzzleMatchesNodeRating(puzzle, node) {
+  const rating = Number(puzzle.rating || 0);
+  const minRating = Number(node.minRating || 0);
+  const maxRating = Number(node.maxRating || Infinity);
+
+  return rating >= minRating && rating <= maxRating;
+}
+
 function buildLadderNodeQueue(nodeId) {
   const node = getLadderNodeById(nodeId);
   const productionIndexes = getProductionTrackLadderPuzzleIndexes();
   const themeFilteredIndexes = productionIndexes.filter((index) => puzzleAvoidsExcludedNodeThemes(puzzles[index], node));
-  const eligibleIndexes = themeFilteredIndexes.length > 0 ? themeFilteredIndexes : productionIndexes;
+  const metadataFilteredIndexes = themeFilteredIndexes.filter((index) => {
+    return puzzleMatchesNodeDifficulty(puzzles[index], node) && puzzleMatchesNodeRating(puzzles[index], node);
+  });
+  const eligibleIndexes = node.strictPuzzleSelection
+    ? metadataFilteredIndexes
+    : metadataFilteredIndexes.length > 0
+      ? metadataFilteredIndexes
+      : themeFilteredIndexes.length > 0
+        ? themeFilteredIndexes
+        : productionIndexes;
   const preferredMateInMin = node.preferredMateInMin || 1;
   const preferredMateInMax = node.preferredMateInMax || 2;
   const mateInPreferredIndexes = eligibleIndexes.filter((index) => {
@@ -1470,8 +1824,11 @@ function buildLadderNodeQueue(nodeId) {
     ...shuffleSeeded(fallbackEligibleIndexes, `${node.zoneId}:${node.id}:fallback`),
   ].filter((index, arrayIndex, array) => array.indexOf(index) === arrayIndex);
   const selectedIndexes = [];
+  const desiredPuzzleCount = node.strictPuzzleSelection
+    ? Math.min(node.puzzleCount, sourceIndexes.length)
+    : node.puzzleCount;
 
-  for (let index = 0; index < node.puzzleCount; index += 1) {
+  for (let index = 0; index < desiredPuzzleCount; index += 1) {
     const unusedIndexes = sourceIndexes.filter((puzzleIndex) => !selectedIndexes.includes(puzzleIndex));
     const finalPool = unusedIndexes.length > 0 ? unusedIndexes : sourceIndexes;
 
@@ -1557,6 +1914,22 @@ function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
 
   if (zoneId === GRANDMASTER_KEEP_ZONE_ID) {
     return completedSet.has('king-running-king');
+  }
+
+  if (zoneId === MASTER_REALM_ZONE_ID) {
+    return completedSet.has('grandmaster-trial');
+  }
+
+  if (zoneId === INTERNATIONAL_MASTER_CITADEL_ZONE_ID) {
+    return completedSet.has('master-gatekeeper');
+  }
+
+  if (zoneId === GRANDMASTER_SUMMIT_ZONE_ID) {
+    return completedSet.has('im-citadel-master');
+  }
+
+  if (zoneId === LEGENDARY_HALL_ZONE_ID) {
+    return completedSet.has('summit-guardian');
   }
 
   return false;
@@ -2411,7 +2784,23 @@ const BOSS_CINEMATIC_COPY = {
   },
   [GRANDMASTER_KEEP_ZONE_ID]: {
     tone: 'legendary',
-    text: 'The final trial is complete. The first campaign is yours.',
+    text: 'The first campaign is clear. Master Realm awaits.',
+  },
+  [MASTER_REALM_ZONE_ID]: {
+    tone: 'teal',
+    text: 'The master gate opens. The road gets sharper.',
+  },
+  [INTERNATIONAL_MASTER_CITADEL_ZONE_ID]: {
+    tone: 'royal',
+    text: 'The citadel falls to precise calculation.',
+  },
+  [GRANDMASTER_SUMMIT_ZONE_ID]: {
+    tone: 'gold',
+    text: 'The summit line holds. Your calculation climbs higher.',
+  },
+  [LEGENDARY_HALL_ZONE_ID]: {
+    tone: 'legendary',
+    text: 'The hall recognizes your trial. The board is yours.',
   },
 };
 
@@ -2566,8 +2955,6 @@ export default function App() {
   const completedLadderNodeIds = useMemo(() => {
     return new Set(stats.completedLadderNodes || []);
   }, [stats.completedLadderNodes]);
-  const grandmasterKeepProgress = getLadderZoneProgress(GRANDMASTER_KEEP_ZONE_ID, stats.completedLadderNodes || []);
-  const grandmasterKeepUnlocked = ladderZoneIsUnlocked(GRANDMASTER_KEEP_ZONE_ID, stats.completedLadderNodes || []);
   const ladderCampaignProgress = getLadderCampaignProgress(stats.completedLadderNodes || []);
   const ladderCampaignComplete = ladderCampaignProgress.worldsCompleted >= ladderCampaignProgress.totalWorlds;
   const currentCampaignZone = getCurrentLadderCampaignZone(stats.completedLadderNodes || []);
@@ -3345,8 +3732,8 @@ export default function App() {
       nextZoneId: nextZoneUnlocked ? nextZone.id : '',
       nextZoneName: nextZoneUnlocked ? nextZone.name : '',
       zoneCompleteMessage: cleared && activeLadderNode.type === 'boss' ? `${activeZone.name} complete` : '',
-      campaignCompleteMessage: cleared && activeLadderNode.id === 'grandmaster-trial'
-        ? 'You cleared the first QuickMate campaign.'
+      campaignCompleteMessage: cleared && activeLadderNode.id === 'legendary-board'
+        ? 'You cleared the expanded QuickMate campaign.'
         : '',
       comingSoon: cleared && activeLadderNode.type === 'boss' && nextZone && !nextZoneUnlocked ? nextZone.name : '',
     };
@@ -4261,7 +4648,7 @@ export default function App() {
                   <small>
                     {ladderCampaignComplete ? 'Campaign complete' : currentCampaignZone?.name || 'Campaign ready'}
                     {ladderCampaignComplete
-                      ? ' | first campaign complete'
+                      ? ' | expanded campaign complete'
                       : nextCampaignZone
                         ? ` -> ${nextCampaignZone.name}`
                         : ' | final world'}
@@ -4720,29 +5107,11 @@ export default function App() {
     );
   }
 
-  if (
-    screen === 'pawnVillage'
-    || screen === 'knightWoods'
-    || screen === 'bishopTower'
-    || screen === 'rookFortress'
-    || screen === 'queensCourt'
-    || screen === 'kingsGate'
-    || screen === 'grandmasterKeep'
-  ) {
-    const ladderZoneId = screen === 'grandmasterKeep'
-      ? GRANDMASTER_KEEP_ZONE_ID
-      : screen === 'kingsGate'
-        ? KINGS_GATE_ZONE_ID
-        : screen === 'queensCourt'
-          ? QUEENS_COURT_ZONE_ID
-          : screen === 'rookFortress'
-            ? ROOK_FORTRESS_ZONE_ID
-            : screen === 'bishopTower'
-              ? BISHOP_TOWER_ZONE_ID
-              : screen === 'knightWoods'
-                ? KNIGHT_WOODS_ZONE_ID
-                : PAWN_VILLAGE_ZONE_ID;
-    const ladderZone = getLadderZoneById(ladderZoneId);
+  const ladderZoneForScreen = getLadderZoneByScreen(screen);
+
+  if (ladderZoneForScreen) {
+    const ladderZone = ladderZoneForScreen;
+    const ladderZoneId = ladderZone.id;
     const ladderZoneNodes = getLadderZoneNodes(ladderZoneId);
     const ladderZoneProgress = getLadderZoneProgress(ladderZoneId, stats.completedLadderNodes || []);
     const ladderZoneBadge = getLadderZoneBadge(ladderZoneId);
@@ -4913,12 +5282,12 @@ export default function App() {
               <span>Unopened chests</span>
             </div>
             <div>
-              <strong>{grandmasterKeepProgress.isComplete ? 'Complete' : grandmasterKeepUnlocked ? 'Open' : 'Locked'}</strong>
+              <strong>{ladderCampaignComplete ? 'Complete' : 'Open'}</strong>
               <span>Campaign</span>
             </div>
           </section>
-          {grandmasterKeepProgress.isComplete && (
-            <p className="campaign-complete-banner">You cleared the first QuickMate campaign.</p>
+          {ladderCampaignComplete && (
+            <p className="campaign-complete-banner">You cleared the expanded QuickMate campaign.</p>
           )}
 
           <section className="world-map" aria-label="Ladder World zones">
@@ -5041,7 +5410,15 @@ export default function App() {
                                     ? "Defeat The Queen's Trial to unlock."
                                     : zone.id === GRANDMASTER_KEEP_ZONE_ID
                                       ? 'Defeat The Running King to unlock.'
-                                      : 'Coming soon'}
+                                      : zone.id === MASTER_REALM_ZONE_ID
+                                        ? 'Defeat The Grandmaster Trial to unlock.'
+                                        : zone.id === INTERNATIONAL_MASTER_CITADEL_ZONE_ID
+                                          ? 'Defeat The Master Gatekeeper to unlock.'
+                                          : zone.id === GRANDMASTER_SUMMIT_ZONE_ID
+                                            ? 'Defeat The Citadel Master to unlock.'
+                                            : zone.id === LEGENDARY_HALL_ZONE_ID
+                                              ? 'Defeat The Summit Guardian to unlock.'
+                                              : 'Coming soon'}
                       </small>
                     )}
                   </div>
