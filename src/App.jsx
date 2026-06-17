@@ -1463,6 +1463,30 @@ const ACHIEVEMENTS = [
     isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('legendary-board'),
   },
   {
+    id: 'first-boss-cleared',
+    name: 'First Boss Cleared',
+    description: 'Defeat any Ladder World boss.',
+    isUnlocked: (stats) => getCompletedBossNodes(normalizeStringArray(stats.completedLadderNodes)).length >= 1,
+  },
+  {
+    id: 'clear-5-bosses',
+    name: 'Clear 5 Bosses',
+    description: 'Defeat five Ladder World bosses.',
+    isUnlocked: (stats) => getCompletedBossNodes(normalizeStringArray(stats.completedLadderNodes)).length >= 5,
+  },
+  {
+    id: 'clear-10-bosses',
+    name: 'Clear 10 Bosses',
+    description: 'Defeat ten Ladder World bosses.',
+    isUnlocked: (stats) => getCompletedBossNodes(normalizeStringArray(stats.completedLadderNodes)).length >= 10,
+  },
+  {
+    id: 'clear-legendary-hall-boss',
+    name: 'Clear Legendary Hall Boss',
+    description: 'Defeat The Legendary Board.',
+    isUnlocked: (stats) => normalizeStringArray(stats.completedLadderNodes).includes('legendary-board'),
+  },
+  {
     id: 'first-chest-opened',
     name: 'First Chest Opened',
     description: 'Open any reward chest.',
@@ -1682,6 +1706,14 @@ function getAllLadderNodes() {
   return Object.values(LADDER_ZONE_NODES).flat();
 }
 
+function getLadderBossNodes() {
+  return getAllLadderNodes().filter((node) => node.type === 'boss');
+}
+
+function getLadderZoneBossNode(zoneId) {
+  return getLadderZoneNodes(zoneId).find((node) => node.type === 'boss') || null;
+}
+
 function getLadderNodeById(nodeId) {
   return getAllLadderNodes().find((node) => node.id === nodeId) || PAWN_VILLAGE_NODES[0];
 }
@@ -1883,6 +1915,56 @@ function getCurrentLadderCampaignZone(completedNodeIds = []) {
 
 function getLadderZoneAchievementId(zoneId) {
   return LADDER_ZONE_ACHIEVEMENT_IDS[zoneId] || '';
+}
+
+function getCompletedBossNodes(completedNodeIds = []) {
+  const completedSet = new Set(completedNodeIds);
+
+  return getLadderBossNodes().filter((node) => completedSet.has(node.id));
+}
+
+function getBossProgressSummary(completedNodeIds = [], ladderBadges = []) {
+  const bossNodes = getLadderBossNodes();
+  const completedBossNodes = getCompletedBossNodes(completedNodeIds);
+  const completedSet = new Set(completedNodeIds);
+  const latestCompletedBoss = completedBossNodes[completedBossNodes.length - 1] || null;
+  const nextBoss = bossNodes.find((node) => !completedSet.has(node.id)) || null;
+  const latestBadge = latestCompletedBoss?.rewardBadge
+    || normalizeStringArray(ladderBadges).slice(-1)[0]
+    || 'None yet';
+
+  return {
+    clearedCount: completedBossNodes.length,
+    totalCount: bossNodes.length,
+    latestBadge,
+    nextBoss,
+    nextBossName: nextBoss ? getBossNameFromNodeTitle(nextBoss.title) : 'All bosses cleared',
+    nextBossZoneName: nextBoss ? getLadderZoneById(nextBoss.zoneId).name : '',
+  };
+}
+
+function getBossChallengeCopy(node) {
+  const livesCopy = node.lives ? ` with ${node.lives} lives` : '';
+
+  return `Solve ${node.clearRequirement} of ${node.puzzleCount}${livesCopy}. Misses reveal the line and cost lives.`;
+}
+
+function getBossRewardPreview(node) {
+  return getLadderNodeRewardLabel(node);
+}
+
+function calculateBossBattleScore({ node, solved, misses, mistakes, livesRemaining, cleared }) {
+  if (!node || node.type !== 'boss') {
+    return null;
+  }
+
+  const solvedPoints = solved * 300;
+  const clearBonus = cleared ? node.clearRequirement * 150 : 0;
+  const livesBonus = Math.max(0, livesRemaining || 0) * 125;
+  const xpBonus = cleared ? node.rewardXp : 0;
+  const penalties = misses * 100 + mistakes * 25;
+
+  return Math.max(0, solvedPoints + clearBonus + livesBonus + xpBonus - penalties);
 }
 
 function ladderZoneIsUnlocked(zoneId, completedNodeIds = []) {
@@ -2917,6 +2999,7 @@ export default function App() {
   const [rushPuzzleMistakes, setRushPuzzleMistakes] = useState(0);
   const [rushReveal, setRushReveal] = useState(null);
   const [activeLadderNodeId, setActiveLadderNodeId] = useState('');
+  const [bossIntroNodeId, setBossIntroNodeId] = useState('');
   const [ladderNodeQueue, setLadderNodeQueue] = useState([]);
   const [ladderNodeCursor, setLadderNodeCursor] = useState(0);
   const [ladderNodeStats, setLadderNodeStats] = useState(DEFAULT_LADDER_NODE_STATS);
@@ -2948,6 +3031,11 @@ export default function App() {
   const puzzleBehavior = getPuzzleBehavior(mode);
   const activeLadderNode = activeLadderNodeId ? getLadderNodeById(activeLadderNodeId) : null;
   const activeLadderZone = activeLadderNode ? getLadderZoneById(activeLadderNode.zoneId) : null;
+  const bossIntroNode = bossIntroNodeId
+    ? getAllLadderNodes().find((node) => node.id === bossIntroNodeId && node.type === 'boss') || null
+    : null;
+  const bossIntroZone = bossIntroNode ? getLadderZoneById(bossIntroNode.zoneId) : null;
+  const bossIntroQueue = bossIntroNode ? buildLadderNodeQueue(bossIntroNode.id) : [];
   const activeLadderZoneProgress = activeLadderNode
     ? getLadderZoneProgress(activeLadderNode.zoneId, stats.completedLadderNodes || [])
     : null;
@@ -2961,6 +3049,10 @@ export default function App() {
   const nextCampaignZone = currentCampaignZone ? getNextLadderZone(currentCampaignZone.id) : null;
   const ladderCampaignPath = LADDER_WORLD_ZONES.map((zone) => zone.name).join(' → ');
   const ladderBadgesEarned = normalizeStringArray(stats.ladderBadges).length;
+  const bossProgressSummary = getBossProgressSummary(
+    stats.completedLadderNodes || [],
+    stats.ladderBadges || [],
+  );
   const selectedRushModeConfig = getRushModeConfig(selectedRushMode);
   const activeRushModeConfig = getRushModeConfig(activeRushMode);
   const rushIsTimed = rushModeIsTimed(activeRushMode);
@@ -3154,11 +3246,13 @@ export default function App() {
   }
 
   function openRushIntro() {
+    setBossIntroNodeId('');
     setMode('rush');
     setScreen('rushIntro');
   }
 
   function openLadderWorld() {
+    setBossIntroNodeId('');
     setMode('ladder');
     setScreen('ladderWorld');
   }
@@ -3169,11 +3263,25 @@ export default function App() {
       return;
     }
 
+    setBossIntroNodeId('');
     setMode('ladder');
     setScreen(getLadderZoneScreen(zoneId));
   }
 
-  function startLadderNode(nodeId) {
+  function openBossIntro(nodeId) {
+    const node = getLadderNodeById(nodeId);
+
+    if (node.type !== 'boss') {
+      startLadderNode(nodeId);
+      return;
+    }
+
+    setBossIntroNodeId(node.id);
+    setMode('ladder');
+    setScreen('bossIntro');
+  }
+
+  function startLadderNode(nodeId, options = {}) {
     const node = getLadderNodeById(nodeId);
     const zone = getLadderZoneById(node.zoneId);
     const queue = buildLadderNodeQueue(node.id);
@@ -3183,6 +3291,12 @@ export default function App() {
       return;
     }
 
+    if (node.type === 'boss' && !options.skipIntro) {
+      openBossIntro(node.id);
+      return;
+    }
+
+    setBossIntroNodeId('');
     setActiveLadderNodeId(node.id);
     setLadderNodeQueue(queue);
     setLadderNodeCursor(0);
@@ -3195,6 +3309,7 @@ export default function App() {
   }
 
   function openCollection() {
+    setBossIntroNodeId('');
     setScreen('collection');
   }
 
@@ -3704,6 +3819,32 @@ export default function App() {
     const collectionSetJustCompleted = Boolean(
       collectionRewardItem && !previousCollectionSetProgress?.isComplete && collectionSetProgress?.isComplete,
     );
+    const bossScore = calculateBossBattleScore({
+      node: activeLadderNode,
+      solved: nextStats.solved,
+      misses: nextStats.misses,
+      mistakes: nextStats.mistakes,
+      livesRemaining: nextLives,
+      cleared,
+    });
+    const previewOwnedCollectionItems = collectionRewardItem
+      ? [...currentOwnedCollectionItems, collectionRewardItem.collectionItemId]
+      : currentOwnedCollectionItems;
+    const previewUnopenedChests = earnedChest
+      ? [...normalizeUnopenedChests(stats.unopenedChests), earnedChest]
+      : normalizeUnopenedChests(stats.unopenedChests);
+    const previewNextStats = {
+      ...stats,
+      completedLadderNodes: nextCompletedNodeIds,
+      ladderBadges: earnedBadge
+        ? [...normalizeStringArray(stats.ladderBadges), earnedBadge]
+        : normalizeStringArray(stats.ladderBadges),
+      ownedCollectionItems: previewOwnedCollectionItems,
+      unopenedChests: previewUnopenedChests,
+    };
+    const resultAchievementUpdate = cleared
+      ? applyAchievementUnlocks(previewNextStats, stats)
+      : { newAchievements: [] };
 
     const nextResult = {
       mode: 'ladderNode',
@@ -3719,6 +3860,7 @@ export default function App() {
       mistakes: nextStats.mistakes,
       totalPuzzles: activeLadderNode.puzzleCount,
       livesRemaining: activeLadderNode.lives ? nextLives : null,
+      bossScore,
       rewardXp,
       earnedBadge,
       earnedChest,
@@ -3736,6 +3878,7 @@ export default function App() {
         ? 'You cleared the expanded QuickMate campaign.'
         : '',
       comingSoon: cleared && activeLadderNode.type === 'boss' && nextZone && !nextZoneUnlocked ? nextZone.name : '',
+      newAchievements: resultAchievementUpdate.newAchievements,
     };
 
     setIsComplete(true);
@@ -4470,6 +4613,7 @@ export default function App() {
     setChestOpenResult(null);
     setCinematicMoment(null);
     setActiveLadderNodeId('');
+    setBossIntroNodeId('');
     setScreen('home');
   }
 
@@ -5107,6 +5251,97 @@ export default function App() {
     );
   }
 
+  if (screen === 'bossIntro') {
+    if (!bossIntroNode || !bossIntroZone) {
+      return (
+        <main className="app-shell home-shell">
+          <section className="home-hero boss-intro-screen" aria-label="Boss Battle">
+            <p className="eyebrow">Boss Battle</p>
+            <h1>Boss unavailable</h1>
+            <p className="brand-tagline">Return to Ladder World and choose an unlocked boss.</p>
+            <div className="actions">
+              <button type="button" className="primary-action" onClick={openLadderWorld}>
+                <ListChecks size={18} />
+                Back to Ladder World
+              </button>
+            </div>
+          </section>
+        </main>
+      );
+    }
+
+    const bossName = getBossNameFromNodeTitle(bossIntroNode.title);
+    const nextZone = getNextLadderZone(bossIntroNode.zoneId);
+    const bossAlreadyCleared = completedLadderNodeIds.has(bossIntroNode.id);
+
+    return (
+      <main className="app-shell home-shell">
+        <section className="home-hero boss-intro-screen" aria-label={`${bossName} boss intro`}>
+          <div className="boss-intro-card">
+            <div className="boss-intro-topline">
+              <span className="zone-status">Boss Battle</span>
+              <span>{bossIntroZone.name}</span>
+            </div>
+            <div className="boss-intro-emblem" aria-hidden="true">
+              <Trophy size={40} />
+            </div>
+            <p className="eyebrow">World Boss</p>
+            <h1>{bossName}</h1>
+            <p className="brand-tagline">{bossIntroNode.description}</p>
+            <p className="boss-challenge-copy">{getBossChallengeCopy(bossIntroNode)}</p>
+
+            <section className="boss-intro-stats" aria-label="Boss battle rules and rewards">
+              <div>
+                <span>Puzzles</span>
+                <strong>{bossIntroNode.puzzleCount}</strong>
+              </div>
+              <div>
+                <span>Clear</span>
+                <strong>{bossIntroNode.clearRequirement}/{bossIntroNode.puzzleCount}</strong>
+              </div>
+              <div>
+                <span>Lives</span>
+                <strong>{bossIntroNode.lives || 'No limit'}</strong>
+              </div>
+              <div>
+                <span>Reward</span>
+                <strong>{getBossRewardPreview(bossIntroNode)}</strong>
+              </div>
+            </section>
+
+            {bossAlreadyCleared ? (
+              <p className="rank-chase">Replay battle. Rewards are already claimed for this boss.</p>
+            ) : (
+              <p className="rank-chase">
+                Defeating this boss unlocks {nextZone?.name || 'campaign completion'} and records the badge.
+              </p>
+            )}
+
+            <div className="actions">
+              <button
+                type="button"
+                className="primary-action"
+                onClick={() => startLadderNode(bossIntroNode.id, { skipIntro: true })}
+                disabled={bossIntroQueue.length === 0}
+              >
+                <Zap size={18} />
+                Start Boss Battle
+              </button>
+              <button type="button" className="secondary-action" onClick={() => openLadderZone(bossIntroNode.zoneId)}>
+                <ChevronLeft size={18} />
+                Back to {bossIntroZone.name}
+              </button>
+              <button type="button" className="secondary-action" onClick={openLadderWorld}>
+                <ListChecks size={18} />
+                Ladder World
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   const ladderZoneForScreen = getLadderZoneByScreen(screen);
 
   if (ladderZoneForScreen) {
@@ -5170,11 +5405,18 @@ export default function App() {
                     <div className="node-header">
                       <div>
                         <p className="eyebrow">{node.type === 'boss' ? 'Boss Battle' : 'Puzzle Node'}</p>
-                        <h2>{node.title}</h2>
+                        <h2>{node.type === 'boss' ? getBossNameFromNodeTitle(node.title) : node.title}</h2>
                       </div>
                       <span className="zone-status">{cleared ? 'Cleared' : unlocked ? 'Unlocked' : 'Locked'}</span>
                     </div>
                     <p>{node.description}</p>
+                    {node.type === 'boss' && (
+                      <div className="boss-node-preview" aria-label={`${node.title} boss rules`}>
+                        <span>World boss</span>
+                        <strong>{getBossChallengeCopy(node)}</strong>
+                        <small>{getBossRewardPreview(node)}</small>
+                      </div>
+                    )}
                     <div className="node-details">
                       <div><span>Puzzles</span><strong>{node.puzzleCount}</strong></div>
                       <div><span>Clear</span><strong>{node.clearRequirement}/{node.puzzleCount}</strong></div>
@@ -5198,7 +5440,9 @@ export default function App() {
                       disabled={!unlocked || queue.length === 0}
                     >
                       <Play size={18} />
-                      {cleared ? 'Replay Node' : node.type === 'boss' ? 'Start Boss' : 'Start Node'}
+                      {cleared
+                        ? node.type === 'boss' ? 'Replay Boss Battle' : 'Replay Node'
+                        : node.type === 'boss' ? 'Start Boss Battle' : 'Start Node'}
                     </button>
                   </div>
                 </article>
@@ -5278,6 +5522,22 @@ export default function App() {
               <span>Boss badges</span>
             </div>
             <div>
+              <strong>{bossProgressSummary.clearedCount}/{bossProgressSummary.totalCount}</strong>
+              <span>Bosses cleared</span>
+            </div>
+            <div>
+              <strong>{bossProgressSummary.latestBadge}</strong>
+              <span>Latest boss badge</span>
+            </div>
+            <div>
+              <strong>{bossProgressSummary.nextBossName}</strong>
+              <span>
+                {bossProgressSummary.nextBossZoneName
+                  ? `Next boss to beat | ${bossProgressSummary.nextBossZoneName}`
+                  : 'Next boss to beat'}
+              </span>
+            </div>
+            <div>
               <strong>{collectionStats.unopenedChests}</strong>
               <span>Unopened chests</span>
             </div>
@@ -5294,6 +5554,8 @@ export default function App() {
             {LADDER_WORLD_ZONES.map((zone, index) => {
               const zoneUnlocked = ladderZoneIsUnlocked(zone.id, stats.completedLadderNodes || []);
               const zoneProgress = getLadderZoneProgress(zone.id, stats.completedLadderNodes || []);
+              const zoneBossNode = getLadderZoneBossNode(zone.id);
+              const zoneBossCleared = zoneBossNode ? completedLadderNodeIds.has(zoneBossNode.id) : false;
               const zoneProgressPercent = zoneProgress.totalCount > 0
                 ? (zoneProgress.completedCount / zoneProgress.totalCount) * 100
                 : 0;
@@ -5360,6 +5622,10 @@ export default function App() {
                       <div>
                         <span>Boss</span>
                         <strong>{zone.bossName}</strong>
+                      </div>
+                      <div>
+                        <span>Boss status</span>
+                        <strong>{zoneBossCleared ? 'Defeated' : zoneUnlocked ? 'Awaiting' : 'Locked'}</strong>
                       </div>
                     </div>
                     <div className="zone-motifs" aria-label={`${zone.name} puzzle motifs`}>
@@ -5704,40 +5970,49 @@ export default function App() {
               </div>
             </>
           ) : isLadderNode ? (
-            <div className="stats-grid ladder-node-grid">
-              <div className="stat">
-                <ListChecks size={18} />
-                <span>{activeLadderNode?.type === 'boss' ? 'Boss' : 'Node'}</span>
-                <small>{activeLadderZone?.name || 'Ladder World'}</small>
-              </div>
-              <div className="stat">
-                <BadgeCheck size={18} />
-                <span>{ladderNodeStats.solved}/{activeLadderNode?.clearRequirement || 0}</span>
-                <small>Needed</small>
-              </div>
-              {activeLadderNode?.lives && (
-                <div className="stat">
-                  <Trophy size={18} />
-                  <span>{ladderNodeLives}/{activeLadderNode.lives}</span>
-                  <small>Lives</small>
+            <>
+              {activeLadderNode?.type === 'boss' && (
+                <div className="boss-active-banner" aria-label="Active boss battle">
+                  <span>Boss Battle</span>
+                  <strong>{getBossNameFromNodeTitle(activeLadderNode.title)}</strong>
+                  <small>{getBossChallengeCopy(activeLadderNode)}</small>
                 </div>
               )}
-              <div className="stat">
-                <Target size={18} />
-                <span>{ladderNodePuzzleMistakes}/{RUSH_MAX_PUZZLE_ATTEMPTS}</span>
-                <small>Attempts</small>
+              <div className="stats-grid ladder-node-grid">
+                <div className="stat">
+                  <ListChecks size={18} />
+                  <span>{activeLadderNode?.type === 'boss' ? 'Boss' : 'Node'}</span>
+                  <small>{activeLadderZone?.name || 'Ladder World'}</small>
+                </div>
+                <div className="stat">
+                  <BadgeCheck size={18} />
+                  <span>{ladderNodeStats.solved}/{activeLadderNode?.clearRequirement || 0}</span>
+                  <small>Needed</small>
+                </div>
+                {activeLadderNode?.lives && (
+                  <div className="stat boss-life-stat">
+                    <Trophy size={18} />
+                    <span>{ladderNodeLives}/{activeLadderNode.lives}</span>
+                    <small>Lives</small>
+                  </div>
+                )}
+                <div className="stat">
+                  <Target size={18} />
+                  <span>{ladderNodePuzzleMistakes}/{RUSH_MAX_PUZZLE_ATTEMPTS}</span>
+                  <small>Attempts</small>
+                </div>
+                <div className="stat">
+                  <XCircle size={18} />
+                  <span>{ladderNodeStats.misses}</span>
+                  <small>Misses</small>
+                </div>
+                <div className="stat">
+                  <Sparkles size={18} />
+                  <span>{stats.ladderXp || 0}</span>
+                  <small>Ladder XP</small>
+                </div>
               </div>
-              <div className="stat">
-                <XCircle size={18} />
-                <span>{ladderNodeStats.misses}</span>
-                <small>Misses</small>
-              </div>
-              <div className="stat">
-                <Sparkles size={18} />
-                <span>{stats.ladderXp || 0}</span>
-                <small>Ladder XP</small>
-              </div>
-            </div>
+            </>
           ) : (
             <div className="stats-grid">
               <div className="stat">
@@ -5887,24 +6162,41 @@ export default function App() {
           {cinematicMoment ? (
             <CinematicMoment moment={cinematicMoment} onDismiss={dismissCinematicMoment} />
           ) : result.mode === 'ladderNode' ? (
-            <div className="result-panel">
+            <div className={`result-panel ${result.nodeType === 'boss' ? 'boss-result-panel' : ''}`}>
               <Trophy size={42} />
               <p className="eyebrow">
                 {result.cleared
                   ? result.nodeType === 'boss' ? 'Boss Defeated' : 'Node Clear'
-                  : 'Node Failed'}
+                  : result.nodeType === 'boss' ? 'Boss Failed' : 'Node Failed'}
               </p>
-              <h2>{result.nodeTitle}</h2>
+              <h2>{result.nodeType === 'boss' ? getBossNameFromNodeTitle(result.nodeTitle) : result.nodeTitle}</h2>
+              {result.nodeType === 'boss' && (
+                <div className="boss-result-banner" aria-label="Boss battle result">
+                  <span>{result.zoneName}</span>
+                  <strong>{result.cleared ? 'Boss cleared' : 'Boss failed'}</strong>
+                  <small>
+                    {result.cleared
+                      ? 'The path forward is open.'
+                      : `Solve ${result.solved}/${result.totalPuzzles}. Retry when ready.`}
+                  </small>
+                </div>
+              )}
               <div className="result-score">
                 <Sparkles size={20} />
-                <strong>{result.solved}/{result.totalPuzzles}</strong>
-                <span>solved</span>
+                <strong>{result.nodeType === 'boss' ? result.bossScore : `${result.solved}/${result.totalPuzzles}`}</strong>
+                <span>{result.nodeType === 'boss' ? 'boss score' : 'solved'}</span>
               </div>
               <div className="rush-result-highlights" aria-label="Ladder node highlights">
                 <div className={`highlight-card ${result.cleared ? 'rank' : ''}`}>
                   <span>Status</span>
-                  <strong>{result.cleared ? 'Cleared' : 'Retry'}</strong>
+                  <strong>{result.cleared ? result.nodeType === 'boss' ? 'Boss cleared' : 'Cleared' : 'Retry'}</strong>
                 </div>
+                {result.nodeType === 'boss' && (
+                  <div className="highlight-card rank">
+                    <span>Boss score</span>
+                    <strong>{result.bossScore}</strong>
+                  </div>
+                )}
                 <div className="highlight-card">
                   <span>Reward XP</span>
                   <strong>+{result.rewardXp}</strong>
@@ -5921,9 +6213,26 @@ export default function App() {
                 {result.livesRemaining !== null && (
                   <div><span>Lives remaining</span><strong>{result.livesRemaining}</strong></div>
                 )}
+                {result.nodeType === 'boss' && (
+                  <div><span>Boss score</span><strong>{result.bossScore}</strong></div>
+                )}
                 <div><span>Reward XP</span><strong>+{result.rewardXp}</strong></div>
                 <div><span>Progress</span><strong>{result.progressCompleted}/{result.progressTotal} nodes</strong></div>
               </div>
+              {result.nodeType === 'boss' && (result.newAchievements || []).length > 0 && (
+                <section className="achievement-unlock-card" aria-label="Boss achievements unlocked">
+                  <p className="eyebrow">Achievement Unlocked</p>
+                  {(result.newAchievements || []).map((achievement) => (
+                    <div className="achievement-unlock-row" key={achievement.id}>
+                      <BadgeCheck size={18} />
+                      <div>
+                        <strong>{achievement.name}</strong>
+                        <span>{achievement.description}</span>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              )}
               {result.earnedBadge && (
                 <section className="earned-chest-card" aria-label="Badge earned">
                   <p className="eyebrow">Badge Earned</p>
@@ -6074,13 +6383,13 @@ export default function App() {
                 {result.cleared && result.nextZoneId && (
                   <button type="button" className="primary-action" onClick={() => openLadderZone(result.nextZoneId)}>
                     <ChevronRight size={18} />
-                    Open {result.nextZoneName}
+                    Continue to {result.nextZoneName}
                   </button>
                 )}
                 {!result.cleared && (
                   <button type="button" className="primary-action" onClick={() => startLadderNode(result.nodeId)}>
                     <RotateCcw size={18} />
-                    Retry Node
+                    {result.nodeType === 'boss' ? 'Retry Boss' : 'Retry Node'}
                   </button>
                 )}
                 <button
@@ -6089,7 +6398,7 @@ export default function App() {
                   onClick={() => openLadderZone(result.zoneId || PAWN_VILLAGE_ZONE_ID)}
                 >
                   <ListChecks size={18} />
-                  {result.zoneName || 'Ladder World'}
+                  {result.nodeType === 'boss' ? 'Continue Campaign' : result.zoneName || 'Ladder World'}
                 </button>
                 <button type="button" className="secondary-action" onClick={goHome}>
                   <Home size={18} />

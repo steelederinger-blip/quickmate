@@ -827,7 +827,10 @@ h2 {
 }
 
 .node-card.boss .node-index {
-  background: #7b4a32;
+  color: #241303;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.32), transparent 22px),
+    linear-gradient(135deg, #f2bd4b, #b56824);
 }
 
 .node-content {
@@ -843,7 +846,11 @@ h2 {
 }
 
 .node-card.boss .node-content {
-  border-left-color: #7b4a32;
+  border-color: color-mix(in srgb, var(--accent), transparent 34%);
+  border-left-color: var(--accent);
+  background:
+    radial-gradient(circle at top right, rgba(242, 189, 75, 0.14), transparent 12rem),
+    var(--surface);
 }
 
 .node-card.cleared .node-content {
@@ -862,6 +869,45 @@ h2 {
   margin: 0;
   color: var(--muted);
   font-weight: 780;
+}
+
+.boss-node-preview,
+.boss-active-banner,
+.boss-result-banner {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 45%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(242, 189, 75, 0.13), rgba(32, 230, 210, 0.05)),
+    var(--surface-soft);
+}
+
+.boss-node-preview span,
+.boss-active-banner span,
+.boss-result-banner span {
+  color: var(--accent-strong);
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.boss-node-preview strong,
+.boss-active-banner strong,
+.boss-result-banner strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.boss-node-preview small,
+.boss-active-banner small,
+.boss-result-banner small {
+  color: var(--muted);
+  font-weight: 820;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .node-details {
@@ -1870,9 +1916,125 @@ h2 {
   color: var(--accent);
 }
 
+.boss-result-panel {
+  border-color: color-mix(in srgb, var(--accent), transparent 30%);
+  background:
+    radial-gradient(circle at top, rgba(242, 189, 75, 0.12), transparent 17rem),
+    var(--surface);
+}
+
+.boss-result-panel > svg {
+  color: var(--accent-strong);
+}
+
 .result-panel h2 {
   margin-top: 4px;
   font-size: 1.8rem;
+}
+
+.boss-intro-screen {
+  min-height: calc(100vh - 28px);
+  place-content: center;
+}
+
+.boss-intro-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: min(620px, 100%);
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 30%);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top, rgba(242, 189, 75, 0.18), transparent 18rem),
+    linear-gradient(160deg, rgba(21, 28, 41, 0.96), rgba(8, 11, 16, 0.98));
+  box-shadow: var(--shadow), 0 0 44px rgba(242, 189, 75, 0.12);
+  text-align: center;
+  overflow: hidden;
+}
+
+.boss-intro-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 231, 160, 0.11), transparent),
+    radial-gradient(circle at bottom right, rgba(32, 230, 210, 0.1), transparent 15rem);
+  pointer-events: none;
+}
+
+.boss-intro-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.boss-intro-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--muted);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.boss-intro-emblem {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 20%);
+  border-radius: 50%;
+  color: var(--accent-strong);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.22), transparent 28px),
+    rgba(242, 189, 75, 0.13);
+  box-shadow: 0 0 32px rgba(242, 189, 75, 0.2);
+}
+
+.boss-intro-card h1 {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 3.35rem);
+  overflow-wrap: anywhere;
+}
+
+.boss-challenge-copy {
+  margin: 0;
+  color: var(--accent-strong);
+  font-weight: 920;
+  line-height: 1.4;
+}
+
+.boss-intro-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  width: 100%;
+}
+
+.boss-intro-stats div {
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.boss-intro-stats span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.boss-intro-stats strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 .cinematic-moment {
@@ -2069,6 +2231,14 @@ h2 {
   color: #bcfff6;
   background: color-mix(in srgb, var(--speed-teal), transparent 82%);
   border: 1px solid color-mix(in srgb, var(--speed-teal), transparent 48%);
+}
+
+.boss-life-stat,
+.boss-result-panel .highlight-card.rank {
+  border-color: color-mix(in srgb, var(--accent), transparent 32%);
+  background:
+    linear-gradient(135deg, rgba(242, 189, 75, 0.16), rgba(255, 255, 255, 0.035)),
+    var(--surface-soft);
 }
 
 .result-score {
@@ -3494,6 +3664,12 @@ button {
     padding: 12px;
   }
 
+  .boss-node-preview,
+  .boss-active-banner,
+  .boss-result-banner {
+    padding: 9px 10px;
+  }
+
   .zone-details,
   .node-details {
     gap: 7px;
@@ -3564,6 +3740,33 @@ button {
     width: 100%;
     max-height: calc(100vh - 20px);
     padding: 16px;
+  }
+
+  .boss-intro-screen {
+    min-height: calc(100vh - 20px);
+  }
+
+  .boss-intro-card {
+    gap: 10px;
+    padding: 16px 12px;
+  }
+
+  .boss-intro-emblem {
+    width: 58px;
+    height: 58px;
+  }
+
+  .boss-intro-card h1 {
+    font-size: 1.9rem;
+  }
+
+  .boss-intro-stats {
+    gap: 7px;
+  }
+
+  .boss-intro-stats div {
+    min-height: 62px;
+    padding: 9px;
   }
 
   .cinematic-moment {
