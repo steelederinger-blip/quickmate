@@ -1208,6 +1208,15 @@ const PIECE_GLYPHS = {
   bP: '♟',
 };
 
+const FILLED_WHITE_PIECE_GLYPHS = {
+  wK: '\u265A',
+  wQ: '\u265B',
+  wR: '\u265C',
+  wB: '\u265D',
+  wN: '\u265E',
+  wP: '\u265F',
+};
+
 const RUSH_MILESTONE_CHESTS = [
   {
     id: 'rush-runs-5',
@@ -2739,17 +2748,22 @@ function premiumThemeIsUnlocked(stats) {
 function createPieceThemeRenderers(theme) {
   const themeClassName = getThemeClassName(theme.id);
 
-  return Object.fromEntries(Object.entries(PIECE_GLYPHS).map(([pieceType, glyph]) => [
-    pieceType,
-    ({ square }) => (
-      <span
-        className={`qm-piece qm-piece-${themeClassName} ${pieceType.startsWith('w') ? 'white' : 'black'}`}
-        aria-hidden="true"
-      >
-        {glyph}
-      </span>
-    ),
-  ]));
+  return Object.fromEntries(Object.entries(PIECE_GLYPHS).map(([pieceType, glyph]) => {
+    const isWhitePiece = pieceType.startsWith('w');
+    const displayGlyph = isWhitePiece ? FILLED_WHITE_PIECE_GLYPHS[pieceType] : glyph;
+
+    return [
+      pieceType,
+      ({ square }) => (
+        <span
+          className={`qm-piece qm-piece-${themeClassName} ${isWhitePiece ? 'white' : 'black'}`}
+          aria-hidden="true"
+        >
+          {displayGlyph}
+        </span>
+      ),
+    ];
+  }));
 }
 
 function getCollectionSetProgress(setId, ownedCollectionItems) {
@@ -5859,9 +5873,9 @@ export default function App() {
                     key={theme.id}
                   >
                     <div className={`theme-preview piece-theme-preview piece-theme-${getThemeClassName(theme.id)}`} aria-hidden="true">
-                      <span>♘</span>
-                      <span>♛</span>
-                      <span>♔</span>
+                      <span>{'\u265E'}</span>
+                      <span>{'\u265B'}</span>
+                      <span>{'\u265A'}</span>
                     </div>
                     <div className="theme-card-copy">
                       <span className={`rarity-pill compact ${getRarityClassName(theme.rarity)}`}>{theme.rarity}</span>
