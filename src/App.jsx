@@ -21,6 +21,7 @@ import {
   Trophy,
   Zap,
   XCircle,
+  Shuffle,
 } from 'lucide-react';
 import {
   BOARD_THEMES,
@@ -45,17 +46,39 @@ const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
 const RUSH_FIRST_MISS_FEEDBACK = 'Not forcing. One more try.';
 const MATE_CHALLENGE_MODE = 'mateChallenge';
-const MATE_CHALLENGE_PUZZLE_IDS = [
-  'v2-001',
-  'v2-002',
-  'v2-003',
-  'v2-004',
-  'v2-005',
-  'v2-006',
-  'v2-007',
-  'v2-008',
-  'v2-009',
-  'v2-010',
+const MATE_CHALLENGE_FILTER_KEYS = {
+  all: 'all',
+  warmup: 'warmup',
+  standard: 'standard',
+  advanced: 'advanced',
+  expert: 'expert',
+};
+const MATE_CHALLENGE_FILTERS = [
+  {
+    key: MATE_CHALLENGE_FILTER_KEYS.all,
+    label: 'All',
+    description: 'All safe production-track practice puzzles.',
+  },
+  {
+    key: MATE_CHALLENGE_FILTER_KEYS.warmup,
+    label: 'Warmup',
+    description: 'Mate-in-1 puzzles.',
+  },
+  {
+    key: MATE_CHALLENGE_FILTER_KEYS.standard,
+    label: 'Standard',
+    description: 'Mate-in-2 puzzles.',
+  },
+  {
+    key: MATE_CHALLENGE_FILTER_KEYS.advanced,
+    label: 'Advanced',
+    description: 'Mate-in-3 puzzles.',
+  },
+  {
+    key: MATE_CHALLENGE_FILTER_KEYS.expert,
+    label: 'Expert',
+    description: 'Mate-in-4+ puzzles.',
+  },
 ];
 const PUZZLE_BEHAVIOR = {
   trainingMode: 'trainingMode',
@@ -1627,13 +1650,75 @@ function isProductionTrackPuzzle(puzzle) {
   return puzzle.contentStatus === 'candidate' || puzzle.contentStatus === 'approved';
 }
 
-function getMateChallengePuzzleIndexes() {
-  return MATE_CHALLENGE_PUZZLE_IDS
-    .map((puzzleId) => puzzles.findIndex((puzzle) => puzzle.id === puzzleId))
-    .filter((index) => index >= 0)
-    .filter((index) => isProductionTrackPuzzle(puzzles[index]))
-    .filter((index) => puzzles[index].contentStatus !== 'rejected')
-    .filter((index) => getMateIn(puzzles[index]) <= 3);
+function getMateChallengeFilterKey(puzzle) {
+  const mateIn = getMateIn(puzzle);
+
+  if (mateIn === 1) {
+    return MATE_CHALLENGE_FILTER_KEYS.warmup;
+  }
+
+  if (mateIn === 2) {
+    return MATE_CHALLENGE_FILTER_KEYS.standard;
+  }
+
+  if (mateIn === 3) {
+    return MATE_CHALLENGE_FILTER_KEYS.advanced;
+  }
+
+  return MATE_CHALLENGE_FILTER_KEYS.expert;
+}
+
+function getMateChallengeFilterConfig(filterKey) {
+  return MATE_CHALLENGE_FILTERS.find((filter) => filter.key === filterKey)
+    || MATE_CHALLENGE_FILTERS[0];
+}
+
+function puzzleHasSafeMateChallengeLine(puzzle) {
+  const mateIn = getMateIn(puzzle);
+  const expectedSolutionLength = mateIn * 2 - 1;
+
+  if (!isProductionTrackPuzzle(puzzle) || !puzzle.fen || mateIn < 1) {
+    return false;
+  }
+
+  if (!Array.isArray(puzzle.solution) || puzzle.solution.length < expectedSolutionLength) {
+    return false;
+  }
+
+  try {
+    const lineGame = new Chess(puzzle.fen);
+    puzzle.solution.forEach((moveSan) => {
+      playExpectedMove(lineGame, moveSan);
+    });
+    return lineGame.isCheckmate();
+  } catch {
+    return false;
+  }
+}
+
+function getMateChallengePuzzleIndexes(filterKey = MATE_CHALLENGE_FILTER_KEYS.all) {
+  return puzzles
+    .map((puzzle, index) => ({ puzzle, index }))
+    .filter(({ puzzle }) => puzzleHasSafeMateChallengeLine(puzzle))
+    .filter(({ puzzle }) => {
+      return filterKey === MATE_CHALLENGE_FILTER_KEYS.all
+        || getMateChallengeFilterKey(puzzle) === filterKey;
+    })
+    .map(({ index }) => index);
+}
+
+function getMateChallengeFilterCounts(puzzleIndexes) {
+  return MATE_CHALLENGE_FILTERS.reduce((counts, filter) => {
+    if (filter.key === MATE_CHALLENGE_FILTER_KEYS.all) {
+      counts[filter.key] = puzzleIndexes.length;
+      return counts;
+    }
+
+    counts[filter.key] = puzzleIndexes.filter((index) => {
+      return getMateChallengeFilterKey(puzzles[index]) === filter.key;
+    }).length;
+    return counts;
+  }, {});
 }
 
 function getPuzzleIndexesForMode(targetMode, { productionTrackOnly = false, devOnly = false } = {}) {
@@ -3163,6 +3248,7 @@ export default function App() {
   const [ladderNodePuzzleMistakes, setLadderNodePuzzleMistakes] = useState(0);
   const [ladderNodeReveal, setLadderNodeReveal] = useState(null);
   const [mateChallengeCursor, setMateChallengeCursor] = useState(0);
+  const [mateChallengeFilter, setMateChallengeFilter] = useState(MATE_CHALLENGE_FILTER_KEYS.all);
   const [mateChallengeMovesUsed, setMateChallengeMovesUsed] = useState(0);
   const [dailyRushRunDate, setDailyRushRunDate] = useState(todayKey);
   const [dailyRushPracticeRun, setDailyRushPracticeRun] = useState(false);
@@ -3188,9 +3274,26 @@ export default function App() {
   const isMateChallenge = mode === MATE_CHALLENGE_MODE;
   const isChallengeRun = isRush || isLadderNode || isMateChallenge;
   const puzzleBehavior = getPuzzleBehavior(mode);
-  const mateChallengePuzzleIndexes = useMemo(() => getMateChallengePuzzleIndexes(), []);
+  const mateChallengeAllPuzzleIndexes = useMemo(() => getMateChallengePuzzleIndexes(), []);
+  const mateChallengeFilterCounts = useMemo(() => {
+    return getMateChallengeFilterCounts(mateChallengeAllPuzzleIndexes);
+  }, [mateChallengeAllPuzzleIndexes]);
+  const mateChallengePuzzleIndexes = useMemo(() => {
+    const selectedIndexes = mateChallengeAllPuzzleIndexes.filter((index) => {
+      return mateChallengeFilter === MATE_CHALLENGE_FILTER_KEYS.all
+        || getMateChallengeFilterKey(puzzles[index]) === mateChallengeFilter;
+    });
+
+    return selectedIndexes.length > 0 ? selectedIndexes : mateChallengeAllPuzzleIndexes;
+  }, [mateChallengeAllPuzzleIndexes, mateChallengeFilter]);
   const hasMateChallengePuzzles = mateChallengePuzzleIndexes.length > 0;
   const mateChallengeTotal = mateChallengePuzzleIndexes.length;
+  const mateChallengeFilterConfig = getMateChallengeFilterConfig(mateChallengeFilter);
+  const mateChallengeAttempts = stats.mateChallengeAttempts || 0;
+  const mateChallengeClears = stats.mateChallengeClears || 0;
+  const mateChallengeClearRate = mateChallengeAttempts > 0
+    ? Math.round((mateChallengeClears / mateChallengeAttempts) * 100)
+    : 0;
   const mateChallengeMoveLimit = mateIn;
   const mateChallengeMovesLeft = Math.max(0, mateChallengeMoveLimit - mateChallengeMovesUsed);
   const mateChallengeProgress = mateChallengeMoveLimit > 0
@@ -3391,6 +3494,27 @@ export default function App() {
 
   function startDaily() {
     startPuzzle(dailyPuzzleIndex, 'daily');
+  }
+
+  function selectMateChallengeFilter(filterKey) {
+    if ((mateChallengeFilterCounts[filterKey] || 0) === 0) {
+      return;
+    }
+
+    setMateChallengeFilter(filterKey);
+    setMateChallengeCursor(0);
+  }
+
+  function startRandomMateChallenge() {
+    if (mateChallengePuzzleIndexes.length === 0) {
+      setFeedback('No production-track Mate Challenge puzzles are available.');
+      return;
+    }
+
+    const randomCursor = mateChallengePuzzleIndexes.length > 1
+      ? Math.floor(Math.random() * mateChallengePuzzleIndexes.length)
+      : 0;
+    startMateChallenge(randomCursor);
   }
 
   function startMateChallenge(cursor = 0) {
@@ -4783,6 +4907,8 @@ export default function App() {
       reason,
       challengeIndex: mateChallengeCursor + 1,
       totalChallenges: mateChallengeTotal,
+      filterKey: mateChallengeFilter,
+      filterLabel: mateChallengeFilterConfig.label,
       nextChallengeCursor: nextCursor,
       currentStreak: nextCurrentStreak,
       bestStreak: nextStats.bestMateChallengeStreak,
@@ -5303,12 +5429,73 @@ export default function App() {
                   <small>Prototype: checkmate before your move limit expires.</small>
                   <small>
                     {hasMateChallengePuzzles
-                      ? `${mateChallengeTotal} production puzzles | best streak ${stats.bestMateChallengeStreak || 0}`
+                      ? `${mateChallengeTotal} ${mateChallengeFilterConfig.label.toLowerCase()} puzzles | best streak ${stats.bestMateChallengeStreak || 0}`
                       : 'No production-track prototype puzzles available'}
                   </small>
                 </span>
                 <Play size={20} />
               </button>
+            </div>
+            <div className="mate-challenge-home-panel" aria-label="Mate Challenge practice filters">
+              <div className="mate-challenge-home-copy">
+                <div>
+                  <p className="eyebrow">Mate Challenge Practice</p>
+                  <strong>{mateChallengeTotal} selected puzzles</strong>
+                  <span>
+                    {mateChallengeAllPuzzleIndexes.length} safe production-track puzzles available.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="secondary-action compact-action"
+                  onClick={startRandomMateChallenge}
+                  disabled={!hasMateChallengePuzzles}
+                >
+                  <Shuffle size={16} />
+                  Random Challenge
+                </button>
+              </div>
+              <div className="filter-button-row" aria-label="Mate Challenge difficulty">
+                {MATE_CHALLENGE_FILTERS.map((filter) => {
+                  const count = mateChallengeFilterCounts[filter.key] || 0;
+                  const active = mateChallengeFilter === filter.key;
+                  return (
+                    <button
+                      type="button"
+                      className={`filter-pill ${active ? 'active' : ''}`}
+                      key={filter.key}
+                      onClick={() => selectMateChallengeFilter(filter.key)}
+                      disabled={count === 0}
+                      title={filter.description}
+                    >
+                      <span>{filter.label}</span>
+                      <strong>{count}</strong>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mate-challenge-stats-strip" aria-label="Mate Challenge stats">
+                <div>
+                  <strong>{mateChallengeAttempts}</strong>
+                  <span>Attempts</span>
+                </div>
+                <div>
+                  <strong>{mateChallengeClears}</strong>
+                  <span>Clears</span>
+                </div>
+                <div>
+                  <strong>{mateChallengeClearRate}%</strong>
+                  <span>Clear rate</span>
+                </div>
+                <div>
+                  <strong>{stats.mateChallengeCurrentStreak || 0}</strong>
+                  <span>Streak</span>
+                </div>
+                <div>
+                  <strong>{stats.bestMateChallengeStreak || 0}</strong>
+                  <span>Best</span>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -6388,7 +6575,7 @@ export default function App() {
               {isDailyRush ? `${Math.min(rushQueueCursor + 1, DAILY_RUSH_PUZZLE_COUNT)}/${DAILY_RUSH_PUZZLE_COUNT}` : ''}
               {mode === 'rush' ? `${rushQueueCursor + 1}/${rushQueue.length}` : ''}
               {isLadderNode ? `${Math.min(ladderNodeCursor + 1, activeLadderNodeTotal)}/${activeLadderNodeTotal}` : ''}
-              {isMateChallenge ? `${mateChallengeCursor + 1}/${mateChallengeTotal}` : ''}
+              {isMateChallenge ? `${mateChallengeFilterConfig.label} ${mateChallengeCursor + 1}/${mateChallengeTotal}` : ''}
               {!isChallengeRun && mode !== 'daily' ? puzzles.length : ''}
             </span>
           </div>
@@ -6557,7 +6744,7 @@ export default function App() {
                 <div>
                   <p className="eyebrow">Prototype Mode</p>
                   <strong>Mate in {mateChallengeMoveLimit}</strong>
-                  <span>Any legal checkmate clears the challenge.</span>
+                  <span>{mateChallengeFilterConfig.label} set. Any legal checkmate clears.</span>
                 </div>
                 <div>
                   <p className="eyebrow">Attacking moves left</p>
@@ -6569,7 +6756,7 @@ export default function App() {
                 <div className="stat">
                   <Target size={18} />
                   <span>{mateChallengeCursor + 1}/{mateChallengeTotal}</span>
-                  <small>Challenge</small>
+                  <small>{mateChallengeFilterConfig.label}</small>
                 </div>
                 <div className="stat">
                   <BadgeCheck size={18} />
@@ -6678,6 +6865,12 @@ export default function App() {
                   <Lightbulb size={18} />
                   {isLadderNode && activeLadderNode?.noHints ? 'No Hints' : 'Hint'}
                 </button>
+                {isMateChallenge && (
+                  <button type="button" className="secondary-action" onClick={startRandomMateChallenge}>
+                    <Shuffle size={18} />
+                    Random
+                  </button>
+                )}
                 {isRush ? (
                   <button type="button" className="secondary-action" onClick={skipRushPuzzle}>
                     <SkipForward size={18} />
@@ -6725,7 +6918,7 @@ export default function App() {
                 : isLadderNode
                   ? `${activeLadderZone?.name || 'Ladder World'} ${activeLadderZoneProgress?.completedCount || 0}/${activeLadderZoneProgress?.totalCount || 0} | ${stats.ladderXp || 0} XP`
                 : isMateChallenge
-                  ? `Prototype ${mateChallengeCursor + 1}/${mateChallengeTotal} | best streak ${stats.bestMateChallengeStreak || 0}`
+                  ? `Practice ${mateChallengeFilterConfig.label} ${mateChallengeCursor + 1}/${mateChallengeTotal} | best streak ${stats.bestMateChallengeStreak || 0}`
                 : isRush
                   ? `${activeRushModeConfig.label} best ${activeRushModeBestScore}`
                   : `Best score ${stats.bestScore}`}
@@ -6765,6 +6958,7 @@ export default function App() {
               </div>
               <div className="score-breakdown" aria-label="Mate Challenge result">
                 <div><span>Challenge</span><strong>{result.challengeIndex}/{result.totalChallenges}</strong></div>
+                <div><span>Practice set</span><strong>{result.filterLabel || 'All'}</strong></div>
                 <div><span>Puzzle ID</span><strong>{result.puzzleId}</strong></div>
                 <div><span>Mate target</span><strong>Mate in {result.mateTarget}</strong></div>
                 <div><span>Attacking moves used</span><strong>{result.movesUsed}</strong></div>
@@ -6802,6 +6996,14 @@ export default function App() {
                 >
                   <ChevronRight size={18} />
                   Next Challenge
+                </button>
+                <button
+                  type="button"
+                  className="secondary-action"
+                  onClick={startRandomMateChallenge}
+                >
+                  <Shuffle size={18} />
+                  Random
                 </button>
                 <button type="button" className="secondary-action" onClick={goHome}>
                   <Home size={18} />

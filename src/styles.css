@@ -1583,6 +1583,133 @@ h2 {
     var(--surface);
 }
 
+.mate-challenge-home-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--speed-teal), transparent 62%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(32, 230, 210, 0.08), rgba(242, 189, 75, 0.07)),
+    var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.mate-challenge-home-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mate-challenge-home-copy strong,
+.mate-challenge-home-copy span {
+  display: block;
+}
+
+.mate-challenge-home-copy strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.mate-challenge-home-copy span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.compact-action {
+  min-height: 42px;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+.filter-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  min-width: 96px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.filter-pill strong {
+  min-width: 26px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.filter-pill.active {
+  border-color: color-mix(in srgb, var(--speed-teal), transparent 34%);
+  color: var(--text);
+  background: rgba(32, 230, 210, 0.14);
+}
+
+.filter-pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.filter-pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.mate-challenge-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mate-challenge-stats-strip div {
+  min-width: 0;
+  padding: 9px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.mate-challenge-stats-strip strong,
+.mate-challenge-stats-strip span {
+  display: block;
+}
+
+.mate-challenge-stats-strip strong {
+  color: var(--accent-strong);
+  font-size: 1rem;
+}
+
+.mate-challenge-stats-strip span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .mode-card.disabled-card {
   cursor: not-allowed;
   opacity: 0.62;
@@ -3862,6 +3989,35 @@ button {
   .rush-mode-card small {
     font-size: 0.78rem;
     line-height: 1.3;
+  }
+
+  .mate-challenge-home-panel {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .mate-challenge-home-copy {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compact-action {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .filter-button-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-pill {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .mate-challenge-stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .rush-home-metrics,
