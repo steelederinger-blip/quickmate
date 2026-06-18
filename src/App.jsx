@@ -42,10 +42,39 @@ const DAILY_RUSH_LIVES = 2;
 const DAILY_RUSH_EPOCH = '2026-01-01';
 const BRAND_TAGLINE = 'Fast chess puzzles. Daily Rush. Build your collection.';
 const BRAND_LOGO_SRC = '/brand/quickmate-logo.png';
+const SUPPORT_EMAIL = '[SUPPORT_EMAIL]';
+const LEGAL_LINKS = [
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/support', label: 'Support' },
+  { href: '/terms', label: 'Terms' },
+];
 const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
 const RUSH_FIRST_MISS_FEEDBACK = 'Not forcing. One more try.';
 const MATE_CHALLENGE_MODE = 'mateChallenge';
+
+function getStaticInfoPageKey() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+
+  if (pathname === '/privacy') {
+    return 'privacy';
+  }
+
+  if (pathname === '/support') {
+    return 'support';
+  }
+
+  if (pathname === '/terms') {
+    return 'terms';
+  }
+
+  return '';
+}
+
 const MATE_CHALLENGE_FILTER_KEYS = {
   all: 'all',
   warmup: 'warmup',
@@ -3351,6 +3380,7 @@ const hasDailyRushPuzzles = dailyRushProductionPuzzleCount > 0;
 
 export default function App() {
   const todayKey = getTodayKey();
+  const staticInfoPageKey = getStaticInfoPageKey();
   const dailyPuzzleIndex = getDailyPuzzleIndex(todayKey);
   const [screen, setScreen] = useState('home');
   const [mode, setMode] = useState('ladder');
@@ -5383,6 +5413,236 @@ export default function App() {
     });
   }
 
+  function renderLegalLinks(className = 'legal-link-row') {
+    return (
+      <nav className={className} aria-label="QuickMate public links">
+        {LEGAL_LINKS.map((link) => (
+          <a href={link.href} key={link.href}>
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    );
+  }
+
+  function renderInfoPageShell({ eyebrow, title, summary, children }) {
+    return (
+      <main className="app-shell home-shell info-shell">
+        <section className="info-page" aria-labelledby="info-page-title">
+          <header className="info-page-header">
+            <div>
+              <p className="eyebrow">{eyebrow}</p>
+              <h1 id="info-page-title">{title}</h1>
+              <p>{summary}</p>
+            </div>
+            <a className="secondary-action info-back-link" href="/">
+              <Home size={18} />
+              Back to QuickMate
+            </a>
+          </header>
+
+          {children}
+
+          <footer className="info-page-footer">
+            {renderLegalLinks('legal-link-row info-page-links')}
+            <a className="secondary-action info-back-link" href="/">
+              <Home size={18} />
+              Back to QuickMate
+            </a>
+          </footer>
+        </section>
+      </main>
+    );
+  }
+
+  function renderPrivacyPage() {
+    return renderInfoPageShell({
+      eyebrow: 'QuickMate',
+      title: 'Privacy Policy',
+      summary: 'This page describes the current QuickMate app behavior in plain language.',
+      children: (
+        <>
+          <section className="info-page-card">
+            <h2>Current Data Practices</h2>
+            <p>
+              QuickMate does not require an account. QuickMate does not currently collect names,
+              email addresses, phone numbers, location, contacts, photos, camera access,
+              microphone access, or payment information.
+            </p>
+            <p>
+              QuickMate does not currently use ads, analytics, tracking SDKs, payments,
+              subscriptions, login systems, or external gameplay APIs.
+            </p>
+            <p>
+              Chests and rewards are earned in-game rewards. They are cosmetic or progression
+              rewards only, with no real-money gambling, cash value, wagering, trading, or
+              real-money purchase mechanic currently.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Local Progress</h2>
+            <p>
+              Gameplay progress is stored locally on the user's device or browser using
+              localStorage under <code>quickmate.stats.v1</code>.
+            </p>
+            <p>
+              Locally stored data may include scores, streaks, puzzle progress, achievements,
+              collection items, selected piece themes, selected board themes, chests, and
+              gameplay stats.
+            </p>
+            <p>
+              If the user clears browser, app, or device data, uninstalls the app, or changes
+              devices, local progress may be lost.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Website Hosting Logs</h2>
+            <p>
+              If QuickMate is accessed as a website, normal hosting or server logs may be created
+              depending on hosting provider behavior. These logs may include information such as
+              IP address, user agent, requested page, and request time.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Clipboard Actions</h2>
+            <p>
+              Clipboard copy or share-style actions only happen when the user chooses to copy or
+              share a result. QuickMate does not copy gameplay results without the user's action.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Contact</h2>
+            <p>
+              Support contact:
+              {' '}
+              <span className="support-contact">{SUPPORT_EMAIL}</span>.
+            </p>
+            <p className="info-page-note">
+              This policy should be reviewed again before app-store submission and whenever ads,
+              analytics, accounts, payments, cloud saves, or external services are added.
+            </p>
+          </section>
+        </>
+      ),
+    });
+  }
+
+  function renderSupportPage() {
+    return renderInfoPageShell({
+      eyebrow: 'Support',
+      title: 'QuickMate Support',
+      summary: 'Need help with QuickMate? Use the contact email below for support.',
+      children: (
+        <>
+          <section className="info-page-card">
+            <h2>Contact</h2>
+            <p>
+              Support email:
+              {' '}
+              <span className="support-contact">{SUPPORT_EMAIL}</span>.
+            </p>
+            <p>
+              When reporting an issue, include the device, browser or app version, what mode you
+              were playing, and what happened.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Current App Behavior</h2>
+            <p>
+              QuickMate does not currently require accounts and does not currently use ads,
+              payments, subscriptions, analytics, tracking SDKs, or backend gameplay APIs.
+            </p>
+            <p>
+              QuickMate progress is currently local to the device or browser. Local progress may
+              include scores, streaks, puzzle progress, achievements, collection items, selected
+              themes, chests, and gameplay stats. If browser, app, or device data is cleared,
+              local progress may be lost.
+            </p>
+            <p>
+              Chests and rewards are earned in-game rewards. They are cosmetic or progression
+              rewards only, with no real-money gambling, cash value, wagering, trading, or
+              real-money purchase mechanic currently.
+            </p>
+            <p>
+              See the <a href="/privacy">Privacy Policy</a> for the current data behavior.
+            </p>
+          </section>
+        </>
+      ),
+    });
+  }
+
+  function renderTermsPage() {
+    return renderInfoPageShell({
+      eyebrow: 'Terms',
+      title: 'QuickMate Terms and Disclaimer',
+      summary: 'A simple summary for the current QuickMate app before app-store packaging work begins.',
+      children: (
+        <>
+          <section className="info-page-card">
+            <h2>Game</h2>
+            <p>
+              QuickMate is a chess tactics game focused on checkmate puzzles, timed practice,
+              campaign progression, boss battles, achievements, and collection rewards.
+            </p>
+            <p>
+              QuickMate does not currently require accounts and does not currently use ads,
+              payments, subscriptions, analytics, tracking SDKs, or backend gameplay APIs.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Rewards and Chests</h2>
+            <p>
+              Chests and rewards in QuickMate are earned in-game rewards. They are cosmetic or
+              progression rewards only.
+            </p>
+            <p>
+              QuickMate does not currently include real-money gambling, wagering, trading,
+              real-money purchases, subscriptions, or paid loot boxes. Chests and rewards have no
+              cash value and cannot be sold, traded, wagered, or exchanged for money.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Local Progress</h2>
+            <p>
+              QuickMate progress is currently stored locally on the device or browser. Local
+              progress may include scores, streaks, puzzle progress, achievements, collection
+              items, selected themes, chests, and gameplay stats. Local progress may be lost if
+              device, app, or browser data is cleared, or if the user changes devices.
+            </p>
+          </section>
+
+          <section className="info-page-card">
+            <h2>Disclaimer</h2>
+            <p>
+              QuickMate is provided as-is. The current app does not include a real-money purchase
+              mechanic, payment flow, or account-based cloud save.
+            </p>
+          </section>
+        </>
+      ),
+    });
+  }
+
+  if (staticInfoPageKey === 'privacy') {
+    return renderPrivacyPage();
+  }
+
+  if (staticInfoPageKey === 'support') {
+    return renderSupportPage();
+  }
+
+  if (staticInfoPageKey === 'terms') {
+    return renderTermsPage();
+  }
+
   if (screen === 'home') {
     return (
       <main className="app-shell home-shell">
@@ -5669,6 +5929,7 @@ export default function App() {
               <strong>QuickMate MVP</strong>
               <span>Puzzle Pack | {puzzles.length} puzzles</span>
             </div>
+            {renderLegalLinks()}
           </section>
         </section>
         {showHelp && (
