@@ -2739,8 +2739,8 @@ function premiumThemeIsUnlocked(stats) {
 function PieceBase() {
   return (
     <>
-      <path className="qm-piece-main qm-piece-foot" d="M25 75 H75 L82 88 C69 92 31 92 18 88 Z" />
-      <path className="qm-piece-detail" d="M30 78 H70" />
+      <path className="qm-piece-main qm-piece-foot" d="M31 73 H69 C72 78 75 82 80 86 C66 90 34 90 20 86 C25 82 28 78 31 73 Z" />
+      <path className="qm-piece-detail" d="M31 78 H69 M25 86 H75" />
     </>
   );
 }
@@ -2748,12 +2748,12 @@ function PieceBase() {
 function KingSvg() {
   return (
     <>
-      <path className="qm-piece-main" d="M46 12 H54 V23 H65 V31 H54 V42 H46 V31 H35 V23 H46 Z" />
+      <path className="qm-piece-main" d="M47 11 H53 V22 H63 V28 H53 V40 H47 V28 H37 V22 H47 Z" />
       <path
         className="qm-piece-main"
-        d="M36 45 C36 38 42 33 50 33 C58 33 64 38 64 45 C64 51 60 55 55 58 C63 62 68 69 70 78 H30 C32 69 37 62 45 58 C40 55 36 51 36 45 Z"
+        d="M39 45 C39 38 43 34 50 34 C57 34 61 38 61 45 C61 50 58 54 54 56 C62 61 66 67 67 75 H33 C34 67 38 61 46 56 C42 54 39 50 39 45 Z"
       />
-      <path className="qm-piece-detail" d="M39 73 C43 68 57 68 61 73" />
+      <path className="qm-piece-detail" d="M43 46 C46 44 54 44 57 46 M39 70 C44 66 56 66 61 70" />
       <PieceBase />
     </>
   );
@@ -2762,11 +2762,11 @@ function KingSvg() {
 function QueenSvg() {
   return (
     <>
-      <circle className="qm-piece-accent" cx="26" cy="30" r="5" />
-      <circle className="qm-piece-accent" cx="50" cy="25" r="5" />
-      <circle className="qm-piece-accent" cx="74" cy="30" r="5" />
-      <path className="qm-piece-main" d="M25 35 L36 64 L50 34 L64 64 L75 35 L68 78 H32 Z" />
-      <path className="qm-piece-detail" d="M35 63 H65 M37 72 H63" />
+      <circle className="qm-piece-accent" cx="27" cy="28" r="3.8" />
+      <circle className="qm-piece-accent" cx="50" cy="22" r="4.2" />
+      <circle className="qm-piece-accent" cx="73" cy="28" r="3.8" />
+      <path className="qm-piece-main" d="M29 34 L38 64 L50 31 L62 64 L71 34 L65 75 H35 Z" />
+      <path className="qm-piece-detail" d="M36 61 H64 M38 69 H62 M43 52 L50 34 L57 52" />
       <PieceBase />
     </>
   );
@@ -2777,9 +2777,9 @@ function RookSvg() {
     <>
       <path
         className="qm-piece-main"
-        d="M30 24 H39 V33 H46 V24 H54 V33 H61 V24 H70 V43 H65 V76 H35 V43 H30 Z"
+        d="M30 23 H39 V32 H46 V23 H54 V32 H61 V23 H70 V41 H65 L63 75 H37 L35 41 H30 Z"
       />
-      <path className="qm-piece-detail" d="M36 43 H64 M38 58 H62 M39 70 H61" />
+      <path className="qm-piece-detail" d="M35 41 H65 M39 56 H61 M40 69 H60" />
       <PieceBase />
     </>
   );
@@ -2790,10 +2790,10 @@ function BishopSvg() {
     <>
       <path
         className="qm-piece-main"
-        d="M50 17 C62 29 66 42 58 55 C66 61 70 69 70 78 H30 C30 69 34 61 42 55 C34 42 38 29 50 17 Z"
+        d="M50 15 C60 26 63 39 57 52 C64 58 68 66 68 75 H32 C32 66 36 58 43 52 C37 39 40 26 50 15 Z"
       />
-      <path className="qm-piece-detail" d="M56 29 L43 52 M38 70 C44 66 56 66 62 70" />
-      <circle className="qm-piece-accent" cx="50" cy="24" r="3" />
+      <path className="qm-piece-detail" d="M56 29 L44 52 M39 69 C44 65 56 65 61 69" />
+      <circle className="qm-piece-accent" cx="50" cy="24" r="2.7" />
       <PieceBase />
     </>
   );
@@ -2804,10 +2804,10 @@ function KnightSvg() {
     <>
       <path
         className="qm-piece-main"
-        d="M31 78 H72 C70 68 63 60 54 55 C64 50 70 39 64 29 C58 19 44 17 34 27 L29 39 L39 36 L42 29 C49 32 51 39 47 45 C40 50 35 57 33 67 Z"
+        d="M32 75 H70 C68 66 61 59 52 55 C62 50 68 40 62 30 C56 20 43 19 34 28 L29 40 L39 36 L42 30 C48 32 51 38 48 44 C40 50 35 58 33 68 Z"
       />
-      <path className="qm-piece-detail" d="M41 36 C47 38 52 40 57 39 M46 55 C53 59 59 66 61 73" />
-      <circle className="qm-piece-accent" cx="51" cy="31" r="2.4" />
+      <path className="qm-piece-detail" d="M40 37 C46 38 52 40 57 38 M45 56 C52 59 58 65 61 72 M35 48 C39 49 44 49 48 46" />
+      <circle className="qm-piece-accent" cx="51" cy="31" r="2.1" />
       <PieceBase />
     </>
   );
@@ -2816,9 +2816,9 @@ function KnightSvg() {
 function PawnSvg() {
   return (
     <>
-      <circle className="qm-piece-main" cx="50" cy="28" r="13" />
-      <path className="qm-piece-main" d="M39 45 C41 40 59 40 61 45 L67 78 H33 Z" />
-      <path className="qm-piece-detail" d="M40 58 H60" />
+      <circle className="qm-piece-main" cx="50" cy="27" r="10.5" />
+      <path className="qm-piece-main" d="M41 43 C43 39 57 39 59 43 L65 75 H35 Z" />
+      <path className="qm-piece-detail" d="M40 57 H60 M38 68 H62" />
       <PieceBase />
     </>
   );

@@ -2086,20 +2086,20 @@ h2 {
   place-items: center;
   width: 100%;
   height: 100%;
-  padding: 5%;
+  padding: 3%;
   user-select: none;
   pointer-events: none;
-  --piece-fill: #f5e5c6;
+  --piece-fill: #f7edd8;
   --piece-stroke: rgba(18, 16, 14, 0.76);
   --piece-detail: rgba(53, 42, 29, 0.72);
-  --piece-accent: #fff1c9;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.34));
+  --piece-accent: #fff8ea;
+  filter: drop-shadow(0 1.8px 1.8px rgba(0, 0, 0, 0.28));
 }
 
 .qm-piece-svg {
   display: block;
-  width: 92%;
-  height: 92%;
+  width: 96%;
+  height: 96%;
   overflow: visible;
 }
 
@@ -2107,7 +2107,7 @@ h2 {
 .qm-piece-accent {
   fill: var(--piece-fill);
   stroke: var(--piece-stroke);
-  stroke-width: 3.6;
+  stroke-width: 2.65;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
@@ -2115,107 +2115,107 @@ h2 {
 
 .qm-piece-accent {
   fill: var(--piece-accent);
-  stroke-width: 2.8;
+  stroke-width: 2.2;
 }
 
 .qm-piece-detail {
   fill: none;
   stroke: var(--piece-detail);
-  stroke-width: 3;
+  stroke-width: 2.15;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.84;
+  opacity: 0.74;
   vector-effect: non-scaling-stroke;
 }
 
 .qm-piece-foot {
-  stroke-width: 3.2;
+  stroke-width: 2.4;
 }
 
 .qm-piece.white {
-  --piece-fill: #f3dfba;
-  --piece-stroke: rgba(24, 19, 15, 0.82);
-  --piece-detail: rgba(65, 50, 33, 0.74);
-  --piece-accent: #fff0c9;
+  --piece-fill: #f5ead5;
+  --piece-stroke: rgba(29, 25, 21, 0.78);
+  --piece-detail: rgba(72, 61, 47, 0.62);
+  --piece-accent: #fff8ea;
   filter:
-    drop-shadow(0 1px 0 rgba(255, 248, 225, 0.26))
-    drop-shadow(0 2.5px 2.4px rgba(0, 0, 0, 0.34));
+    drop-shadow(0 0.7px 0 rgba(255, 255, 250, 0.22))
+    drop-shadow(0 2px 1.8px rgba(0, 0, 0, 0.28));
 }
 
 .qm-piece.black {
   --piece-fill: #151920;
-  --piece-stroke: rgba(255, 231, 181, 0.48);
-  --piece-detail: rgba(255, 238, 199, 0.42);
+  --piece-stroke: rgba(235, 219, 184, 0.42);
+  --piece-detail: rgba(245, 232, 202, 0.34);
   --piece-accent: #2a303a;
-  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.42));
+  filter: drop-shadow(0 2.4px 2px rgba(0, 0, 0, 0.38));
 }
 
 .qm-piece-tournament.white {
-  --piece-fill: #f2f0e5;
-  --piece-stroke: rgba(12, 19, 29, 0.84);
-  --piece-detail: rgba(26, 37, 51, 0.72);
+  --piece-fill: #f4f1e8;
+  --piece-stroke: rgba(17, 25, 37, 0.78);
+  --piece-detail: rgba(36, 47, 61, 0.58);
   --piece-accent: #ffffff;
 }
 
 .qm-piece-tournament.black {
   --piece-fill: #0b1017;
-  --piece-stroke: rgba(230, 239, 245, 0.46);
-  --piece-detail: rgba(226, 237, 245, 0.38);
+  --piece-stroke: rgba(218, 232, 240, 0.4);
+  --piece-detail: rgba(226, 237, 245, 0.32);
   --piece-accent: #192331;
 }
 
 .qm-piece-marble.white {
-  --piece-fill: #e9dfcf;
-  --piece-stroke: rgba(55, 55, 58, 0.82);
-  --piece-detail: rgba(86, 82, 76, 0.68);
-  --piece-accent: #faf4e9;
+  --piece-fill: #eee7dc;
+  --piece-stroke: rgba(57, 55, 53, 0.72);
+  --piece-detail: rgba(92, 87, 80, 0.56);
+  --piece-accent: #fffaf0;
 }
 
 .qm-piece-marble.black {
-  --piece-fill: #4b515b;
-  --piece-stroke: rgba(255, 246, 220, 0.56);
-  --piece-detail: rgba(255, 248, 226, 0.44);
+  --piece-fill: #454b54;
+  --piece-stroke: rgba(246, 239, 218, 0.46);
+  --piece-detail: rgba(255, 248, 226, 0.34);
   --piece-accent: #69717b;
 }
 
 .qm-piece-shadow.white {
-  --piece-fill: #bffaf0;
-  --piece-stroke: rgba(3, 13, 19, 0.9);
-  --piece-detail: rgba(4, 39, 45, 0.74);
-  --piece-accent: #ffffff;
+  --piece-fill: #d9fbf5;
+  --piece-stroke: rgba(4, 18, 24, 0.82);
+  --piece-detail: rgba(4, 47, 52, 0.58);
+  --piece-accent: #f4fffd;
   filter:
-    drop-shadow(0 0 5px rgba(32, 230, 210, 0.24))
-    drop-shadow(0 3px 3px rgba(0, 0, 0, 0.44));
+    drop-shadow(0 0 2.5px rgba(32, 230, 210, 0.16))
+    drop-shadow(0 2.2px 2px rgba(0, 0, 0, 0.36));
 }
 
 .qm-piece-shadow.black {
   --piece-fill: #061018;
-  --piece-stroke: rgba(117, 255, 239, 0.58);
-  --piece-detail: rgba(149, 255, 242, 0.46);
+  --piece-stroke: rgba(117, 255, 239, 0.44);
+  --piece-detail: rgba(149, 255, 242, 0.34);
   --piece-accent: #0f2a32;
   filter:
-    drop-shadow(0 0 6px rgba(32, 230, 210, 0.2))
-    drop-shadow(0 4px 4px rgba(0, 0, 0, 0.52));
+    drop-shadow(0 0 3px rgba(32, 230, 210, 0.14))
+    drop-shadow(0 2.6px 2.2px rgba(0, 0, 0, 0.44));
 }
 
 .qm-piece-royal.white {
-  --piece-fill: #f6d47d;
-  --piece-stroke: rgba(58, 31, 7, 0.86);
-  --piece-detail: rgba(91, 52, 12, 0.72);
-  --piece-accent: #fff0a8;
+  --piece-fill: #f2d88c;
+  --piece-stroke: rgba(63, 39, 12, 0.76);
+  --piece-detail: rgba(94, 62, 18, 0.56);
+  --piece-accent: #fff2b6;
   filter:
-    drop-shadow(0 0 5px rgba(242, 189, 75, 0.24))
-    drop-shadow(0 3px 3px rgba(0, 0, 0, 0.4));
+    drop-shadow(0 0 2.5px rgba(242, 189, 75, 0.16))
+    drop-shadow(0 2.2px 2px rgba(0, 0, 0, 0.34));
 }
 
 .qm-piece-royal.black {
   --piece-fill: #211304;
-  --piece-stroke: rgba(255, 214, 110, 0.58);
-  --piece-detail: rgba(255, 224, 143, 0.46);
+  --piece-stroke: rgba(255, 214, 110, 0.44);
+  --piece-detail: rgba(255, 224, 143, 0.34);
   --piece-accent: #3d270a;
   filter:
-    drop-shadow(0 0 6px rgba(242, 189, 75, 0.22))
-    drop-shadow(0 4px 4px rgba(0, 0, 0, 0.5));
+    drop-shadow(0 0 3px rgba(242, 189, 75, 0.15))
+    drop-shadow(0 2.6px 2.2px rgba(0, 0, 0, 0.42));
 }
 
 .panel-title {
