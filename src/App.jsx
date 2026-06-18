@@ -5900,21 +5900,38 @@ export default function App() {
                   <article
                     className={`theme-card ${unlocked ? 'unlocked' : 'locked'} ${selected ? 'selected' : ''}`}
                     key={theme.id}
+                    style={{ '--theme-accent': theme.accentColor || theme.darkSquare }}
                   >
                     <div
                       className={`theme-preview board-theme-preview board-theme-preview-${theme.frameClassName}`}
                       aria-hidden="true"
                     >
-                      <span style={{ backgroundColor: theme.lightSquare }} />
-                      <span style={{ backgroundColor: theme.darkSquare }} />
-                      <span style={{ backgroundColor: theme.darkSquare }} />
-                      <span style={{ backgroundColor: theme.lightSquare }} />
+                      {Array.from({ length: 16 }, (_, squareIndex) => {
+                        const file = squareIndex % 4;
+                        const rank = Math.floor(squareIndex / 4);
+                        const isLight = (file + rank) % 2 === 0;
+
+                        return (
+                          <span
+                            key={`${theme.id}-preview-${squareIndex}`}
+                            style={{ backgroundColor: isLight ? theme.lightSquare : theme.darkSquare }}
+                          />
+                        );
+                      })}
                     </div>
                     <div className="theme-card-copy">
-                      <span className={`rarity-pill compact ${getRarityClassName(theme.rarity)}`}>{theme.rarity}</span>
+                      <div className="theme-card-meta">
+                        <span className={`rarity-pill compact ${getRarityClassName(theme.rarity)}`}>{theme.rarity}</span>
+                        <span className={`theme-state-pill ${selected ? 'selected' : unlocked ? 'unlocked' : 'locked'}`}>
+                          {selected ? 'Selected' : unlocked ? 'Unlocked' : 'Locked'}
+                        </span>
+                      </div>
                       <h3>{theme.name}</h3>
                       <p>{theme.description}</p>
-                      <small>{unlocked ? theme.preview : `Locked: ${theme.unlockSource}`}</small>
+                      <small>{theme.preview}</small>
+                      <small className="theme-unlock-hint">
+                        {unlocked ? `Unlocked: ${theme.unlockSource}` : `Unlock: ${theme.unlockSource}`}
+                      </small>
                     </div>
                     <button
                       type="button"

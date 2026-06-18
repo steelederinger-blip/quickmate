@@ -1061,7 +1061,9 @@ h2 {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-accent, var(--accent)) 9%, transparent), transparent 58%),
+    rgba(255, 255, 255, 0.045);
 }
 
 .theme-card.locked {
@@ -1069,9 +1071,9 @@ h2 {
 }
 
 .theme-card.selected {
-  border-color: rgba(242, 189, 75, 0.5);
+  border-color: color-mix(in srgb, var(--theme-accent, var(--accent)) 62%, rgba(242, 189, 75, 0.5));
   background:
-    linear-gradient(135deg, rgba(242, 189, 75, 0.14), rgba(32, 230, 210, 0.08)),
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-accent, var(--accent)) 22%, transparent), rgba(32, 230, 210, 0.08)),
     var(--surface-soft);
 }
 
@@ -1123,11 +1125,17 @@ h2 {
 
 .board-theme-preview {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 86px;
   height: 86px;
-  padding: 6px;
-  background: #121821;
+  padding: 5px;
+  border-color: color-mix(in srgb, var(--theme-accent, var(--accent)) 36%, rgba(242, 189, 75, 0.18));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-accent, var(--accent)) 24%, transparent), transparent),
+    #121821;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(0, 0, 0, 0.16);
 }
 
 .board-theme-preview span {
@@ -1138,6 +1146,42 @@ h2 {
   display: grid;
   gap: 5px;
   min-width: 0;
+}
+
+.theme-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.theme-state-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.theme-state-pill.unlocked {
+  border-color: color-mix(in srgb, var(--success), transparent 48%);
+  color: var(--success);
+}
+
+.theme-state-pill.selected {
+  border-color: color-mix(in srgb, var(--accent), transparent 38%);
+  color: var(--accent-strong);
+}
+
+.theme-state-pill.locked {
+  color: var(--muted);
 }
 
 .theme-card-copy h3 {
@@ -1162,6 +1206,11 @@ h2 {
 
 .theme-card-copy small {
   font-size: 0.76rem;
+}
+
+.theme-card-copy .theme-unlock-hint {
+  color: color-mix(in srgb, var(--theme-accent, var(--accent)) 74%, var(--muted));
+  overflow-wrap: anywhere;
 }
 
 .theme-card > button {
@@ -1951,6 +2000,13 @@ h2 {
   box-shadow: var(--shadow), 0 20px 42px rgba(0, 0, 0, 0.22);
 }
 
+.board-theme-classic-green {
+  border-color: rgba(215, 192, 136, 0.32);
+  background:
+    linear-gradient(135deg, rgba(88, 116, 95, 0.24), rgba(215, 192, 136, 0.1)),
+    var(--surface);
+}
+
 .board-theme-walnut {
   border-color: rgba(215, 185, 139, 0.32);
   background:
@@ -1958,10 +2014,57 @@ h2 {
     var(--surface);
 }
 
+.board-theme-tournament-blue {
+  border-color: rgba(111, 184, 255, 0.36);
+  background:
+    radial-gradient(circle at top, rgba(111, 184, 255, 0.14), transparent 14rem),
+    linear-gradient(135deg, rgba(61, 111, 156, 0.32), rgba(216, 232, 243, 0.1)),
+    var(--surface);
+}
+
+.board-theme-forest {
+  border-color: rgba(130, 196, 108, 0.34);
+  background:
+    radial-gradient(circle at top left, rgba(130, 196, 108, 0.14), transparent 13rem),
+    linear-gradient(135deg, rgba(65, 106, 73, 0.42), rgba(213, 223, 191, 0.08)),
+    var(--surface);
+}
+
 .board-theme-slate {
   border-color: rgba(149, 183, 196, 0.34);
   background:
     linear-gradient(135deg, rgba(82, 105, 121, 0.34), rgba(32, 230, 210, 0.08)),
+    var(--surface);
+}
+
+.board-theme-sandstone {
+  border-color: rgba(226, 189, 114, 0.34);
+  background:
+    radial-gradient(circle at top right, rgba(226, 189, 114, 0.16), transparent 14rem),
+    linear-gradient(135deg, rgba(154, 109, 69, 0.36), rgba(234, 215, 178, 0.1)),
+    var(--surface);
+}
+
+.board-theme-fortress-iron {
+  border-color: rgba(183, 193, 201, 0.36);
+  background:
+    linear-gradient(135deg, rgba(80, 92, 102, 0.44), rgba(204, 209, 212, 0.1)),
+    var(--surface);
+}
+
+.board-theme-royal-court {
+  border-color: rgba(242, 189, 75, 0.38);
+  background:
+    radial-gradient(circle at top, rgba(242, 189, 75, 0.14), transparent 13rem),
+    linear-gradient(135deg, rgba(113, 80, 154, 0.42), rgba(229, 213, 239, 0.1)),
+    var(--surface);
+}
+
+.board-theme-grandmaster-obsidian {
+  border-color: rgba(32, 230, 210, 0.32);
+  background:
+    radial-gradient(circle at top, rgba(32, 230, 210, 0.12), transparent 14rem),
+    linear-gradient(135deg, rgba(37, 43, 53, 0.78), rgba(173, 182, 194, 0.08)),
     var(--surface);
 }
 
@@ -1977,6 +2080,22 @@ h2 {
   background:
     radial-gradient(circle at top, rgba(32, 230, 210, 0.14), transparent 14rem),
     linear-gradient(135deg, rgba(36, 54, 69, 0.72), rgba(242, 189, 75, 0.08)),
+    var(--surface);
+}
+
+.board-theme-ice-summit {
+  border-color: rgba(191, 246, 255, 0.42);
+  background:
+    radial-gradient(circle at top, rgba(191, 246, 255, 0.18), transparent 14rem),
+    linear-gradient(135deg, rgba(90, 140, 164, 0.38), rgba(224, 244, 248, 0.1)),
+    var(--surface);
+}
+
+.board-theme-legendary-gold {
+  border-color: rgba(255, 214, 110, 0.48);
+  background:
+    radial-gradient(circle at top, rgba(255, 214, 110, 0.2), transparent 15rem),
+    linear-gradient(135deg, rgba(155, 106, 32, 0.42), rgba(243, 223, 154, 0.12)),
     var(--surface);
 }
 
