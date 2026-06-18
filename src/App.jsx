@@ -1193,29 +1193,20 @@ const DEFAULT_COLLECTION_STATS = {
 const DEFAULT_PIECE_THEME_ID = 'classic';
 const DEFAULT_BOARD_THEME_ID = 'classic-green';
 
-const PIECE_GLYPHS = {
-  wK: '♔',
-  wQ: '♕',
-  wR: '♖',
-  wB: '♗',
-  wN: '♘',
-  wP: '♙',
-  bK: '♚',
-  bQ: '♛',
-  bR: '♜',
-  bB: '♝',
-  bN: '♞',
-  bP: '♟',
-};
-
-const FILLED_WHITE_PIECE_GLYPHS = {
-  wK: '\u265A',
-  wQ: '\u265B',
-  wR: '\u265C',
-  wB: '\u265D',
-  wN: '\u265E',
-  wP: '\u265F',
-};
+const CHESS_PIECE_TYPES = [
+  'wK',
+  'wQ',
+  'wR',
+  'wB',
+  'wN',
+  'wP',
+  'bK',
+  'bQ',
+  'bR',
+  'bB',
+  'bN',
+  'bP',
+];
 
 const RUSH_MILESTONE_CHESTS = [
   {
@@ -2745,12 +2736,135 @@ function premiumThemeIsUnlocked(stats) {
     .some((theme) => !theme.defaultUnlocked && theme.rarity !== 'Common');
 }
 
+function PieceBase() {
+  return (
+    <>
+      <path className="qm-piece-main qm-piece-foot" d="M25 75 H75 L82 88 C69 92 31 92 18 88 Z" />
+      <path className="qm-piece-detail" d="M30 78 H70" />
+    </>
+  );
+}
+
+function KingSvg() {
+  return (
+    <>
+      <path className="qm-piece-main" d="M46 12 H54 V23 H65 V31 H54 V42 H46 V31 H35 V23 H46 Z" />
+      <path
+        className="qm-piece-main"
+        d="M36 45 C36 38 42 33 50 33 C58 33 64 38 64 45 C64 51 60 55 55 58 C63 62 68 69 70 78 H30 C32 69 37 62 45 58 C40 55 36 51 36 45 Z"
+      />
+      <path className="qm-piece-detail" d="M39 73 C43 68 57 68 61 73" />
+      <PieceBase />
+    </>
+  );
+}
+
+function QueenSvg() {
+  return (
+    <>
+      <circle className="qm-piece-accent" cx="26" cy="30" r="5" />
+      <circle className="qm-piece-accent" cx="50" cy="25" r="5" />
+      <circle className="qm-piece-accent" cx="74" cy="30" r="5" />
+      <path className="qm-piece-main" d="M25 35 L36 64 L50 34 L64 64 L75 35 L68 78 H32 Z" />
+      <path className="qm-piece-detail" d="M35 63 H65 M37 72 H63" />
+      <PieceBase />
+    </>
+  );
+}
+
+function RookSvg() {
+  return (
+    <>
+      <path
+        className="qm-piece-main"
+        d="M30 24 H39 V33 H46 V24 H54 V33 H61 V24 H70 V43 H65 V76 H35 V43 H30 Z"
+      />
+      <path className="qm-piece-detail" d="M36 43 H64 M38 58 H62 M39 70 H61" />
+      <PieceBase />
+    </>
+  );
+}
+
+function BishopSvg() {
+  return (
+    <>
+      <path
+        className="qm-piece-main"
+        d="M50 17 C62 29 66 42 58 55 C66 61 70 69 70 78 H30 C30 69 34 61 42 55 C34 42 38 29 50 17 Z"
+      />
+      <path className="qm-piece-detail" d="M56 29 L43 52 M38 70 C44 66 56 66 62 70" />
+      <circle className="qm-piece-accent" cx="50" cy="24" r="3" />
+      <PieceBase />
+    </>
+  );
+}
+
+function KnightSvg() {
+  return (
+    <>
+      <path
+        className="qm-piece-main"
+        d="M31 78 H72 C70 68 63 60 54 55 C64 50 70 39 64 29 C58 19 44 17 34 27 L29 39 L39 36 L42 29 C49 32 51 39 47 45 C40 50 35 57 33 67 Z"
+      />
+      <path className="qm-piece-detail" d="M41 36 C47 38 52 40 57 39 M46 55 C53 59 59 66 61 73" />
+      <circle className="qm-piece-accent" cx="51" cy="31" r="2.4" />
+      <PieceBase />
+    </>
+  );
+}
+
+function PawnSvg() {
+  return (
+    <>
+      <circle className="qm-piece-main" cx="50" cy="28" r="13" />
+      <path className="qm-piece-main" d="M39 45 C41 40 59 40 61 45 L67 78 H33 Z" />
+      <path className="qm-piece-detail" d="M40 58 H60" />
+      <PieceBase />
+    </>
+  );
+}
+
+function ChessPieceSvg({ pieceType }) {
+  const pieceRole = pieceType.slice(1);
+
+  return (
+    <svg className="qm-piece-svg" viewBox="0 0 100 100" focusable="false" aria-hidden="true">
+      {pieceRole === 'K' ? <KingSvg /> : null}
+      {pieceRole === 'Q' ? <QueenSvg /> : null}
+      {pieceRole === 'R' ? <RookSvg /> : null}
+      {pieceRole === 'B' ? <BishopSvg /> : null}
+      {pieceRole === 'N' ? <KnightSvg /> : null}
+      {pieceRole === 'P' ? <PawnSvg /> : null}
+    </svg>
+  );
+}
+
+function PieceThemePreview({ theme }) {
+  const themeClassName = getThemeClassName(theme.id);
+
+  return (
+    <div className={`theme-preview piece-theme-preview piece-theme-${themeClassName}`} aria-hidden="true">
+      {['wN', 'bQ', 'wK'].map((pieceType) => {
+        const isWhitePiece = pieceType.startsWith('w');
+
+        return (
+          <span
+            className={`qm-piece qm-piece-${themeClassName} ${isWhitePiece ? 'white' : 'black'}`}
+            key={`${theme.id}-${pieceType}`}
+          >
+            <ChessPieceSvg pieceType={pieceType} />
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function createPieceThemeRenderers(theme) {
   const themeClassName = getThemeClassName(theme.id);
 
-  return Object.fromEntries(Object.entries(PIECE_GLYPHS).map(([pieceType, glyph]) => {
+  return Object.fromEntries(CHESS_PIECE_TYPES.map((pieceType) => {
     const isWhitePiece = pieceType.startsWith('w');
-    const displayGlyph = isWhitePiece ? FILLED_WHITE_PIECE_GLYPHS[pieceType] : glyph;
 
     return [
       pieceType,
@@ -2759,7 +2873,7 @@ function createPieceThemeRenderers(theme) {
           className={`qm-piece qm-piece-${themeClassName} ${isWhitePiece ? 'white' : 'black'}`}
           aria-hidden="true"
         >
-          {displayGlyph}
+          <ChessPieceSvg pieceType={pieceType} />
         </span>
       ),
     ];
@@ -5872,11 +5986,7 @@ export default function App() {
                     className={`theme-card ${unlocked ? 'unlocked' : 'locked'} ${selected ? 'selected' : ''}`}
                     key={theme.id}
                   >
-                    <div className={`theme-preview piece-theme-preview piece-theme-${getThemeClassName(theme.id)}`} aria-hidden="true">
-                      <span>{'\u265E'}</span>
-                      <span>{'\u265B'}</span>
-                      <span>{'\u265A'}</span>
-                    </div>
+                    <PieceThemePreview theme={theme} />
                     <div className="theme-card-copy">
                       <span className={`rarity-pill compact ${getRarityClassName(theme.rarity)}`}>{theme.rarity}</span>
                       <h3>{theme.name}</h3>
