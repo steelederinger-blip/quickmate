@@ -75,6 +75,7 @@ button {
   background:
     radial-gradient(circle at top left, rgba(47, 95, 59, 0.12), transparent 34rem),
     linear-gradient(135deg, var(--bg), var(--surface-soft));
+  overflow-x: clip;
 }
 
 .app-shell.low-time {
@@ -1067,7 +1068,7 @@ h2 {
 }
 
 .theme-card.locked {
-  opacity: 0.66;
+  opacity: 0.78;
 }
 
 .theme-card.selected {
@@ -1590,7 +1591,7 @@ h2 {
 
 .mode-card {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
   min-height: 92px;
@@ -1600,6 +1601,11 @@ h2 {
   background: var(--surface-strong);
   text-align: left;
   box-shadow: var(--shadow);
+}
+
+.mode-card > svg:last-child {
+  align-self: center;
+  justify-self: end;
 }
 
 .mode-card.featured {
@@ -1967,7 +1973,51 @@ h2 {
 .board-zone {
   display: grid;
   place-items: center;
+  gap: 8px;
   min-width: 0;
+}
+
+.player-side-banner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: min(100%, 560px);
+  padding: 7px 11px;
+  border: 1px solid rgba(242, 189, 75, 0.22);
+  border-radius: 999px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-strong), transparent 6%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+  font-size: 0.82rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.player-side-banner::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #f5ead1;
+  box-shadow: inset 0 0 0 1px rgba(25, 22, 18, 0.42);
+}
+
+.player-side-banner.black::before {
+  background: #131820;
+  box-shadow: inset 0 0 0 1px rgba(245, 234, 209, 0.36);
+}
+
+.player-side-banner strong {
+  color: var(--accent-strong);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.player-side-banner span {
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .board-frame {
@@ -2528,6 +2578,13 @@ h2 {
   max-height: calc(100vh - 28px);
   overflow-y: auto;
   padding: 22px;
+  text-align: center;
+}
+
+.result-panel .primary-action,
+.result-panel .secondary-action,
+.chest-open-result .primary-action,
+.chest-open-result .secondary-action {
   text-align: center;
 }
 
@@ -4048,6 +4105,15 @@ button {
     padding: 10px;
   }
 
+  .primary-feature-section,
+  .rush-overview-section,
+  .practice-section,
+  .theme-section,
+  .achievements-section,
+  .unopened-chests-section {
+    gap: 10px;
+  }
+
   .home-hero {
     gap: 14px;
     padding-block: 4px 18px;
@@ -4101,6 +4167,17 @@ button {
 
   .panel-header {
     flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .primary-feature-grid,
+  .mode-grid,
+  .practice-mode-grid {
+    gap: 10px;
   }
 
   .rush-hero-card {
@@ -4112,9 +4189,36 @@ button {
   }
 
   .mode-card {
+    grid-template-columns: 30px minmax(0, 1fr) 22px;
+    align-items: start;
     gap: 11px;
     min-height: 82px;
     padding: 13px;
+  }
+
+  .mode-card > svg:first-child {
+    margin-top: 2px;
+  }
+
+  .mode-card > svg:last-child {
+    width: 20px;
+    height: 20px;
+    margin-top: 3px;
+  }
+
+  .mode-card strong {
+    line-height: 1.12;
+  }
+
+  .mode-card .card-cta {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 2px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(242, 189, 75, 0.12);
+    line-height: 1.15;
   }
 
   .mode-card small,
@@ -4221,6 +4325,18 @@ button {
     gap: 10px;
   }
 
+  .board-zone {
+    order: 1;
+  }
+
+  .info-panel {
+    order: 2;
+  }
+
+  .sidebar {
+    order: 3;
+  }
+
   .sidebar,
   .info-panel {
     padding: 11px;
@@ -4240,6 +4356,13 @@ button {
     width: min(100%, calc(100vw - 20px));
     padding: 5px;
     border-radius: 10px;
+  }
+
+  .player-side-banner {
+    width: min(100%, calc(100vw - 20px));
+    flex-wrap: wrap;
+    gap: 5px 8px;
+    padding: 6px 10px;
   }
 
   .panel-title {
@@ -4394,6 +4517,7 @@ button {
 
   .theme-card {
     grid-template-columns: 74px minmax(0, 1fr);
+    align-items: start;
     padding: 9px;
   }
 
@@ -4405,7 +4529,11 @@ button {
   }
 
   .piece-theme-preview {
-    font-size: 1.38rem;
+    padding: 6px;
+  }
+
+  .theme-card > button {
+    min-height: 44px;
   }
 
   .piece-slots {
@@ -4433,7 +4561,26 @@ button {
   .result-panel {
     width: 100%;
     max-height: calc(100vh - 20px);
+    gap: 10px;
     padding: 16px;
+    border-radius: 12px;
+  }
+
+  .result-score {
+    margin: 8px 0;
+    padding: 8px 12px;
+  }
+
+  .daily-result-strip,
+  .endless-result-strip {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .daily-result-strip span,
+  .endless-result-strip span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .boss-intro-screen {
@@ -4528,6 +4675,8 @@ button {
   .score-breakdown div {
     align-items: flex-start;
     min-height: 34px;
+    gap: 8px;
+    padding: 8px;
   }
 
   .score-breakdown div span {
@@ -4558,6 +4707,17 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     gap: 8px;
+  }
+
+  .earned-chest-card,
+  .chest-open-result,
+  .achievement-unlock-card {
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .help-panel .primary-action {
+    width: 100%;
   }
 
   .result-panel .actions > button,

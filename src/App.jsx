@@ -2515,6 +2515,18 @@ function getMateIn(puzzle) {
   return puzzle.mateIn;
 }
 
+function getPuzzlePlayerSide(puzzle) {
+  if (puzzle?.sideToMove === 'black' || puzzle?.sideToMove === 'b') {
+    return 'black';
+  }
+
+  if (puzzle?.sideToMove === 'white' || puzzle?.sideToMove === 'w') {
+    return 'white';
+  }
+
+  return puzzle?.fen?.split(' ')[1] === 'b' ? 'black' : 'white';
+}
+
 function calculateScore({ mateIn, mistakes, hints, seconds }) {
   const base = mateIn * 100;
   const noMistakesBonus = mistakes === 0 ? 150 : 0;
@@ -3392,7 +3404,9 @@ export default function App() {
   const game = useMemo(() => new Chess(fen), [fen]);
   const expectedMove = puzzle.solution[solutionIndex];
   const progress = Math.round((solutionIndex / puzzle.solution.length) * 100);
-  const boardOrientation = 'white';
+  const playerSide = getPuzzlePlayerSide(puzzle);
+  const playerSideLabel = playerSide === 'black' ? 'Black' : 'White';
+  const boardOrientation = playerSide;
   const mateIn = getMateIn(puzzle);
   const dailyDone = stats.completedDailyPuzzleDate === todayKey;
   const isDailyRush = mode === 'dailyRush';
@@ -6732,6 +6746,10 @@ export default function App() {
         </aside>
 
         <section className="board-zone" aria-label="Chess board">
+          <div className={`player-side-banner ${playerSide}`} aria-label={`You play ${playerSideLabel}`}>
+            <strong>You play {playerSideLabel}</strong>
+            <span>Find the mate for {playerSideLabel}</span>
+          </div>
           <div className={`board-frame board-theme-${selectedBoardTheme.frameClassName}`}>
             <Chessboard
               options={{
