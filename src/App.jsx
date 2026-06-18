@@ -42,7 +42,7 @@ const DAILY_RUSH_LIVES = 2;
 const DAILY_RUSH_EPOCH = '2026-01-01';
 const BRAND_TAGLINE = 'Fast chess puzzles. Daily Rush. Build your collection.';
 const BRAND_LOGO_SRC = '/brand/quickmate-logo.png';
-const SUPPORT_EMAIL = '[SUPPORT_EMAIL]';
+const SUPPORT_EMAIL = 'quickmateapp@gmail.com';
 const LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/support', label: 'Support' },
