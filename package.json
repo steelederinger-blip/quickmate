@@ -8,12 +8,18 @@
     "build": "vite build",
     "validate:puzzles": "node scripts/validate-puzzles.js",
     "verify": "npm run validate:puzzles && npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:build": "cd android && gradlew.bat assembleDebug"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@vitejs/plugin-react": "6.0.2",
     "chess.js": "1.4.0",
     "lucide-react": "1.17.0",
@@ -22,5 +28,7 @@
     "react-dom": "19.2.7",
     "vite": "8.0.16"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1"
+  }
 }

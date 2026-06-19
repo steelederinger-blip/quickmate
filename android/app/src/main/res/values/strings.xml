@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">QuickMate</string>
+    <string name="title_activity_main">QuickMate</string>
+    <string name="package_name">com.quickmate.app</string>
+    <string name="custom_url_scheme">com.quickmate.app</string>
+</resources>
