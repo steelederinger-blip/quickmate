@@ -9,7 +9,11 @@
     />
     <meta name="theme-color" content="#080b10" />
     <meta name="application-name" content="QuickMate" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="QuickMate" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/png" href="/brand/quickmate-app-icon.png" />
     <link rel="apple-touch-icon" href="/brand/quickmate-app-icon.png" />
     <meta property="og:title" content="QuickMate" />
@@ -25,5 +29,12 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
