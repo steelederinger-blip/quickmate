@@ -43,10 +43,15 @@ const DAILY_RUSH_EPOCH = '2026-01-01';
 const BRAND_TAGLINE = 'Fast chess puzzles. Daily Rush. Build your collection.';
 const BRAND_LOGO_SRC = '/brand/quickmate-logo.png';
 const SUPPORT_EMAIL = 'quickmateapp@gmail.com';
+const MIND_GAMES_URL = 'https://temperedpro-mindgames.netlify.app/mind-games';
 const LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/support', label: 'Support' },
   { href: '/terms', label: 'Terms' },
+];
+const PUBLIC_LINKS = [
+  { href: MIND_GAMES_URL, label: 'Mind Games', external: true },
+  ...LEGAL_LINKS,
 ];
 const ILLEGAL_MOVE_FEEDBACK = 'Illegal move.';
 const WRONG_LEGAL_MOVE_FEEDBACK = 'Legal move, but it does not force mate.';
@@ -5416,8 +5421,13 @@ export default function App() {
   function renderLegalLinks(className = 'legal-link-row') {
     return (
       <nav className={className} aria-label="QuickMate public links">
-        {LEGAL_LINKS.map((link) => (
-          <a href={link.href} key={link.href}>
+        {PUBLIC_LINKS.map((link) => (
+          <a
+            href={link.href}
+            key={link.href}
+            rel={link.external ? 'noreferrer' : undefined}
+            target={link.external ? '_blank' : undefined}
+          >
             {link.label}
           </a>
         ))}
@@ -5735,6 +5745,23 @@ export default function App() {
                 <Play size={22} />
               </button>
             </div>
+          </section>
+
+          <section className="mind-games-discovery-section" aria-label="Mind Games">
+            <a
+              className="mode-card mind-games-discovery-card"
+              href={MIND_GAMES_URL}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <Sparkles size={26} />
+              <span>
+                <strong>Mind Games</strong>
+                <small>Five daily brain games that get harder throughout the week.</small>
+                <small className="card-cta">Play today’s games</small>
+              </span>
+              <Play size={22} />
+            </a>
           </section>
 
           <section className="rush-overview-section" aria-label="Rush performance">

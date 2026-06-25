@@ -318,6 +318,10 @@ h2 {
   gap: 12px;
 }
 
+.mind-games-discovery-section {
+  display: grid;
+}
+
 .primary-feature-grid {
   display: grid;
   gap: 12px;
@@ -352,6 +356,19 @@ h2 {
 
 .collection-feature-card {
   border-color: color-mix(in srgb, var(--accent), transparent 55%);
+}
+
+.mind-games-discovery-card {
+  min-height: 88px;
+  border-color: color-mix(in srgb, var(--speed-teal), transparent 48%);
+  background:
+    linear-gradient(135deg, rgba(32, 230, 210, 0.12), rgba(242, 189, 75, 0.08)),
+    var(--surface-strong);
+  text-decoration: none;
+}
+
+.mind-games-discovery-card > svg:first-child {
+  color: var(--speed-teal);
 }
 
 .mode-card .card-cta {
@@ -1731,6 +1748,7 @@ h2 {
   color: var(--text);
   background: var(--surface-strong);
   text-align: left;
+  text-decoration: none;
   box-shadow: var(--shadow);
 }
 
